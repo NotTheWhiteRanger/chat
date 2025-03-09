@@ -417,9 +417,9 @@
       document.execCommand("copy");
     });
 
-    // Toggle the encryption tool directly with Ctrl+Shift+E using e.code
+    // Toggle the encryption tool directly with Ctrl+Alt+K using e.code
     document.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.shiftKey && e.code === "KeyE") {
+      if (e.ctrlKey && e.altKey && e.code === "KeyK") {
         const tool = document.getElementById("encryptionTool");
         tool.style.display = (tool.style.display === "none" || tool.style.display === "") ? "block" : "none";
       }
