@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crew IT Solutions</title>
+  <style>
+    /* General IT Company Site Styles */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+    header {
+      background: #004080;
+      color: #fff;
+      padding: 20px 0;
+      text-align: center;
+    }
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    nav ul li {
+      display: inline;
+      margin: 0 15px;
+    }
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .hero {
+      background: url('https://via.placeholder.com/1200x300?text=Crew+IT+Solutions') no-repeat center center/cover;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .hero h1 {
+      font-size: 3em;
+      margin: 0;
+    }
+    .content {
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    footer {
+      background: #004080;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+    }
+    /* Hidden Encryption Tool Styles */
+    #encryptionTool {
+      display: none;
+      background: #f4f4f4;
+      color: #333;
+      padding: 20px;
+      border-top: 2px solid #ccc;
+      max-width: 900px;
+      margin: 20px auto;
+    }
+    #encryptionTool h2 {
+      margin-top: 0;
+    }
+    #encryptionTool .form-group {
+      margin-bottom: 10px;
+    }
+    #encryptionTool label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    #encryptionTool input[type="text"],
+    #encryptionTool input[type="number"],
+    #encryptionTool textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #encryptionTool button {
+      padding: 10px 15px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    /* Secret Button Styles */
+    #secretButton {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      display: none;
+      background: #900;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <!-- Standard IT Company Website -->
+  <header>
+    <h1>Crew IT Solutions</h1>
+    <nav>
+      <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#">Services</a></li>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>Innovative IT Solutions</h1>
+  </div>
+
+  <div class="content">
+    <h2>Welcome to Crew IT Solutions</h2>
+    <p>We provide cutting-edge IT services for businesses of all sizes. Our team is dedicated to delivering innovative solutions tailored to your needs. Explore our services and let us help you achieve your IT goals.</p>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 Crew IT Solutions. All rights reserved.</p>
+  </footer>
+
+  <!-- Hidden Encryption Tool (Your Script Converted to JavaScript) -->
+  <div id="encryptionTool">
+    <h2>Enchiridion Encryption Tool</h2>
+    <div class="form-group">
+      <label for="inputText">Input Text:</label>
+      <textarea id="inputText" rows="4" placeholder="Enter text..."></textarea>
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="caesarCheckbox">
+      <label for="caesarCheckbox">Caesar</label>
+      <label for="caesarShift">Shift:</label>
+      <input type="number" id="caesarShift" value="3" min="-25" max="25">
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="vigenereCheckbox">
+      <label for="vigenereCheckbox">Vigenere</label>
+      <label for="vigenereKey">Key:</label>
+      <input type="text" id="vigenereKey" placeholder="Enter key">
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="transpositionCheckbox">
+      <label for="transpositionCheckbox">Transposition</label>
+      <label for="transpositionKey">Key:</label>
+      <input type="text" id="transpositionKey" placeholder="Enter key">
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="atbashCheckbox">
+      <label for="atbashCheckbox">Atbash</label>
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="reverseCheckbox">
+      <label for="reverseCheckbox">Reverse</label>
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="beaufortCheckbox">
+      <label for="beaufortCheckbox">Beaufort</label>
+      <label for="beaufortKey">Key:</label>
+      <input type="text" id="beaufortKey" placeholder="Enter key">
+    </div>
+    <div class="form-group">
+      <input type="checkbox" id="shuffleCheckbox">
+      <label for="shuffleCheckbox">Shuffle</label>
+      <label for="shuffleKey">Key:</label>
+      <input type="text" id="shuffleKey" placeholder="Enter key">
+    </div>
+    <div class="form-group">
+      <button id="encryptButton">Encrypt</button>
+      <button id="decryptButton">Decrypt</button>
+      <button id="clearButton">Clear Input</button>
+      <button id="copyButton">Copy Output</button>
+    </div>
+    <div class="form-group">
+      <label for="outputText">Output:</label>
+      <textarea id="outputText" rows="4" readonly placeholder="Output will appear here..."></textarea>
+    </div>
+  </div>
+
+  <!-- Secret Button (Revealed via secret key combination) -->
+  <button id="secretButton" title="Secret">★<
