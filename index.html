@@ -3,97 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <title>KCS Chat Solutions</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* Standard Site Styles */
-    body {
+    /* General Reset and Fonts */
+    * {
+      box-sizing: border-box;
       margin: 0;
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
+      padding: 0;
     }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f7f7f7;
+      color: #333;
+      line-height: 1.6;
+    }
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+    /* Header Styling */
     header {
-      background: #004080;
+      background: linear-gradient(135deg, #1a73e8, #4285f4);
       color: #fff;
       padding: 20px 0;
       text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    header h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 2.5em;
+      margin-bottom: 10px;
     }
     nav ul {
       list-style: none;
-      padding: 0;
-      margin: 0;
+      display: flex;
+      justify-content: center;
     }
     nav ul li {
-      display: inline;
       margin: 0 15px;
     }
     nav ul li a {
+      font-weight: 700;
       color: #fff;
-      text-decoration: none;
-      font-weight: bold;
+      transition: color 0.3s ease;
     }
+    nav ul li a:hover {
+      color: #d0e3ff;
+    }
+    /* Hero Section */
     .hero {
-      background: url('https://via.placeholder.com/1200x300?text=KCS+Chat+Solutions') no-repeat center center/cover;
-      height: 300px;
+      position: relative;
+      background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center center/cover;
+      height: 400px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
     }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+    }
     .hero h1 {
+      position: relative;
+      font-family: 'Montserrat', sans-serif;
       font-size: 3em;
-      margin: 0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
     }
+    /* Content */
     .content {
-      padding: 20px;
       max-width: 900px;
-      margin: auto;
+      background: #fff;
+      padding: 30px;
+      margin: 30px auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+    .content h2 {
+      font-family: 'Montserrat', sans-serif;
+      margin-bottom: 15px;
+      color: #1a73e8;
+    }
+    .content p {
+      margin-bottom: 15px;
+    }
+    /* Footer */
     footer {
-      background: #004080;
+      background: #1a73e8;
       color: #fff;
       text-align: center;
-      padding: 10px;
+      padding: 15px 0;
+      font-size: 0.9em;
     }
-    /* Hidden Encryption Tool Styles */
+    /* Hidden Encryption Tool Styling */
     #encryptionTool {
       display: none;
-      background: #f4f4f4;
-      color: #333;
+      background: #fff;
       padding: 20px;
-      border-top: 2px solid #ccc;
       max-width: 900px;
       margin: 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
     #encryptionTool h2 {
-      margin-top: 0;
+      margin-bottom: 15px;
+      font-family: 'Montserrat', sans-serif;
+      color: #1a73e8;
     }
     #encryptionTool .form-group {
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
     #encryptionTool label {
       display: block;
       margin-bottom: 5px;
+      font-weight: 700;
     }
     #encryptionTool input[type="text"],
     #encryptionTool input[type="number"],
     #encryptionTool textarea {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
+      padding: 10px;
+      border: 1px solid #ddd;
       border-radius: 4px;
+      font-size: 1em;
     }
     #encryptionTool button {
       padding: 10px 15px;
-      margin-right: 10px;
       border: none;
       border-radius: 4px;
+      background: #1a73e8;
+      color: #fff;
       cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    #encryptionTool button:hover {
+      background: #1558b0;
     }
   </style>
 </head>
 <body>
-  <!-- Standard Website Content -->
+  <!-- Header -->
   <header>
     <h1>KCS Chat Solutions</h1>
     <nav>
@@ -107,15 +162,18 @@
     </nav>
   </header>
 
+  <!-- Hero Section -->
   <div class="hero">
     <h1>Connecting IT & Chat Communities</h1>
   </div>
 
+  <!-- Main Content -->
   <div class="content">
     <h2>Welcome to KCS Chat Solutions</h2>
-    <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Explore our offerings and discover how we can help you stay connected.</p>
+    <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Our innovative approach ensures your business stays connected in today's fast-paced world.</p>
   </div>
 
+  <!-- Footer -->
   <footer>
     <p>&copy; 2025 KCS Chat Solutions. All rights reserved.</p>
   </footer>
@@ -386,7 +444,7 @@
       return result;
     }
 
-    // Event listeners for encryption tool buttons
+    // Encryption tool button event listeners
     document.getElementById("encryptButton").addEventListener("click", () => {
       let input = document.getElementById("inputText").value;
       if (input.trim() === "") {
@@ -417,7 +475,7 @@
       document.execCommand("copy");
     });
 
-    // Toggle the encryption tool directly with Ctrl+Alt+K using e.code
+    // Toggle encryption tool with Ctrl+Alt+K
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.altKey && e.code === "KeyK") {
         const tool = document.getElementById("encryptionTool");
