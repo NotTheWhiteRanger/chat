@@ -21,6 +21,9 @@
       background: var(--bg-color);
       color: var(--text-color);
       line-height: 1.6;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 1s ease-in-out;
     }
     a { text-decoration: none; color: inherit; }
     header {
@@ -203,6 +206,21 @@
     </div>
   </div>
   <script defer>
+    // Meme Wallpaper Switcher Code
+    const memes = [
+      "images/cat1.jpeg",
+      "images/cat2.jpeg",
+      "images/cat3.png",
+      "images/cat4.jpeg"
+    ];
+    let memeIndex = 0;
+    document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
+    setInterval(() => {
+      memeIndex = (memeIndex + 1) % memes.length;
+      document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
+    }, 5000);
+
+    // Encryption Tool Functions and Event Listeners
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     const caesarCipher = (text, shift, decrypt = false) => {
