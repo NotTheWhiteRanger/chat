@@ -87,42 +87,31 @@
       padding: 15px 0;
       font-size: 0.9em;
     }
-    #encryptionTool {
+    /* Modal styles */
+    #modalContainer {
       display: none;
-      background: var(--white);
-      padding: 20px;
-      max-width: 900px;
-      margin: 20px auto;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    #encryptionTool h2 {
-      margin-bottom: 15px;
-      font-family: 'Montserrat', sans-serif;
-      color: var(--primary-color);
-    }
-    #encryptionTool .form-group { margin-bottom: 15px; }
-    #encryptionTool label { display: block; margin-bottom: 5px; font-weight: 700; }
-    #encryptionTool input[type="text"],
-    #encryptionTool input[type="number"],
-    #encryptionTool textarea {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1em;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.7);
     }
-    #encryptionTool button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 4px;
-      background: var(--primary-color);
-      color: var(--white);
+    #modalContent {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+    }
+    .closeModal {
+      float: right;
+      font-size: 1.5em;
       cursor: pointer;
-      transition: background 0.3s ease;
-      margin-right: 5px;
     }
-    #encryptionTool button:hover { background: var(--primary-hover); }
   </style>
 </head>
 <body>
@@ -144,66 +133,24 @@
   <main>
     <h2>Welcome to KCS Chat Solutions</h2>
     <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Our innovative approach ensures your business stays connected in today's fast-paced world.</p>
+    <!-- Button to open the encryption tool modal -->
+    <button id="openModalBtn">Open Encryption Tool</button>
   </main>
   <footer>
     <p>&copy; 2025 KCS Chat Solutions. All rights reserved.</p>
   </footer>
-  <div id="encryptionTool">
-    <h2>Enchiridion Encryption Tool</h2>
-    <div class="form-group">
-      <label for="inputText">Input Text:</label>
-      <textarea id="inputText" rows="4" placeholder="Enter text..."></textarea>
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="caesarCheckbox">
-      <label for="caesarCheckbox">Caesar</label>
-      <label for="caesarShift">Shift:</label>
-      <input type="number" id="caesarShift" value="3" min="-25" max="25">
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="vigenereCheckbox">
-      <label for="vigenereCheckbox">Vigenere</label>
-      <label for="vigenereKey">Key:</label>
-      <input type="text" id="vigenereKey" placeholder="Enter key">
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="transpositionCheckbox">
-      <label for="transpositionCheckbox">Transposition</label>
-      <label for="transpositionKey">Key:</label>
-      <input type="text" id="transpositionKey" placeholder="Enter key">
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="atbashCheckbox">
-      <label for="atbashCheckbox">Atbash</label>
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="reverseCheckbox">
-      <label for="reverseCheckbox">Reverse</label>
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="beaufortCheckbox">
-      <label for="beaufortCheckbox">Beaufort</label>
-      <label for="beaufortKey">Key:</label>
-      <input type="text" id="beaufortKey" placeholder="Enter key">
-    </div>
-    <div class="form-group">
-      <input type="checkbox" id="shuffleCheckbox">
-      <label for="shuffleCheckbox">Shuffle</label>
-      <label for="shuffleKey">Key:</label>
-      <input type="text" id="shuffleKey" placeholder="Enter key">
-    </div>
-    <div class="form-group">
-      <button id="encryptButton">Encrypt</button>
-      <button id="decryptButton">Decrypt</button>
-      <button id="clearButton">Clear Input</button>
-      <button id="copyButton">Copy Output</button>
-    </div>
-    <div class="form-group">
-      <label for="outputText">Output:</label>
-      <textarea id="outputText" rows="4" readonly placeholder="Output will appear here..."></textarea>
+
+  <!-- Modal Container -->
+  <div id="modalContainer">
+    <div id="modalContent">
+      <span class="closeModal">&times;</span>
+      <div id="modalInner">
+        <!-- Encryption tool content will be loaded here -->
+      </div>
     </div>
   </div>
-  <script defer>
+
+  <script>
     // Rotating Wallpaper Code with Updated File Paths
     const memes = [
       "images/cat1.jpeg",
@@ -223,197 +170,26 @@
       document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
     }, 5000);
 
-    // Encryption Tool Functions & Event Listeners
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    const caesarCipher = (text, shift, decrypt = false) => {
-      if (decrypt) shift = -shift;
-      return text.split('').map(char => {
-        const upper = char.toUpperCase();
-        if (alphabet.includes(upper)) {
-          let idx = alphabet.indexOf(upper);
-          let newIdx = (idx + shift) % 26;
-          if (newIdx < 0) newIdx += 26;
-          const newChar = alphabet[newIdx];
-          return char === char.toUpperCase() ? newChar : newChar.toLowerCase();
-        }
-        return char;
-      }).join('');
-    };
-    const vigenereCipher = (text, key, decrypt = false) => {
-      key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      let result = '', keyIndex = 0;
-      for (let char of text) {
-        const upper = char.toUpperCase();
-        if (alphabet.includes(upper)) {
-          let shift = alphabet.indexOf(key[keyIndex % key.length]);
-          if (decrypt) shift = -shift;
-          let idx = alphabet.indexOf(upper);
-          let newIdx = (idx + shift) % 26;
-          if (newIdx < 0) newIdx += 26;
-          const newChar = alphabet[newIdx];
-          result += char === char.toUpperCase() ? newChar : newChar.toLowerCase();
-          keyIndex++;
-        } else {
-          result += char;
-        }
-      }
-      return result;
-    };
-    const transpositionCipher = (text, key, decrypt = false) => {
-      key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      text = text.toUpperCase().replace(/[^A-Z]/g, '');
-      const numCols = key.length, numRows = Math.ceil(text.length / numCols), filler = 'X';
-      const matrix = [];
-      for (let r = 0; r < numRows; r++) {
-        matrix[r] = [];
-        for (let c = 0; c < numCols; c++) {
-          const index = r * numCols + c;
-          matrix[r][c] = text[index] || filler;
-        }
-      }
-      const keyArr = key.split('').map((char, i) => ({ char, index: i }));
-      keyArr.sort((a, b) => a.char.localeCompare(b.char));
-      let result = '';
-      if (!decrypt) {
-        keyArr.forEach(({ index }) => {
-          for (let r = 0; r < numRows; r++) result += matrix[r][index];
-        });
-      } else {
-        const total = text.length;
-        const colLengths = [];
-        const fullCols = total % numCols;
-        for (let i = 0; i < numCols; i++) {
-          colLengths[i] = (i < fullCols) ? numRows : numRows - 1;
-        }
-        const cols = [];
-        let pos = 0;
-        keyArr.forEach(({ index }) => {
-          const len = colLengths[index];
-          cols[index] = text.slice(pos, pos + len);
-          pos += len;
-        });
-        for (let r = 0; r < numRows; r++) {
-          for (let c = 0; c < numCols; c++) result += (cols[c][r] || '');
-        }
-      }
-      return result;
-    };
-    const atbashCipher = text =>
-      text.split('').map(char => {
-        const upper = char.toUpperCase();
-        if (alphabet.includes(upper)) {
-          const idx = alphabet.indexOf(upper);
-          const newChar = alphabet[25 - idx];
-          return char === char.toUpperCase() ? newChar : newChar.toLowerCase();
-        }
-        return char;
-      }).join('');
-    const reverseCipher = text => text.split('').reverse().join('');
-    const beaufortCipher = (text, key) => {
-      key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      let result = '', keyIndex = 0;
-      for (let char of text) {
-        const upper = char.toUpperCase();
-        if (alphabet.includes(upper)) {
-          const k = alphabet.indexOf(key[keyIndex % key.length]);
-          const c = alphabet.indexOf(upper);
-          let newIdx = (k - c);
-          newIdx = ((newIdx % 26) + 26) % 26;
-          const newChar = alphabet[newIdx];
-          result += char === char.toUpperCase() ? newChar : newChar.toLowerCase();
-          keyIndex++;
-        } else {
-          result += char;
-        }
-      }
-      return result;
-    };
-    const getPermutation = (length, key) => {
-      let seed = 0;
-      for (let char of key) seed = (seed * 31 + char.charCodeAt(0)) % 2147483647;
-      const random = () => { seed = (seed * 1103515245 + 12345) % 2147483647; return seed / 2147483647; };
-      const arr = Array.from({ length }, (_, i) => i);
-      for (let i = length - 1; i > 0; i--) {
-        const j = Math.floor(random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr;
-    };
-    const shuffleCipher = (text, key, decrypt = false) => {
-      if (!key.trim()) return text;
-      const permutation = getPermutation(text.length, key);
-      const result = Array(text.length);
-      if (!decrypt) {
-        for (let i = 0; i < text.length; i++) result[i] = text[permutation[i]];
-      } else {
-        const inverse = [];
-        permutation.forEach((p, i) => { inverse[p] = i; });
-        for (let i = 0; i < text.length; i++) result[i] = text[inverse[i]];
-      }
-      return result.join('');
-    };
-    const processCiphers = (text, decrypt = false) => {
-      const ciphers = [];
-      if (document.getElementById("caesarCheckbox").checked) ciphers.push("caesar");
-      if (document.getElementById("vigenereCheckbox").checked) ciphers.push("vigenere");
-      if (document.getElementById("transpositionCheckbox").checked) ciphers.push("transposition");
-      if (document.getElementById("atbashCheckbox").checked) ciphers.push("atbash");
-      if (document.getElementById("reverseCheckbox").checked) ciphers.push("reverse");
-      if (document.getElementById("beaufortCheckbox").checked) ciphers.push("beaufort");
-      if (document.getElementById("shuffleCheckbox").checked) ciphers.push("shuffle");
-      if (decrypt) ciphers.reverse();
-      
-      return ciphers.reduce((result, cipher) => {
-        switch (cipher) {
-          case "caesar":
-            const shift = parseInt(document.getElementById("caesarShift").value) || 0;
-            return caesarCipher(result, shift, decrypt);
-          case "vigenere":
-            return vigenereCipher(result, document.getElementById("vigenereKey").value, decrypt);
-          case "transposition":
-            return transpositionCipher(result, document.getElementById("transpositionKey").value, decrypt);
-          case "atbash":
-            return atbashCipher(result);
-          case "reverse":
-            return reverseCipher(result);
-          case "beaufort":
-            return beaufortCipher(result, document.getElementById("beaufortKey").value);
-          case "shuffle":
-            return shuffleCipher(result, document.getElementById("shuffleKey").value, decrypt);
-          default:
-            return result;
-        }
-      }, text);
-    };
-    document.getElementById("encryptButton").addEventListener("click", () => {
-      const input = document.getElementById("inputText").value;
-      if (!input.trim()) { alert("Please enter input text."); return; }
-      document.getElementById("outputText").value = processCiphers(input);
+    // Modal functionality: Load encryptionTool.html into the modal when button is clicked
+    document.getElementById('openModalBtn').addEventListener('click', () => {
+      fetch('encryptionTool.html')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('modalInner').innerHTML = html;
+          document.getElementById('modalContainer').style.display = 'block';
+        })
+        .catch(err => console.error('Error loading encryption tool:', err));
     });
-    document.getElementById("decryptButton").addEventListener("click", () => {
-      const input = document.getElementById("inputText").value;
-      if (!input.trim()) { alert("Please enter input text."); return; }
-      document.getElementById("outputText").value = processCiphers(input, true);
+
+    // Close modal when clicking the close button
+    document.querySelector('.closeModal').addEventListener('click', () => {
+      document.getElementById('modalContainer').style.display = 'none';
     });
-    document.getElementById("clearButton").addEventListener("click", () => {
-      document.getElementById("inputText").value = "";
-    });
-    document.getElementById("copyButton").addEventListener("click", async () => {
-      const outputField = document.getElementById("outputText");
-      try {
-        await navigator.clipboard.writeText(outputField.value);
-      } catch (err) {
-        outputField.select();
-        document.execCommand("copy");
-      }
-    });
-    document.addEventListener("keydown", e => {
-      if (e.ctrlKey && e.altKey && e.code === "KeyK") {
-        const tool = document.getElementById("encryptionTool");
-        tool.style.display = tool.style.display === "block" ? "none" : "block";
+
+    // Also close modal if clicking outside the modal content
+    window.addEventListener('click', (event) => {
+      if (event.target === document.getElementById('modalContainer')) {
+        document.getElementById('modalContainer').style.display = 'none';
       }
     });
   </script>
