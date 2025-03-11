@@ -2,33 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KCS Chat Solutions</title>
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
   <style>
-    /* General Reset and Fonts */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    :root {
+      --primary-color: #1a73e8;
+      --primary-light: #4285f4;
+      --primary-hover: #1558b0;
+      --bg-color: #f7f7f7;
+      --text-color: #333;
+      --white: #fff;
+      --shadow: rgba(0,0,0,0.2);
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Roboto', sans-serif;
-      background: #f7f7f7;
-      color: #333;
+      background: var(--bg-color);
+      color: var(--text-color);
       line-height: 1.6;
     }
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
-    /* Header Styling */
+    a { text-decoration: none; color: inherit; }
     header {
-      background: linear-gradient(135deg, #1a73e8, #4285f4);
-      color: #fff;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+      color: var(--white);
       padding: 20px 0;
       text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 4px var(--shadow);
     }
     header h1 {
       font-family: 'Montserrat', sans-serif;
@@ -40,35 +40,24 @@
       display: flex;
       justify-content: center;
     }
-    nav ul li {
-      margin: 0 15px;
-    }
-    nav ul li a {
-      font-weight: 700;
-      color: #fff;
-      transition: color 0.3s ease;
-    }
-    nav ul li a:hover {
-      color: #d0e3ff;
-    }
-    /* Hero Section */
+    nav ul li { margin: 0 15px; }
+    nav ul li a { font-weight: 700; transition: color 0.3s ease; }
+    nav ul li a:hover { color: #d0e3ff; }
     .hero {
       position: relative;
-      background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center center/cover;
+      background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center/cover;
       height: 400px;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--white);
     }
     .hero::after {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.4);
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
     }
     .hero h1 {
       position: relative;
@@ -76,35 +65,30 @@
       font-size: 3em;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
     }
-    /* Content */
-    .content {
+    main {
       max-width: 900px;
-      background: #fff;
+      background: var(--white);
       padding: 30px;
       margin: 30px auto;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .content h2 {
+    main h2 {
       font-family: 'Montserrat', sans-serif;
       margin-bottom: 15px;
-      color: #1a73e8;
+      color: var(--primary-color);
     }
-    .content p {
-      margin-bottom: 15px;
-    }
-    /* Footer */
+    main p { margin-bottom: 15px; }
     footer {
-      background: #1a73e8;
-      color: #fff;
+      background: var(--primary-color);
+      color: var(--white);
       text-align: center;
       padding: 15px 0;
       font-size: 0.9em;
     }
-    /* Hidden Encryption Tool Styling */
     #encryptionTool {
       display: none;
-      background: #fff;
+      background: var(--white);
       padding: 20px;
       max-width: 900px;
       margin: 20px auto;
@@ -114,16 +98,10 @@
     #encryptionTool h2 {
       margin-bottom: 15px;
       font-family: 'Montserrat', sans-serif;
-      color: #1a73e8;
+      color: var(--primary-color);
     }
-    #encryptionTool .form-group {
-      margin-bottom: 15px;
-    }
-    #encryptionTool label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 700;
-    }
+    #encryptionTool .form-group { margin-bottom: 15px; }
+    #encryptionTool label { display: block; margin-bottom: 5px; font-weight: 700; }
     #encryptionTool input[type="text"],
     #encryptionTool input[type="number"],
     #encryptionTool textarea {
@@ -137,18 +115,16 @@
       padding: 10px 15px;
       border: none;
       border-radius: 4px;
-      background: #1a73e8;
-      color: #fff;
+      background: var(--primary-color);
+      color: var(--white);
       cursor: pointer;
       transition: background 0.3s ease;
+      margin-right: 5px;
     }
-    #encryptionTool button:hover {
-      background: #1558b0;
-    }
+    #encryptionTool button:hover { background: var(--primary-hover); }
   </style>
 </head>
 <body>
-  <!-- Header -->
   <header>
     <h1>KCS Chat Solutions</h1>
     <nav>
@@ -161,24 +137,16 @@
       </ul>
     </nav>
   </header>
-
-  <!-- Hero Section -->
   <div class="hero">
     <h1>Connecting IT & Chat Communities</h1>
   </div>
-
-  <!-- Main Content -->
-  <div class="content">
+  <main>
     <h2>Welcome to KCS Chat Solutions</h2>
     <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Our innovative approach ensures your business stays connected in today's fast-paced world.</p>
-  </div>
-
-  <!-- Footer -->
+  </main>
   <footer>
     <p>&copy; 2025 KCS Chat Solutions. All rights reserved.</p>
   </footer>
-
-  <!-- Hidden Encryption Tool -->
   <div id="encryptionTool">
     <h2>Enchiridion Encryption Tool</h2>
     <div class="form-group">
@@ -234,40 +202,37 @@
       <textarea id="outputText" rows="4" readonly placeholder="Output will appear here..."></textarea>
     </div>
   </div>
-
-  <script>
-    // Encryption Tool Functions
+  <script defer>
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    function caesarCipher(text, shift, decrypt = false) {
+    const caesarCipher = (text, shift, decrypt = false) => {
       if (decrypt) shift = -shift;
       return text.split('').map(char => {
-        let upper = char.toUpperCase();
-        if (alphabet.indexOf(upper) !== -1) {
+        const upper = char.toUpperCase();
+        if (alphabet.includes(upper)) {
           let idx = alphabet.indexOf(upper);
           let newIdx = (idx + shift) % 26;
           if(newIdx < 0) newIdx += 26;
-          let newChar = alphabet[newIdx];
+          const newChar = alphabet[newIdx];
           return char === char.toUpperCase() ? newChar : newChar.toLowerCase();
         }
         return char;
       }).join('');
-    }
+    };
 
-    function vigenereCipher(text, key, decrypt = false) {
+    const vigenereCipher = (text, key, decrypt = false) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (key.length === 0) return text;
-      let result = '';
-      let keyIndex = 0;
+      if (!key) return text;
+      let result = '', keyIndex = 0;
       for (let char of text) {
-        let upper = char.toUpperCase();
-        if (alphabet.indexOf(upper) !== -1) {
+        const upper = char.toUpperCase();
+        if (alphabet.includes(upper)) {
           let shift = alphabet.indexOf(key[keyIndex % key.length]);
-          if (decrypt) shift = -shift;
+          if(decrypt) shift = -shift;
           let idx = alphabet.indexOf(upper);
           let newIdx = (idx + shift) % 26;
           if(newIdx < 0) newIdx += 26;
-          let newChar = alphabet[newIdx];
+          const newChar = alphabet[newIdx];
           result += char === char.toUpperCase() ? newChar : newChar.toLowerCase();
           keyIndex++;
         } else {
@@ -275,84 +240,74 @@
         }
       }
       return result;
-    }
+    };
 
-    function transpositionCipher(text, key, decrypt = false) {
+    const transpositionCipher = (text, key, decrypt = false) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (key.length === 0) return text;
+      if (!key) return text;
       text = text.toUpperCase().replace(/[^A-Z]/g, '');
-      let numCols = key.length;
-      let numRows = Math.ceil(text.length / numCols);
-      let filler = 'X';
-      let matrix = [];
+      const numCols = key.length, numRows = Math.ceil(text.length / numCols), filler = 'X';
+      const matrix = [];
       for (let r = 0; r < numRows; r++) {
         matrix[r] = [];
         for (let c = 0; c < numCols; c++) {
-          let index = r * numCols + c;
+          const index = r * numCols + c;
           matrix[r][c] = text[index] || filler;
         }
       }
-      let keyArr = key.split('').map((char, index) => ({ char, index }));
+      const keyArr = key.split('').map((char, i) => ({char, index: i}));
       keyArr.sort((a, b) => a.char.localeCompare(b.char));
       let result = '';
       if (!decrypt) {
-        for (let { index } of keyArr) {
-          for (let r = 0; r < numRows; r++) {
-            result += matrix[r][index];
-          }
-        }
+        keyArr.forEach(({index}) => {
+          for (let r = 0; r < numRows; r++) result += matrix[r][index];
+        });
       } else {
-        let total = text.length;
-        let colLengths = [];
-        let fullCols = total % numCols;
+        const total = text.length;
+        const colLengths = [];
+        const fullCols = total % numCols;
         for (let i = 0; i < numCols; i++) {
           colLengths[i] = (i < fullCols) ? numRows : numRows - 1;
         }
-        let cols = [];
+        const cols = [];
         let pos = 0;
-        for (let { index } of keyArr) {
-          let len = colLengths[index];
+        keyArr.forEach(({index}) => {
+          const len = colLengths[index];
           cols[index] = text.slice(pos, pos + len);
           pos += len;
-        }
+        });
         for (let r = 0; r < numRows; r++) {
-          for (let c = 0; c < numCols; c++) {
-            result += (cols[c][r] || '');
-          }
+          for (let c = 0; c < numCols; c++) result += (cols[c][r] || '');
         }
       }
       return result;
-    }
+    };
 
-    function atbashCipher(text) {
-      return text.split('').map(char => {
-        let upper = char.toUpperCase();
-        if (alphabet.indexOf(upper) !== -1) {
-          let idx = alphabet.indexOf(upper);
-          let newChar = alphabet[25 - idx];
+    const atbashCipher = text =>
+      text.split('').map(char => {
+        const upper = char.toUpperCase();
+        if (alphabet.includes(upper)) {
+          const idx = alphabet.indexOf(upper);
+          const newChar = alphabet[25 - idx];
           return char === char.toUpperCase() ? newChar : newChar.toLowerCase();
         }
         return char;
       }).join('');
-    }
 
-    function reverseCipher(text) {
-      return text.split('').reverse().join('');
-    }
+    const reverseCipher = text => text.split('').reverse().join('');
 
-    function beaufortCipher(text, key) {
+    const beaufortCipher = (text, key) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (key.length === 0) return text;
-      let result = '';
-      let keyIndex = 0;
+      if (!key) return text;
+      let result = '', keyIndex = 0;
       for (let char of text) {
-        let upper = char.toUpperCase();
-        if (alphabet.indexOf(upper) !== -1) {
-          let k = alphabet.indexOf(key[keyIndex % key.length]);
-          let c = alphabet.indexOf(upper);
+        const upper = char.toUpperCase();
+        if (alphabet.includes(upper)) {
+          const k = alphabet.indexOf(key[keyIndex % key.length]);
+          const c = alphabet.indexOf(upper);
           let newIdx = (k - c);
           newIdx = ((newIdx % 26) + 26) % 26;
-          let newChar = alphabet[newIdx];
+          const newChar = alphabet[newIdx];
           result += char === char.toUpperCase() ? newChar : newChar.toLowerCase();
           keyIndex++;
         } else {
@@ -360,47 +315,36 @@
         }
       }
       return result;
-    }
+    };
 
-    function getPermutation(length, key) {
+    const getPermutation = (length, key) => {
       let seed = 0;
-      for (let char of key) {
-        seed = (seed * 31 + char.charCodeAt(0)) % 2147483647;
-      }
-      function random() {
-        seed = (seed * 1103515245 + 12345) % 2147483647;
-        return seed / 2147483647;
-      }
-      let arr = [...Array(length).keys()];
+      for (let char of key) seed = (seed * 31 + char.charCodeAt(0)) % 2147483647;
+      const random = () => { seed = (seed * 1103515245 + 12345) % 2147483647; return seed / 2147483647; };
+      const arr = Array.from({length}, (_, i) => i);
       for (let i = length - 1; i > 0; i--) {
-        let j = Math.floor(random() * (i + 1));
+        const j = Math.floor(random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
       return arr;
-    }
+    };
 
-    function shuffleCipher(text, key, decrypt = false) {
-      if (key.trim() === '') return text;
-      let permutation = getPermutation(text.length, key);
-      let result = new Array(text.length);
+    const shuffleCipher = (text, key, decrypt = false) => {
+      if (!key.trim()) return text;
+      const permutation = getPermutation(text.length, key);
+      const result = Array(text.length);
       if (!decrypt) {
-        for (let i = 0; i < text.length; i++) {
-          result[i] = text[permutation[i]];
-        }
+        for (let i = 0; i < text.length; i++) result[i] = text[permutation[i]];
       } else {
-        let inverse = [];
-        for (let i = 0; i < permutation.length; i++) {
-          inverse[permutation[i]] = i;
-        }
-        for (let i = 0; i < text.length; i++) {
-          result[i] = text[inverse[i]];
-        }
+        const inverse = [];
+        permutation.forEach((p, i) => { inverse[p] = i; });
+        for (let i = 0; i < text.length; i++) result[i] = text[inverse[i]];
       }
       return result.join('');
-    }
+    };
 
-    function processCiphers(text, decrypt = false) {
-      let ciphers = [];
+    const processCiphers = (text, decrypt = false) => {
+      const ciphers = [];
       if (document.getElementById("caesarCheckbox").checked) ciphers.push("caesar");
       if (document.getElementById("vigenereCheckbox").checked) ciphers.push("vigenere");
       if (document.getElementById("transpositionCheckbox").checked) ciphers.push("transposition");
@@ -410,76 +354,59 @@
       if (document.getElementById("shuffleCheckbox").checked) ciphers.push("shuffle");
       if (decrypt) ciphers.reverse();
       
-      let result = text;
-      for (let cipher of ciphers) {
+      return ciphers.reduce((result, cipher) => {
         switch (cipher) {
           case "caesar":
-            let shift = parseInt(document.getElementById("caesarShift").value) || 0;
-            result = caesarCipher(result, shift, decrypt);
-            break;
+            const shift = parseInt(document.getElementById("caesarShift").value) || 0;
+            return caesarCipher(result, shift, decrypt);
           case "vigenere":
-            let vKey = document.getElementById("vigenereKey").value;
-            result = vigenereCipher(result, vKey, decrypt);
-            break;
+            return vigenereCipher(result, document.getElementById("vigenereKey").value, decrypt);
           case "transposition":
-            let tKey = document.getElementById("transpositionKey").value;
-            result = transpositionCipher(result, tKey, decrypt);
-            break;
+            return transpositionCipher(result, document.getElementById("transpositionKey").value, decrypt);
           case "atbash":
-            result = atbashCipher(result);
-            break;
+            return atbashCipher(result);
           case "reverse":
-            result = reverseCipher(result);
-            break;
+            return reverseCipher(result);
           case "beaufort":
-            let bKey = document.getElementById("beaufortKey").value;
-            result = beaufortCipher(result, bKey);
-            break;
+            return beaufortCipher(result, document.getElementById("beaufortKey").value);
           case "shuffle":
-            let sKey = document.getElementById("shuffleKey").value;
-            result = shuffleCipher(result, sKey, decrypt);
-            break;
+            return shuffleCipher(result, document.getElementById("shuffleKey").value, decrypt);
+          default:
+            return result;
         }
-      }
-      return result;
-    }
+      }, text);
+    };
 
-    // Encryption tool button event listeners
     document.getElementById("encryptButton").addEventListener("click", () => {
-      let input = document.getElementById("inputText").value;
-      if (input.trim() === "") {
-        alert("Please enter input text.");
-        return;
-      }
-      let output = processCiphers(input, false);
-      document.getElementById("outputText").value = output;
+      const input = document.getElementById("inputText").value;
+      if (!input.trim()) { alert("Please enter input text."); return; }
+      document.getElementById("outputText").value = processCiphers(input);
     });
 
     document.getElementById("decryptButton").addEventListener("click", () => {
-      let input = document.getElementById("inputText").value;
-      if (input.trim() === "") {
-        alert("Please enter input text.");
-        return;
-      }
-      let output = processCiphers(input, true);
-      document.getElementById("outputText").value = output;
+      const input = document.getElementById("inputText").value;
+      if (!input.trim()) { alert("Please enter input text."); return; }
+      document.getElementById("outputText").value = processCiphers(input, true);
     });
 
     document.getElementById("clearButton").addEventListener("click", () => {
       document.getElementById("inputText").value = "";
     });
 
-    document.getElementById("copyButton").addEventListener("click", () => {
-      let outputField = document.getElementById("outputText");
-      outputField.select();
-      document.execCommand("copy");
+    document.getElementById("copyButton").addEventListener("click", async () => {
+      const outputField = document.getElementById("outputText");
+      try {
+        await navigator.clipboard.writeText(outputField.value);
+      } catch (err) {
+        outputField.select();
+        document.execCommand("copy");
+      }
     });
 
-    // Toggle encryption tool with Ctrl+Alt+K
-    document.addEventListener("keydown", (e) => {
+    document.addEventListener("keydown", e => {
       if (e.ctrlKey && e.altKey && e.code === "KeyK") {
         const tool = document.getElementById("encryptionTool");
-        tool.style.display = (tool.style.display === "none" || tool.style.display === "") ? "block" : "none";
+        tool.style.display = tool.style.display === "block" ? "none" : "block";
       }
     });
   </script>
