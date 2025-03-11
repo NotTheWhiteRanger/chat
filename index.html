@@ -21,6 +21,7 @@
       background: var(--bg-color);
       color: var(--text-color);
       line-height: 1.6;
+      /* The wallpaper will be set here */
       background-size: cover;
       background-position: center;
       transition: background-image 1s ease-in-out;
@@ -48,7 +49,9 @@
     nav ul li a:hover { color: #d0e3ff; }
     .hero {
       position: relative;
-      background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center/cover;
+      /* Commented out the fixed background image */
+      /* background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center/cover; */
+      background: transparent;
       height: 400px;
       display: flex;
       align-items: center;
