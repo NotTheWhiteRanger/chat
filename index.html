@@ -1,39 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KCS Chat Solutions</title>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <title>Cats & Guns Central</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
       --primary-color: #1a73e8;
-      --primary-light: #4285f4;
       --primary-hover: #1558b0;
-      --bg-color: #f7f7f7;
-      --text-color: #333;
       --white: #fff;
-      --shadow: rgba(0,0,0,0.2);
+      --text-color: #333;
+      --shadow: rgba(0, 0, 0, 0.2);
+      --gun-color: #444; /* Just a placeholder color for “guns” references */
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-      font-family: 'Roboto', sans-serif;
+      font-family: Arial, sans-serif;
       background-size: cover;
       background-position: center;
       transition: background-image 1s ease-in-out;
       color: var(--text-color);
       line-height: 1.6;
+      min-height: 100vh;
+      position: relative;
     }
-    a { text-decoration: none; color: inherit; }
     header {
-      background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+      background: linear-gradient(135deg, var(--primary-color), #4285f4);
       color: var(--white);
       padding: 20px 0;
       text-align: center;
       box-shadow: 0 2px 4px var(--shadow);
+      position: relative;
+      z-index: 10; /* Keep header above background */
     }
     header h1 {
-      font-family: 'Montserrat', sans-serif;
       font-size: 2.5em;
       margin-bottom: 10px;
     }
@@ -41,115 +45,173 @@
       list-style: none;
       display: flex;
       justify-content: center;
+      padding: 0;
     }
-    nav ul li { margin: 0 15px; }
-    nav ul li a { font-weight: 700; transition: color 0.3s ease; }
-    nav ul li a:hover { color: #d0e3ff; }
+    nav ul li {
+      margin: 0 15px;
+    }
+    nav ul li a {
+      color: var(--white);
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    nav ul li a:hover {
+      color: #cce0ff;
+    }
     .hero {
+      position: relative;
       background: transparent;
       height: 400px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--white);
+      text-align: center;
     }
     .hero::after {
-      content: '';
+      content: "";
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: transparent;
+      background: rgba(0, 0, 0, 0.5);
     }
-    .hero h1 {
+    .hero h2 {
       position: relative;
-      font-family: 'Montserrat', sans-serif;
       font-size: 3em;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     }
     main {
       max-width: 900px;
       background: var(--white);
+      margin: -50px auto 30px auto;
       padding: 30px;
-      margin: 30px auto;
       border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 5; /* Keep main above hero overlay */
     }
-    main h2 {
-      font-family: 'Montserrat', sans-serif;
-      margin-bottom: 15px;
+    main h3 {
       color: var(--primary-color);
+      margin-bottom: 15px;
     }
-    main p { margin-bottom: 15px; }
     footer {
       background: var(--primary-color);
       color: var(--white);
       text-align: center;
       padding: 15px 0;
       font-size: 0.9em;
+      position: relative;
+      z-index: 10;
     }
-    /* Modal Styles */
-    #modalContainer {
+    /* Chat Modal */
+    #chatModal {
       display: none;
       position: fixed;
-      z-index: 1000;
+      z-index: 2000;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
       overflow: auto;
-      background-color: rgba(0,0,0,0.7);
+      background-color: rgba(0, 0, 0, 0.6);
     }
-    #modalContent {
+    #chatContent {
       background-color: #fff;
       margin: 5% auto;
       padding: 20px;
       width: 90%;
-      max-width: 800px;
+      max-width: 600px;
       border-radius: 8px;
+      position: relative;
     }
-    .closeModal {
+    #closeChat {
       float: right;
       font-size: 1.5em;
       cursor: pointer;
+      color: #555;
+    }
+    #chatLog {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      padding: 10px;
+      overflow-y: auto;
+      font-family: monospace;
+      background: #f7f7f7;
+    }
+    #chatMessage {
+      width: 80%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+    }
+    #sendChat {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      background: var(--primary-color);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #sendChat:hover {
+      background: var(--primary-hover);
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>KCS Chat Solutions</h1>
+    <h1>Cats & Guns Central</h1>
     <nav>
       <ul>
         <li><a href="#">Home</a></li>
-        <li><a href="#">Chat</a></li>
-        <li><a href="#">Services</a></li>
-        <li><a href="#">About Us</a></li>
+        <li><a href="#" id="gunsLink">Guns</a></li>
+        <li><a href="#" id="catsLink">Cats</a></li>
+        <li><a href="#" id="chatLink">Chat</a></li>
         <li><a href="#">Contact</a></li>
       </ul>
     </nav>
   </header>
+
   <div class="hero">
-    <h1>Connecting IT & Chat Communities</h1>
+    <h2>We Love Cats & Guns</h2>
   </div>
+
   <main>
-    <h2>Welcome to KCS Chat Solutions</h2>
-    <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Our innovative approach ensures your business stays connected in today's fast-paced world.</p>
+    <h3>Welcome to the Cats & Guns Community</h3>
+    <p>
+      Here at Cats & Guns Central, we combine our two passions: adorable felines and high-powered firearms. 
+      Explore our rotating gallery of cat images, chat with fellow cat-and-gun enthusiasts, 
+      and learn more about how we responsibly handle both.
+    </p>
+    <p>
+      Click "Chat" above (or press Ctrl+Alt+K) to talk with others about your favorite cat memes, 
+      the best cat-themed firearms, or anything else cat-and-gun related!
+    </p>
   </main>
+
   <footer>
-    <p>&copy; 2025 KCS Chat Solutions. All rights reserved.</p>
+    <p>&copy; 2025 Cats & Guns Central. All rights reserved.</p>
   </footer>
 
-  <!-- Modal Container -->
-  <div id="modalContainer">
-    <div id="modalContent">
-      <span class="closeModal">&times;</span>
-      <div id="modalInner">
-        <!-- Encryption tool content will load here -->
-      </div>
+  <!-- Chat Modal -->
+  <div id="chatModal">
+    <div id="chatContent">
+      <span id="closeChat">&times;</span>
+      <h2>Live Chat</h2>
+      <div id="chatLog"></div>
+      <input type="text" id="chatMessage" placeholder="Type your message..." />
+      <button id="sendChat">Send</button>
     </div>
   </div>
 
   <script>
-    // Rotating Wallpaper Code with Updated File Paths
+    /* =========================
+       Rotating Background
+    ========================== */
     const memes = [
       "images/cat1.jpeg",
       "images/cat2.jpg",
@@ -163,35 +225,77 @@
     ];
     let memeIndex = 0;
     document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
+
     setInterval(() => {
       memeIndex = (memeIndex + 1) % memes.length;
       document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
     }, 5000);
 
-    // Open the encryption tool modal on keyboard shortcut (Ctrl+Alt+K)
-    document.addEventListener('keydown', (e) => {
+    /* =========================
+       Chat Modal Logic
+    ========================== */
+    const chatModal = document.getElementById("chatModal");
+    const closeChat = document.getElementById("closeChat");
+    const chatLink = document.getElementById("chatLink");
+    const chatLog = document.getElementById("chatLog");
+    const chatMessage = document.getElementById("chatMessage");
+    const sendChat = document.getElementById("sendChat");
+
+    // Open chat modal when "Chat" link is clicked
+    chatLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      chatModal.style.display = "block";
+    });
+
+    // Close chat modal
+    closeChat.addEventListener("click", () => {
+      chatModal.style.display = "none";
+    });
+
+    // Close modal if user clicks outside the chatContent
+    window.addEventListener("click", (event) => {
+      if (event.target === chatModal) {
+        chatModal.style.display = "none";
+      }
+    });
+
+    // Basic chat send logic
+    sendChat.addEventListener("click", () => {
+      const message = chatMessage.value.trim();
+      if (!message) return;
+      const timeStamp = new Date().toLocaleTimeString();
+      chatLog.value += `[${timeStamp}] You: ${message}\n`;
+      chatMessage.value = "";
+      chatLog.scrollTop = chatLog.scrollHeight;
+    });
+
+    // Allow Enter key to send chat
+    chatMessage.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendChat.click();
+      }
+    });
+
+    /* =========================
+       Keyboard Shortcut for Encryption Tool
+       (Optional) If you want to keep the Ctrl+Alt+K fetch
+       from your old script, uncomment below:
+    ==========================
+
+    document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.altKey && e.code === "KeyK") {
-        fetch('encryptionTool.html')
-          .then(response => response.text())
-          .then(html => {
-            document.getElementById('modalInner').innerHTML = html;
-            document.getElementById('modalContainer').style.display = 'block';
+        fetch("encryptionTool.html")
+          .then((response) => response.text())
+          .then((html) => {
+            // For example, inject into the chat or a separate modal
+            // document.getElementById('modalInner').innerHTML = html;
+            // document.getElementById('modalContainer').style.display = 'block';
           })
-          .catch(err => console.error('Error loading encryption tool:', err));
+          .catch((err) => console.error("Error loading encryption tool:", err));
       }
     });
 
-    // Close modal when clicking the close button
-    document.querySelector('.closeModal').addEventListener('click', () => {
-      document.getElementById('modalContainer').style.display = 'none';
-    });
-
-    // Close modal if clicking outside the modal content
-    window.addEventListener('click', (event) => {
-      if (event.target === document.getElementById('modalContainer')) {
-        document.getElementById('modalContainer').style.display = 'none';
-      }
-    });
+    */
   </script>
 </body>
 </html>
