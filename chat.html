@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Simple Chat Room</title>
+  <!-- Firebase libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #chat-window {
+      height: 300px;
+      width: 100%;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+    }
+    #message-input {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #send-btn {
+      padding: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to the Chat Room!</h1>
+  <div id="chat-window"></div>
+  <input type="text" id="message-input" placeholder="Type your message here" />
+  <button id="send-btn">Send</button>
+
+  <script>
+    // TODO: Replace these config values with your Firebase project's settings.
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const messagesRef = db.ref("messages");
+
+    // Listen for new messages and add them to the chat window
+    messagesRef.on("child_added", function(data) {
+      var msg = data.val();
+      var chatWindow = document.getElementById("chat-window");
+      var messageElement = document.createElement("p");
+      messageElement.textContent = msg;
+      chatWindow.appendChild(messageElement);
+      // Auto-scroll to the bottom of the chat window
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    });
+
+    // Function to send a message
+    function sendMessage() {
+      var input = document.getElementById("message-input");
+      var message = input.value;
+      if (message.trim() !== "") {
+        messagesRef.push(message);
+        input.value = "";
+      }
+    }
+
+    // Send message on button click
+    document.getElementById("send-btn").addEventListener("click", sendMessage);
+
+    // Send message when pressing Enter
+    document.getElementById("message-input").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
