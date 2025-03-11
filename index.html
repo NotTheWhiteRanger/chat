@@ -87,7 +87,7 @@
       padding: 15px 0;
       font-size: 0.9em;
     }
-    /* Modal styles */
+    /* Modal Styles */
     #modalContainer {
       display: none;
       position: fixed;
@@ -133,8 +133,9 @@
   <main>
     <h2>Welcome to KCS Chat Solutions</h2>
     <p>We provide reliable chat services and IT solutions designed for seamless communication and collaboration. Our innovative approach ensures your business stays connected in today's fast-paced world.</p>
-    <!-- Button to open the encryption tool modal -->
-    <button id="openModalBtn">Open Encryption Tool</button>
+    <p>
+      <em>Tip:</em> Press <strong>Ctrl+Alt+K</strong> to open the encryption tool.
+    </p>
   </main>
   <footer>
     <p>&copy; 2025 KCS Chat Solutions. All rights reserved.</p>
@@ -145,7 +146,7 @@
     <div id="modalContent">
       <span class="closeModal">&times;</span>
       <div id="modalInner">
-        <!-- Encryption tool content will be loaded here -->
+        <!-- Encryption tool content will load here -->
       </div>
     </div>
   </div>
@@ -170,15 +171,17 @@
       document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
     }, 5000);
 
-    // Modal functionality: Load encryptionTool.html into the modal when button is clicked
-    document.getElementById('openModalBtn').addEventListener('click', () => {
-      fetch('encryptionTool.html')
-        .then(response => response.text())
-        .then(html => {
-          document.getElementById('modalInner').innerHTML = html;
-          document.getElementById('modalContainer').style.display = 'block';
-        })
-        .catch(err => console.error('Error loading encryption tool:', err));
+    // Open the encryption tool modal on keyboard shortcut (Ctrl+Alt+K)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.altKey && e.code === "KeyK") {
+        fetch('encryptionTool.html')
+          .then(response => response.text())
+          .then(html => {
+            document.getElementById('modalInner').innerHTML = html;
+            document.getElementById('modalContainer').style.display = 'block';
+          })
+          .catch(err => console.error('Error loading encryption tool:', err));
+      }
     });
 
     // Close modal when clicking the close button
@@ -186,7 +189,7 @@
       document.getElementById('modalContainer').style.display = 'none';
     });
 
-    // Also close modal if clicking outside the modal content
+    // Close modal if clicking outside the modal content
     window.addEventListener('click', (event) => {
       if (event.target === document.getElementById('modalContainer')) {
         document.getElementById('modalContainer').style.display = 'none';
