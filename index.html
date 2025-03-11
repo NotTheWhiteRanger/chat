@@ -18,13 +18,12 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Roboto', sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
-      line-height: 1.6;
-      /* The wallpaper will be set here */
+      /* Wallpaper rotates over entire body */
       background-size: cover;
       background-position: center;
       transition: background-image 1s ease-in-out;
+      color: var(--text-color);
+      line-height: 1.6;
     }
     a { text-decoration: none; color: inherit; }
     header {
@@ -48,9 +47,7 @@
     nav ul li a { font-weight: 700; transition: color 0.3s ease; }
     nav ul li a:hover { color: #d0e3ff; }
     .hero {
-      position: relative;
-      /* Commented out the fixed background image */
-      /* background: url('https://via.placeholder.com/1200x400?text=KCS+Chat+Solutions') no-repeat center/cover; */
+      /* Removed fixed background so only rotating wallpaper is visible */
       background: transparent;
       height: 400px;
       display: flex;
@@ -63,7 +60,7 @@
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4);
+      background: transparent;
     }
     .hero h1 {
       position: relative;
@@ -209,12 +206,14 @@
     </div>
   </div>
   <script defer>
-    // Meme Wallpaper Switcher Code
+    // Rotating Wallpaper Code
     const memes = [
       "images/cat1.jpeg",
       "images/cat2.jpeg",
       "images/cat3.png",
-      "images/cat4.jpeg"
+      "images/cat4.jpeg",
+      "images/cat5.jpg",
+      "images/cat6.jpg"
     ];
     let memeIndex = 0;
     document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
@@ -223,9 +222,8 @@
       document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
     }, 5000);
 
-    // Encryption Tool Functions and Event Listeners
+    // Encryption Tool Functions & Event Listeners
     const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
     const caesarCipher = (text, shift, decrypt = false) => {
       if (decrypt) shift = -shift;
       return text.split('').map(char => {
@@ -233,14 +231,13 @@
         if (alphabet.includes(upper)) {
           let idx = alphabet.indexOf(upper);
           let newIdx = (idx + shift) % 26;
-          if(newIdx < 0) newIdx += 26;
+          if (newIdx < 0) newIdx += 26;
           const newChar = alphabet[newIdx];
           return char === char.toUpperCase() ? newChar : newChar.toLowerCase();
         }
         return char;
       }).join('');
     };
-
     const vigenereCipher = (text, key, decrypt = false) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
       if (!key) return text;
@@ -249,10 +246,10 @@
         const upper = char.toUpperCase();
         if (alphabet.includes(upper)) {
           let shift = alphabet.indexOf(key[keyIndex % key.length]);
-          if(decrypt) shift = -shift;
+          if (decrypt) shift = -shift;
           let idx = alphabet.indexOf(upper);
           let newIdx = (idx + shift) % 26;
-          if(newIdx < 0) newIdx += 26;
+          if (newIdx < 0) newIdx += 26;
           const newChar = alphabet[newIdx];
           result += char === char.toUpperCase() ? newChar : newChar.toLowerCase();
           keyIndex++;
@@ -262,7 +259,6 @@
       }
       return result;
     };
-
     const transpositionCipher = (text, key, decrypt = false) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
       if (!key) return text;
@@ -276,11 +272,11 @@
           matrix[r][c] = text[index] || filler;
         }
       }
-      const keyArr = key.split('').map((char, i) => ({char, index: i}));
+      const keyArr = key.split('').map((char, i) => ({ char, index: i }));
       keyArr.sort((a, b) => a.char.localeCompare(b.char));
       let result = '';
       if (!decrypt) {
-        keyArr.forEach(({index}) => {
+        keyArr.forEach(({ index }) => {
           for (let r = 0; r < numRows; r++) result += matrix[r][index];
         });
       } else {
@@ -292,7 +288,7 @@
         }
         const cols = [];
         let pos = 0;
-        keyArr.forEach(({index}) => {
+        keyArr.forEach(({ index }) => {
           const len = colLengths[index];
           cols[index] = text.slice(pos, pos + len);
           pos += len;
@@ -303,7 +299,6 @@
       }
       return result;
     };
-
     const atbashCipher = text =>
       text.split('').map(char => {
         const upper = char.toUpperCase();
@@ -314,9 +309,7 @@
         }
         return char;
       }).join('');
-
     const reverseCipher = text => text.split('').reverse().join('');
-
     const beaufortCipher = (text, key) => {
       key = key.toUpperCase().replace(/[^A-Z]/g, '');
       if (!key) return text;
@@ -337,19 +330,17 @@
       }
       return result;
     };
-
     const getPermutation = (length, key) => {
       let seed = 0;
       for (let char of key) seed = (seed * 31 + char.charCodeAt(0)) % 2147483647;
       const random = () => { seed = (seed * 1103515245 + 12345) % 2147483647; return seed / 2147483647; };
-      const arr = Array.from({length}, (_, i) => i);
+      const arr = Array.from({ length }, (_, i) => i);
       for (let i = length - 1; i > 0; i--) {
         const j = Math.floor(random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
       return arr;
     };
-
     const shuffleCipher = (text, key, decrypt = false) => {
       if (!key.trim()) return text;
       const permutation = getPermutation(text.length, key);
@@ -363,7 +354,6 @@
       }
       return result.join('');
     };
-
     const processCiphers = (text, decrypt = false) => {
       const ciphers = [];
       if (document.getElementById("caesarCheckbox").checked) ciphers.push("caesar");
@@ -397,23 +387,19 @@
         }
       }, text);
     };
-
     document.getElementById("encryptButton").addEventListener("click", () => {
       const input = document.getElementById("inputText").value;
       if (!input.trim()) { alert("Please enter input text."); return; }
       document.getElementById("outputText").value = processCiphers(input);
     });
-
     document.getElementById("decryptButton").addEventListener("click", () => {
       const input = document.getElementById("inputText").value;
       if (!input.trim()) { alert("Please enter input text."); return; }
       document.getElementById("outputText").value = processCiphers(input, true);
     });
-
     document.getElementById("clearButton").addEventListener("click", () => {
       document.getElementById("inputText").value = "";
     });
-
     document.getElementById("copyButton").addEventListener("click", async () => {
       const outputField = document.getElementById("outputText");
       try {
@@ -423,7 +409,6 @@
         document.execCommand("copy");
       }
     });
-
     document.addEventListener("keydown", e => {
       if (e.ctrlKey && e.altKey && e.code === "KeyK") {
         const tool = document.getElementById("encryptionTool");
