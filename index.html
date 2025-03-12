@@ -371,7 +371,7 @@
   <div id="chatModal">
     <div id="chatContent">
       <span id="closeChat">&times;</span>
-      <h2 style="margin-top:0;">Kitty Cat Squad</h2>
+      <h2 style="margin-top:0;">Live Chat</h2>
       <div id="chatLog"></div>
       <input type="text" id="chatMessage" placeholder="Type your message..." />
       <button id="sendChat">Send</button>
@@ -522,8 +522,9 @@
       const data = snapshot.val();
       const messageElem = document.createElement("div");
       messageElem.classList.add("chat-message");
-      // Determine if message was sent by current user
-      if (data.username === currentUsername) {
+      // If the current user is signed in (not "Anonymous") and the message is from them, style as sent;
+      // Otherwise, style as received.
+      if (currentUsername !== "Anonymous" && data.username === currentUsername) {
         messageElem.classList.add("sent");
         messageElem.textContent = data.message;
       } else {
