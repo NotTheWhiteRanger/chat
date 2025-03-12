@@ -1,584 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Cats & Guns Central</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Styles -->
-  <style>
-    :root {
-      --primary-color: #1a73e8;
-      --primary-hover: #1558b0;
-      --white: #fff;
-      --text-color: #333;
-      --shadow: rgba(0, 0, 0, 0.2);
-    }
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-      font-family: Arial, sans-serif;
-      background-size: cover;
-      background-position: center;
-      transition: background-image 1s ease-in-out, filter 0.5s ease;
-      color: var(--text-color);
-      line-height: 1.4;
-      position: relative;
-      font-size: 14px;
-    }
-    /* Inverted color scheme */
-    body.inverted {
-      filter: invert(1);
-    }
-    header {
-      background: linear-gradient(135deg, var(--primary-color), #4285f4);
-      color: var(--white);
-      padding: 5px 0;
-      text-align: center;
-      box-shadow: 0 2px 4px var(--shadow);
-      z-index: 10;
-    }
-    header h1 {
-      font-size: 1.2em;
-      margin-bottom: 2px;
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li {
-      margin: 0 10px;
-    }
-    nav ul li a {
-      color: var(--white);
-      font-weight: bold;
-      text-decoration: none;
-      transition: color 0.3s;
-      font-size: 0.9em;
-    }
-    nav ul li a:hover {
-      color: #cce0ff;
-    }
-    .hero {
-      position: relative;
-      background: transparent;
-      height: 400px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white);
-      text-align: center;
-    }
-    .hero h2 {
-      position: relative;
-      font-size: 2.5em;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-      margin: 0 20px;
-    }
-    main {
-      max-width: 800px;
-      width: 100%;
-      background: var(--white);
-      margin: auto auto 20px auto;
-      padding: 5px;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      font-size: 0.95em;
-      text-align: center;
-    }
-    main h3 {
-      color: var(--primary-color);
-      margin-bottom: 5px;
-      font-size: 1em;
-    }
-    main p {
-      margin-bottom: 5px;
-      font-size: 0.9em;
-    }
-    footer {
-      background: var(--primary-color);
-      color: var(--white);
-      text-align: center;
-      padding: 10px 0;
-      font-size: 0.85em;
-    }
-    /* Chat Modal */
-    #chatModal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.6);
-    }
-    #chatContent {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 15px;
-      width: 90%;
-      max-width: 600px;
-      border-radius: 8px;
-      position: relative;
-      font-size: 14px;
-    }
-    #closeChat {
-      float: right;
-      font-size: 1.2em;
-      cursor: pointer;
-      color: #555;
-    }
-    #chatLog {
-      width: 100%;
-      height: 200px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      padding: 10px;
-      overflow-y: auto;
-      font-family: monospace;
-      background: #f7f7f7;
-      /* pre-wrap ensures newlines are preserved if needed */
-      white-space: pre-wrap;
-    }
-    #chatMessage {
-      width: 75%;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 5px;
-      font-size: 0.9em;
-    }
-    #sendChat {
-      padding: 6px 10px;
-      border: none;
-      border-radius: 4px;
-      background: var(--primary-color);
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.3s;
-      font-size: 0.9em;
-    }
-    #sendChat:hover {
-      background: var(--primary-hover);
-    }
-    /* Game Modal */
-    #gameModal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.6);
-    }
-    #gameContent {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 15px;
-      width: 90%;
-      max-width: 640px;
-      border-radius: 8px;
-      position: relative;
-      text-align: center;
-    }
-    #closeGame {
-      float: right;
-      font-size: 1.2em;
-      cursor: pointer;
-      color: #555;
-    }
-    #snakeGameCanvas {
-      display: block;
-      margin: 0 auto;
-      background: #eee;
-      border: 1px solid #ddd;
-    }
-    /* Score & Leaderboard */
-    #scoreContainer {
-      margin-top: 10px;
-      text-align: center;
-    }
-    #scoreContainer p, #scoreContainer h3 {
-      margin: 5px 0;
-    }
-    #leaderboard {
-      list-style: none;
-      padding: 0;
-    }
-    #leaderboard li {
-      margin: 3px 0;
-    }
-    /* Search Bar */
-    #searchBarContainer {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 20;
-    }
-    #searchBar {
-      padding: 5px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    /* Invisible Invert Button */
-    #invertBtn {
-      position: fixed;
-      top: 41%;
-      left: 60.5%;
-      transform: translate(-50%, -50%);
-      width: 25px;
-      height: 40px;
-      opacity: 0;
-      z-index: 1000;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-    }
-    /* Simple login form */
-    #loginContainer {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      background: rgba(255,255,255,0.9);
-      padding: 10px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      z-index: 30;
-    }
-    #loginContainer input {
-      margin: 5px 0;
-      display: block;
-      width: 200px;
-      padding: 5px;
-      font-size: 0.9em;
-    }
-    #signInBtn {
-      padding: 5px 10px;
-      background: var(--primary-color);
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 5px;
-      font-size: 0.9em;
-    }
-  </style>
-</head>
-<body>
-  <!-- Search Bar -->
-  <div id="searchBarContainer">
-    <input type="text" id="searchBar" placeholder="Search..." />
+<!-- encryptionTool.html (fragment version) -->
+<style>
+  /* Encryption Tool basic styles */
+  body {
+    background-color: black;
+    color: green;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  textarea, input, button {
+    font-size: 14px;
+  }
+  textarea {
+    width: 720px;
+    resize: vertical;
+  }
+  .section {
+    margin-bottom: 20px;
+  }
+  .button-green {
+    background-color: darkgreen;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+  }
+  label {
+    margin-right: 10px;
+  }
+</style>
+
+<div id="encryptionTool">
+  <h1>Enchiridion - Encrypt / Decrypt Tool</h1>
+
+  <!-- Input Section -->
+  <div class="section">
+    <label for="inputText">Input Text:</label><br>
+    <textarea id="inputText" rows="4"></textarea>
+    <button id="trimButton" class="button-green">Trim</button>
   </div>
 
-  <!-- Simple Login Form -->
-  <div id="loginContainer">
-    <input type="email" id="emailInput" placeholder="Email" />
-    <input type="password" id="passwordInput" placeholder="Password" />
-    <button id="signInBtn">Sign In</button>
+  <!-- Cipher Checkboxes -->
+  <div class="section">
+    <strong>Ciphers:</strong><br>
+    <input type="checkbox" id="caesarCheckbox">
+    <label for="caesarCheckbox">Caesar</label>
+    <input type="checkbox" id="vigenereCheckbox">
+    <label for="vigenereCheckbox">Vigenere</label>
+    <input type="checkbox" id="transpositionCheckbox">
+    <label for="transpositionCheckbox">Transposition</label>
+    <input type="checkbox" id="atbashCheckbox">
+    <label for="atbashCheckbox">Atbash</label>
+    <input type="checkbox" id="reverseCheckbox">
+    <label for="reverseCheckbox">Reverse</label>
+    <input type="checkbox" id="beaufortCheckbox">
+    <label for="beaufortCheckbox">Beaufort</label>
+    <input type="checkbox" id="shuffleCheckbox">
+    <label for="shuffleCheckbox">Shuffle</label>
   </div>
 
-  <header>
-    <h1>Cats & Guns Central</h1>
-    <nav>
-      <ul>
-        <li><a href="#" id="homeLink">Home</a></li>
-        <li><a href="#" id="gunsLink">Guns</a></li>
-        <li><a href="#" id="catsLink">Cats</a></li>
-        <li><a href="#" id="chatLink">Chat</a></li>
-        <li><a href="#">Contact</a></li>
-      </ul>
-    </nav>
-  </header>
+  <!-- Key Input Fields -->
+  <div class="section">
+    <label for="caesarShift">Caesar Shift:</label>
+    <input type="number" id="caesarShift" value="3" min="-25" max="25"><br><br>
 
-  <div class="hero">
-    <h2></h2>
+    <label for="vigenereKey">Vigenere Key:</label>
+    <input type="text" id="vigenereKey"><br><br>
+
+    <label for="transpositionKey">Transposition Key:</label>
+    <input type="text" id="transpositionKey"><br><br>
+
+    <label for="beaufortKey">Beaufort Key:</label>
+    <input type="text" id="beaufortKey"><br><br>
+
+    <label for="shuffleKey">Shuffle Key:</label>
+    <input type="text" id="shuffleKey">
   </div>
 
-  <main>
-    <h3>Welcome to the Cats & Guns Community</h3>
-    <p>
-      Here at Cats & Guns Central, we combine our two passions: adorable felines and high-powered firearms.
-    </p>
-    <p>
-      Explore our gallery of cat images, chat with fellow enthusiasts, and learn more about our unique community.
-    </p>
-    <p>
-      Click "Chat" above to talk with others about your favorite cat memes and firearms!
-    </p>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Cats & Guns Central. All rights reserved.</p>
-  </footer>
-
-  <!-- Chat Modal -->
-  <div id="chatModal">
-    <div id="chatContent">
-      <span id="closeChat">&times;</span>
-      <h2 style="margin-top:0;">Live Chat</h2>
-      <div id="chatLog"></div>
-      <input type="text" id="chatMessage" placeholder="Type your message..." />
-      <button id="sendChat">Send</button>
-    </div>
+  <!-- Output Section -->
+  <div class="section">
+    <label for="outputText">Output:</label><br>
+    <textarea id="outputText" rows="4" readonly style="background-color: lightgray;"></textarea>
   </div>
 
-  <!-- Game Modal -->
-  <div id="gameModal">
-    <div id="gameContent">
-      <span id="closeGame">&times;</span>
-      <canvas id="snakeGameCanvas" width="600" height="400"></canvas>
-      <div id="scoreContainer">
-        <p>Score: <span id="scoreDisplay">0</span></p>
-        <h3>Leaderboard</h3>
-        <ul id="leaderboard"></ul>
-      </div>
-    </div>
+  <!-- Action Buttons -->
+  <div class="section">
+    <button id="encryptButton" class="button-green">Encrypt</button>
+    <button id="decryptButton" class="button-green">Decrypt</button>
+    <button id="copyButton" class="button-green">Copy Output</button>
+    <button id="clearButton" class="button-green">Clear</button>
+    <button id="natoButton" class="button-green">NATO Converter</button>
   </div>
+</div>
 
-  <!-- Invisible Invert Button -->
-  <button id="invertBtn" aria-label="Invert Colors"></button>
-
-  <!-- Firebase, Auth, Global Chat & Game Logic -->
-  <script type="module">
-    /***** Firebase Imports *****/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-  
-    /***** Firebase Config *****/
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
-    };
-  
-    /***** Initialize Firebase *****/
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
-  
-    // Global variable to store the current user's username
-    let currentUsername = "Anonymous";
-  
-    /***** Simple Sign-In Logic *****/
-    const emailInput = document.getElementById("emailInput");
-    const passwordInput = document.getElementById("passwordInput");
-    const signInBtn = document.getElementById("signInBtn");
-  
-    signInBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          // Extract username from email (everything before the "@")
-          currentUsername = email.split("@")[0];
-          console.log("Signed in as:", currentUsername);
-          alert("Signed in successfully as " + currentUsername + "!");
-        })
-        .catch((error) => {
-          console.error("Auth error:", error);
-          alert("Sign-in failed. Check console for details.");
-        });
-    });
-  
-    /***** Function to redirect to encryptionTool.html *****/
-    function callEncryptionTool() {
-      window.location.href = "encryptionTool.html";
+<script>
+  /* =========================
+     Cipher Functions
+  ========================== */
+  function caesarCipher(text, shift, decrypt) {
+    shift = parseInt(shift);
+    if (decrypt) shift = -shift;
+    let result = '';
+    text = text.toUpperCase();
+    for (let i = 0; i < text.length; i++) {
+      let c = text.charCodeAt(i);
+      if (c >= 65 && c <= 90) {
+        let shifted = ((c - 65 + shift) % 26);
+        if (shifted < 0) shifted += 26;
+        result += String.fromCharCode(65 + shifted);
+      } else {
+        result += text[i];
+      }
     }
-  
-    /***** Set static background image *****/
-    document.body.style.backgroundImage = "url('/images/cat10.jpg')";
-  
-    /***** Search bar event listener for secret keyword *****/
-    const searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (searchBar.value === "CrewhuScammedUs") {
-          callEncryptionTool();
+    return result;
+  }
+
+  function vigenereCipher(text, key, decrypt) {
+    text = text.toUpperCase();
+    key = key.toUpperCase().replace(/[^A-Z]/g, '');
+    if (!key) return text;
+    let result = '';
+    let keyIndex = 0;
+    for (let i = 0; i < text.length; i++) {
+      let c = text[i];
+      if (c >= 'A' && c <= 'Z') {
+        let shift = key.charCodeAt(keyIndex % key.length) - 65;
+        if (decrypt) shift = -shift;
+        let charCode = c.charCodeAt(0) - 65;
+        let shifted = (charCode + shift) % 26;
+        if (shifted < 0) shifted += 26;
+        result += String.fromCharCode(65 + shifted);
+        keyIndex++;
+      } else {
+        result += c;
+      }
+    }
+    return result;
+  }
+
+  function atbashCipher(text) {
+    let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let reverse = alphabet.split('').reverse().join('');
+    text = text.toUpperCase();
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+      let c = text[i];
+      let index = alphabet.indexOf(c);
+      if (index !== -1) {
+        result += reverse[index];
+      } else {
+        result += c;
+      }
+    }
+    return result;
+  }
+
+  function reverseCipher(text) {
+    return text.split('').reverse().join('');
+  }
+
+  function transpositionCipher(text, key, decrypt) {
+    text = text.toUpperCase().replace(/[^A-Z]/g, '');
+    if (!key) return text;
+    if (!decrypt) {
+      let numCols = key.length;
+      let numRows = Math.ceil(text.length / numCols);
+      let matrix = [];
+      for (let r = 0; r < numRows; r++) {
+        matrix[r] = [];
+        for (let c = 0; c < numCols; c++) {
+          let index = r * numCols + c;
+          matrix[r][c] = index < text.length ? text[index] : 'X';
         }
       }
-    });
-  
-    /***** Global Chat Logic *****/
-    const chatModal = document.getElementById("chatModal");
-    const closeChat = document.getElementById("closeChat");
-    const chatLink = document.getElementById("chatLink");
-    const chatLog = document.getElementById("chatLog");
-    const chatMessage = document.getElementById("chatMessage");
-    const sendChat = document.getElementById("sendChat");
-  
-    chatLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      chatModal.style.display = "block";
-    });
-  
-    closeChat.addEventListener("click", () => {
-      chatModal.style.display = "none";
-    });
-  
-    window.addEventListener("click", (event) => {
-      if (event.target === chatModal) {
-        chatModal.style.display = "none";
-      }
-    });
-  
-    // Send message including the currentUsername
-    sendChat.addEventListener("click", () => {
-      const message = chatMessage.value.trim();
-      if (!message) return;
-      const timeStamp = new Date().toLocaleTimeString();
-      const chatData = { username: currentUsername, message, time: timeStamp };
-      push(ref(db, "chat"), chatData);
-      chatMessage.value = "";
-    });
-  
-    // Allow pressing Enter to send the message
-    chatMessage.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        sendChat.click();
-      }
-    });
-  
-    // Listen for new messages and create a separate element for each message
-    onChildAdded(ref(db, "chat"), (snapshot) => {
-      const data = snapshot.val();
-      const messageElem = document.createElement("div");
-      messageElem.textContent = `[${data.time}] ${data.username || "Anonymous"}: ${data.message}`;
-      chatLog.appendChild(messageElem);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    });
-  
-    /***** Snake Game Logic *****/
-    const gameModal = document.getElementById("gameModal");
-    const closeGame = document.getElementById("closeGame");
-    const homeLink = document.getElementById("homeLink");
-  
-    homeLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      gameModal.style.display = "block";
-      displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
-    });
-  
-    closeGame.addEventListener("click", () => {
-      gameModal.style.display = "none";
-    });
-  
-    window.addEventListener("click", (event) => {
-      if (event.target === gameModal) {
-        gameModal.style.display = "none";
-      }
-    });
-  
-    const canvas = document.getElementById("snakeGameCanvas");
-    const ctx = canvas.getContext("2d");
-    const grid = 20;
-    let count = 0;
-    let snake = [{ x: 160, y: 160 }];
-    let dx = grid;
-    let dy = 0;
-    let food = { x: 320, y: 320 };
-    let score = 0;
-    const scoreDisplay = document.getElementById("scoreDisplay");
-    scoreDisplay.textContent = score;
-  
-    function getRandomFoodPosition() {
-      return {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
+      let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
+        .sort((a, b) => a.char.localeCompare(b.char));
+      let result = '';
+      order.forEach(o => {
+        for (let r = 0; r < numRows; r++) {
+          result += matrix[r][o.index];
+        }
+      });
+      return result;
+    } else {
+      // Basic stub for decryption
+      return text;
     }
-  
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
-      count = 0;
-      
-      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-      snake.unshift(head);
-  
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreDisplay.textContent = score;
-        food = getRandomFoodPosition();
+  }
+
+  function beaufortCipher(text, key) {
+    text = text.toUpperCase();
+    key = key.toUpperCase().replace(/[^A-Z]/g, '');
+    if (!key) return text;
+    let result = '';
+    let keyIndex = 0;
+    let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 0; i < text.length; i++) {
+      let c = text[i];
+      if (alphabet.indexOf(c) !== -1) {
+        let K = key.charCodeAt(keyIndex % key.length) - 65;
+        let C = c.charCodeAt(0) - 65;
+        let newPos = (K - C) % 26;
+        if (newPos < 0) newPos += 26;
+        result += alphabet[newPos];
+        keyIndex++;
       } else {
-        snake.pop();
+        result += c;
       }
-  
-      if (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height ||
-        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-      ) {
-        updateHighscores(score);
-        snake = [{ x: 160, y: 160 }];
-        dx = grid;
-        dy = 0;
-        score = 0;
-        scoreDisplay.textContent = score;
-      }
-  
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "red";
-      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-      ctx.fillStyle = "green";
-      snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
-      });
     }
-  
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" && dx === 0) {
-        dx = -grid; dy = 0;
-      } else if (e.key === "ArrowRight" && dx === 0) {
-        dx = grid; dy = 0;
-      } else if (e.key === "ArrowUp" && dy === 0) {
-        dx = 0; dy = -grid;
-      } else if (e.key === "ArrowDown" && dy === 0) {
-        dx = 0; dy = grid;
+    return result;
+  }
+
+  function shuffleCipher(text, key, decrypt) {
+    if (!key.trim()) {
+      alert("Shuffle Cipher requires a key.");
+      return text;
+    }
+    let arr = text.split('');
+    let seed = 0;
+    for (let i = 0; i < key.length; i++) {
+      seed = (seed * 31 + key.charCodeAt(i)) % 2147483647;
+    }
+    function random() {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    }
+    let permutation = arr.map((_, i) => i);
+    for (let i = permutation.length - 1; i > 0; i--) {
+      let j = Math.floor(random() * (i + 1));
+      [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
+    }
+    if (decrypt) {
+      let inverse = [];
+      for (let i = 0; i < permutation.length; i++) {
+        inverse[permutation[i]] = i;
+      }
+      permutation = inverse;
+    }
+    let shuffled = [];
+    for (let i = 0; i < permutation.length; i++) {
+      shuffled[i] = arr[permutation[i]];
+    }
+    return shuffled.join('');
+  }
+
+  function processCiphers(text, decrypt) {
+    let result = text;
+    let order = [];
+    if (document.getElementById('caesarCheckbox').checked) order.push('Caesar');
+    if (document.getElementById('vigenereCheckbox').checked) order.push('Vigenere');
+    if (document.getElementById('transpositionCheckbox').checked) order.push('Transposition');
+    if (document.getElementById('atbashCheckbox').checked) order.push('Atbash');
+    if (document.getElementById('reverseCheckbox').checked) order.push('Reverse');
+    if (document.getElementById('beaufortCheckbox').checked) order.push('Beaufort');
+    if (document.getElementById('shuffleCheckbox').checked) order.push('Shuffle');
+
+    if (decrypt) order = order.reverse();
+
+    order.forEach(cipher => {
+      switch (cipher) {
+        case 'Caesar':
+          let shift = document.getElementById('caesarShift').value;
+          result = caesarCipher(result, shift, decrypt);
+          break;
+        case 'Vigenere':
+          let vkey = document.getElementById('vigenereKey').value;
+          result = vigenereCipher(result, vkey, decrypt);
+          break;
+        case 'Transposition':
+          let tkey = document.getElementById('transpositionKey').value;
+          result = transpositionCipher(result, tkey, decrypt);
+          break;
+        case 'Atbash':
+          result = atbashCipher(result);
+          break;
+        case 'Reverse':
+          result = reverseCipher(result);
+          break;
+        case 'Beaufort':
+          let bkey = document.getElementById('beaufortKey').value;
+          result = beaufortCipher(result, bkey);
+          break;
+        case 'Shuffle':
+          let skey = document.getElementById('shuffleKey').value;
+          result = shuffleCipher(result, skey, decrypt);
+          break;
       }
     });
-  
-    function updateHighscores(currentScore) {
-      let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
-      highscores.push(currentScore);
-      highscores.sort((a, b) => b - a);
-      highscores = highscores.slice(0, 5);
-      localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
-      displayHighscores(highscores);
+    return result;
+  }
+
+  /* =========================
+     Event Listeners
+  ========================== */
+  document.getElementById('trimButton').addEventListener('click', () => {
+    let input = document.getElementById('inputText').value;
+    if (input.length >= 2) {
+      document.getElementById('inputText').value = input.substring(1, input.length - 1);
+    } else {
+      alert("Input too short to trim.");
     }
-  
-    function displayHighscores(highscores) {
-      const leaderboard = document.getElementById("leaderboard");
-      leaderboard.innerHTML = "";
-      highscores.forEach(scoreItem => {
-        const li = document.createElement("li");
-        li.textContent = scoreItem;
-        leaderboard.appendChild(li);
-      });
+  });
+
+  document.getElementById('encryptButton').addEventListener('click', () => {
+    let input = document.getElementById('inputText').value;
+    if (!input.trim()) {
+      alert("Please provide some input text first.");
+      return;
     }
-  
-    gameLoop();
-  
-    // Invert button
-    const invertBtn = document.getElementById("invertBtn");
-    invertBtn.addEventListener("click", () => {
-      document.body.classList.toggle("inverted");
-    });
-  </script>
-</body>
-</html>
+    try {
+      let encrypted = processCiphers(input, false);
+      document.getElementById('outputText').value = `"${encrypted}"`;
+    } catch (e) {
+      alert("Encryption error: " + e.message);
+    }
+  });
+
+  document.getElementById('decryptButton').addEventListener('click', () => {
+    let input = document.getElementById('inputText').value;
+    if (!input.trim()) {
+      alert("Please provide some input text first.");
+      return;
+    }
+    try {
+      let decrypted = processCiphers(input, true);
+      document.getElementById('outputText').value = `"${decrypted}"`;
+    } catch (e) {
+      alert("Decryption error: " + e.message);
+    }
+  });
+
+  document.getElementById('copyButton').addEventListener('click', () => {
+    let output = document.getElementById('outputText').value;
+    if (output) {
+      navigator.clipboard.writeText(output);
+    }
+  });
+
+  document.getElementById('clearButton').addEventListener('click', () => {
+    document.getElementById('inputText').value = '';
+    document.getElementById('outputText').value = '';
+  });
+
+  document.getElementById('natoButton').addEventListener('click', () => {
+    let natoMapping = {
+      'A': 'Alpha', 'B': 'Bravo', 'C': 'Charlie', 'D': 'Delta',
+      'E': 'Echo', 'F': 'Foxtrot', 'G': 'Golf', 'H': 'Hotel',
+      'I': 'India', 'J': 'Juliet', 'K': 'Kilo', 'L': 'Lima',
+      'M': 'Mike', 'N': 'November', 'O': 'Oscar', 'P': 'Papa',
+      'Q': 'Quebec', 'R': 'Romeo', 'S': 'Sierra', 'T': 'Tango',
+      'U': 'Uniform', 'V': 'Victor', 'W': 'Whiskey', 'X': 'X-ray',
+      'Y': 'Yankee', 'Z': 'Zulu'
+    };
+    let input = document.getElementById('inputText').value;
+    if (!input.trim()) {
+      alert("Please enter text to convert.");
+      return;
+    }
+    let outputLetters = [];
+    for (let char of input.toUpperCase()) {
+      if (natoMapping[char]) {
+        outputLetters.push(natoMapping[char]);
+      } else {
+        outputLetters.push(char);
+      }
+    }
+    document.getElementById('outputText').value = outputLetters.join('-');
+  });
+</script>
