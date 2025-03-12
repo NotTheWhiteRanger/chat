@@ -147,7 +147,6 @@
       overflow-y: auto;
       font-family: monospace;
       background: #f7f7f7;
-      /* pre-wrap ensures newlines are preserved if needed */
       white-space: pre-wrap;
     }
     #chatMessage {
@@ -157,7 +156,7 @@
       padding: 5px;
       font-size: 0.9em;
     }
-    #sendChat {
+    #sendChat, #clearFirebaseChat {
       padding: 6px 10px;
       border: none;
       border-radius: 4px;
@@ -166,8 +165,9 @@
       cursor: pointer;
       transition: background 0.3s;
       font-size: 0.9em;
+      margin-top: 5px;
     }
-    #sendChat:hover {
+    #sendChat:hover, #clearFirebaseChat:hover {
       background: var(--primary-hover);
     }
     /* Game Modal */
@@ -330,6 +330,7 @@
       <div id="chatLog"></div>
       <input type="text" id="chatMessage" placeholder="Type your message..." />
       <button id="sendChat">Send</button>
+      <button id="clearFirebaseChat">Clear Chat History</button>
     </div>
   </div>
 
@@ -354,7 +355,7 @@
     /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
   
     /***** Firebase Config *****/
     const firebaseConfig = {
@@ -421,6 +422,7 @@
     const chatLog = document.getElementById("chatLog");
     const chatMessage = document.getElementById("chatMessage");
     const sendChat = document.getElementById("sendChat");
+    const clearFirebaseChat = document.getElementById("clearFirebaseChat");
   
     chatLink.addEventListener("click", (e) => {
       e.preventDefault();
@@ -461,6 +463,18 @@
       messageElem.textContent = `[${data.time}] ${data.username || "Anonymous"}: ${data.message}`;
       chatLog.appendChild(messageElem);
       chatLog.scrollTop = chatLog.scrollHeight;
+    });
+  
+    // Clear chat history from Firebase and the local display
+    clearFirebaseChat.addEventListener("click", () => {
+      remove(ref(db, "chat"))
+        .then(() => {
+          console.log("Firebase chat history cleared");
+          chatLog.innerHTML = "";
+        })
+        .catch((error) => {
+          console.error("Error clearing chat history:", error);
+        });
     });
   
     /***** Snake Game Logic *****/
