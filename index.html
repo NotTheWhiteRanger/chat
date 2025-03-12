@@ -350,159 +350,246 @@
 
   <!-- Firebase, Auth, Global Chat & Game Logic -->
   <script type="module">
-    /***** Firebase Imports *****/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-    /***** Firebase Config *****/
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
-    };
-
-    /***** Initialize Firebase *****/
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
-
-    // Global variable to store the current user's first name (username)
-    let currentUsername = "Anonymous";
-
-    /***** Listen for Authentication State Changes *****/
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // If the user has a displayName, use it; otherwise, extract from the email
-        if (user.displayName) {
-          currentUsername = user.displayName.split(" ")[0];
+    document.addEventListener('DOMContentLoaded', () => {
+      /***** Firebase Imports *****/
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+      import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+      import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+  
+      /***** Firebase Config *****/
+      const firebaseConfig = {
+        apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+        authDomain: "new-chat-8d4f4.firebaseapp.com",
+        databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+        projectId: "new-chat-8d4f4",
+        storageBucket: "new-chat-8d4f4.firebasestorage.app",
+        messagingSenderId: "825077448854",
+        appId: "1:825077448854:web:3906174c00e1f6604782b7"
+      };
+  
+      /***** Initialize Firebase *****/
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+      const auth = getAuth(app);
+  
+      // Global variable to store the current user's first name (username)
+      let currentUsername = "Anonymous";
+  
+      /***** Listen for Authentication State Changes *****/
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // Use displayName if set; otherwise, extract first name from the email
+          if (user.displayName) {
+            currentUsername = user.displayName.split(" ")[0];
+          } else {
+            const localPart = user.email.split("@")[0];
+            currentUsername = localPart.includes(".") ? localPart.split(".")[0] : localPart;
+          }
+          console.log("User signed in as:", currentUsername);
         } else {
-          const localPart = user.email.split("@")[0];
-          currentUsername = localPart.includes(".") ? localPart.split(".")[0] : localPart;
+          currentUsername = "Anonymous";
         }
-        console.log("User signed in as:", currentUsername);
-      } else {
-        currentUsername = "Anonymous";
+      });
+  
+      /***** Simple Sign-In Logic *****/
+      const emailInput = document.getElementById("emailInput");
+      const passwordInput = document.getElementById("passwordInput");
+      const signInBtn = document.getElementById("signInBtn");
+  
+      signInBtn.addEventListener("click", () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        signInWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            console.log("Signed in as:", userCredential.user.email);
+            alert("Signed in successfully!");
+          })
+          .catch((error) => {
+            console.error("Auth error:", error);
+            alert("Sign-in failed. Check console for details.");
+          });
+      });
+  
+      /***** Function to redirect to encryptionTool.html *****/
+      function callEncryptionTool() {
+        window.location.href = "encryptionTool.html";
       }
-    });
-
-    /***** Simple Sign-In Logic *****/
-    const emailInput = document.getElementById("emailInput");
-    const passwordInput = document.getElementById("passwordInput");
-    const signInBtn = document.getElementById("signInBtn");
-
-    signInBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          // The onAuthStateChanged listener will update currentUsername automatically.
-          console.log("Signed in as:", userCredential.user.email);
-          alert("Signed in successfully!");
-        })
-        .catch((error) => {
-          console.error("Auth error:", error);
-          alert("Sign-in failed. Check console for details.");
-        });
-    });
-
-    /***** Function to redirect to encryptionTool.html *****/
-    function callEncryptionTool() {
-      window.location.href = "encryptionTool.html";
-    }
-
-    /***** Set static background image *****/
-    document.body.style.backgroundImage = "url('/images/cat10.jpg')";
-
-    /***** Search bar event listener for secret keyword *****/
-    const searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (searchBar.value === "CrewhuScammedUs") {
+  
+      /***** Set static background image *****/
+      document.body.style.backgroundImage = "url('/images/cat10.jpg')";
+  
+      /***** Search bar event listener for secret keyword *****/
+      const searchBar = document.getElementById("searchBar");
+      searchBar.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" && searchBar.value === "CrewhuScammedUs") {
           callEncryptionTool();
         }
-      }
-    });
-
-    /***** Global Chat Logic *****/
-    const chatModal = document.getElementById("chatModal");
-    const closeChat = document.getElementById("closeChat");
-    const chatLink = document.getElementById("chatLink");
-    const chatLog = document.getElementById("chatLog");
-    const chatMessage = document.getElementById("chatMessage");
-    const sendChat = document.getElementById("sendChat");
-
-    chatLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      chatModal.style.display = "block";
-    });
-
-    closeChat.addEventListener("click", () => {
-      chatModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target === chatModal) {
+      });
+  
+      /***** Global Chat Logic *****/
+      const chatModal = document.getElementById("chatModal");
+      const closeChat = document.getElementById("closeChat");
+      const chatLink = document.getElementById("chatLink");
+      const chatLog = document.getElementById("chatLog");
+      const chatMessage = document.getElementById("chatMessage");
+      const sendChat = document.getElementById("sendChat");
+  
+      chatLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        chatModal.style.display = "block";
+      });
+  
+      closeChat.addEventListener("click", () => {
         chatModal.style.display = "none";
-      }
-    });
-
-    // Send message including the currentUsername
-    sendChat.addEventListener("click", () => {
-      const message = chatMessage.value.trim();
-      if (!message) return;
-      const timeStamp = new Date().toLocaleTimeString();
-      const chatData = { username: currentUsername, message, time: timeStamp };
-      push(ref(db, "chat"), chatData);
-      chatMessage.value = "";
-    });
-
-    // Allow pressing Enter to send the message
-    chatMessage.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        sendChat.click();
-      }
-    });
-
-    // Listen for new messages and display with username
-    onChildAdded(ref(db, "chat"), (snapshot) => {
-      const data = snapshot.val();
-      chatLog.innerText += `[${data.time}] ${data.username || "Anonymous"}: ${data.message}\n`;
-      chatLog.scrollTop = chatLog.scrollHeight;
-    });
-
-    /***** Snake Game Logic *****/
-    const gameModal = document.getElementById("gameModal");
-    const closeGame = document.getElementById("closeGame");
-    const homeLink = document.getElementById("homeLink");
-
-    homeLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      gameModal.style.display = "block";
-      displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
-    });
-
-    closeGame.addEventListener("click", () => {
-      gameModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target === gameModal) {
+      });
+  
+      window.addEventListener("click", (event) => {
+        if (event.target === chatModal) {
+          chatModal.style.display = "none";
+        }
+      });
+  
+      // Send message including the currentUsername
+      sendChat.addEventListener("click", () => {
+        const message = chatMessage.value.trim();
+        if (!message) return;
+        const timeStamp = new Date().toLocaleTimeString();
+        const chatData = { username: currentUsername, message, time: timeStamp };
+        push(ref(db, "chat"), chatData);
+        chatMessage.value = "";
+      });
+  
+      // Allow pressing Enter to send the message
+      chatMessage.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          sendChat.click();
+        }
+      });
+  
+      // Listen for new messages and display with username
+      onChildAdded(ref(db, "chat"), (snapshot) => {
+        const data = snapshot.val();
+        chatLog.innerText += `[${data.time}] ${data.username || "Anonymous"}: ${data.message}\n`;
+        chatLog.scrollTop = chatLog.scrollHeight;
+      });
+  
+      /***** Snake Game Logic *****/
+      const gameModal = document.getElementById("gameModal");
+      const closeGame = document.getElementById("closeGame");
+      const homeLink = document.getElementById("homeLink");
+  
+      homeLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        gameModal.style.display = "block";
+        displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
+      });
+  
+      closeGame.addEventListener("click", () => {
         gameModal.style.display = "none";
+      });
+  
+      window.addEventListener("click", (event) => {
+        if (event.target === gameModal) {
+          gameModal.style.display = "none";
+        }
+      });
+  
+      const canvas = document.getElementById("snakeGameCanvas");
+      const ctx = canvas.getContext("2d");
+      const grid = 20;
+      let count = 0;
+      let snake = [{ x: 160, y: 160 }];
+      let dx = grid;
+      let dy = 0;
+      let food = { x: 320, y: 320 };
+      let score = 0;
+      const scoreDisplay = document.getElementById("scoreDisplay");
+      scoreDisplay.textContent = score;
+  
+      function getRandomFoodPosition() {
+        return {
+          x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
+          y: Math.floor(Math.random() * (canvas.height / grid)) * grid
+        };
       }
+  
+      function gameLoop() {
+        requestAnimationFrame(gameLoop);
+        if (++count < 4) return;
+        count = 0;
+  
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+        snake.unshift(head);
+  
+        if (head.x === food.x && head.y === food.y) {
+          score++;
+          scoreDisplay.textContent = score;
+          food = getRandomFoodPosition();
+        } else {
+          snake.pop();
+        }
+  
+        if (
+          head.x < 0 || head.x >= canvas.width ||
+          head.y < 0 || head.y >= canvas.height ||
+          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+        ) {
+          updateHighscores(score);
+          snake = [{ x: 160, y: 160 }];
+          dx = grid;
+          dy = 0;
+          score = 0;
+          scoreDisplay.textContent = score;
+        }
+  
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "red";
+        ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+        ctx.fillStyle = "green";
+        snake.forEach(segment => {
+          ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+        });
+      }
+  
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" && dx === 0) {
+          dx = -grid; dy = 0;
+        } else if (e.key === "ArrowRight" && dx === 0) {
+          dx = grid; dy = 0;
+        } else if (e.key === "ArrowUp" && dy === 0) {
+          dx = 0; dy = -grid;
+        } else if (e.key === "ArrowDown" && dy === 0) {
+          dx = 0; dy = grid;
+        }
+      });
+  
+      function updateHighscores(currentScore) {
+        let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
+        highscores.push(currentScore);
+        highscores.sort((a, b) => b - a);
+        highscores = highscores.slice(0, 5);
+        localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
+        displayHighscores(highscores);
+      }
+  
+      function displayHighscores(highscores) {
+        const leaderboard = document.getElementById("leaderboard");
+        leaderboard.innerHTML = "";
+        highscores.forEach(scoreItem => {
+          const li = document.createElement("li");
+          li.textContent = scoreItem;
+          leaderboard.appendChild(li);
+        });
+      }
+  
+      gameLoop();
+  
+      // Invert button
+      const invertBtn = document.getElementById("invertBtn");
+      invertBtn.addEventListener("click", () => {
+        document.body.classList.toggle("inverted");
+      });
     });
-
-    const canvas = document.getElementById("snakeGameCanvas");
-    const ctx = canvas.getContext("2d");
-    const grid = 20;
-    let count = 0;
-    let snake = [{ x: 160, y: 160 }];
-    let dx = grid;
-    let dy = 0;
-    let food = { x: 320, y: 320 };
-    let score = 0;
-    const scoreDisplay = document.getElem
+  </script>
+</body>
+</html>
