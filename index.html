@@ -477,9 +477,13 @@
     const clearFirebaseChat = document.getElementById("clearFirebaseChat");
     const unreadBadge = document.getElementById("unreadBadge");
   
-    // Open chat modal and clear unread count
+    // Open chat modal only if signed in
     chatLink.addEventListener("click", (e) => {
       e.preventDefault();
+      if (currentUsername === "Anonymous") {
+        alert("Please sign in to chat.");
+        return;
+      }
       chatModal.style.display = "block";
       unreadCount = 0;
       updateUnreadBadge();
@@ -495,8 +499,12 @@
       }
     });
   
-    // Send message including the currentUsername
+    // Send message only if signed in
     sendChat.addEventListener("click", () => {
+      if (currentUsername === "Anonymous") {
+        alert("Please sign in to chat.");
+        return;
+      }
       const message = chatMessage.value.trim();
       if (!message) return;
       const timeStamp = new Date().toLocaleTimeString();
@@ -527,7 +535,7 @@
       const data = snapshot.val();
       const messageElem = document.createElement("div");
       messageElem.classList.add("chat-message");
-      // If user is signed in (not "Anonymous") and the message is from them, style as sent; otherwise, received.
+      // If the user is signed in (not "Anonymous") and the message is from them, style as sent; otherwise, received.
       if (currentUsername !== "Anonymous" && data.username === currentUsername) {
         messageElem.classList.add("sent");
         messageElem.textContent = data.message;
