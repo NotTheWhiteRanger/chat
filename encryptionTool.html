@@ -147,6 +147,7 @@
       overflow-y: auto;
       font-family: monospace;
       background: #f7f7f7;
+      /* pre-wrap ensures newlines are preserved if needed */
       white-space: pre-wrap;
     }
     #chatMessage {
@@ -453,10 +454,12 @@
       }
     });
   
-    // Listen for new messages and display with username
+    // Listen for new messages and create a separate element for each message
     onChildAdded(ref(db, "chat"), (snapshot) => {
       const data = snapshot.val();
-      chatLog.innerText += `[${data.time}] ${data.username || "Anonymous"}: ${data.message}\n`;
+      const messageElem = document.createElement("div");
+      messageElem.textContent = `[${data.time}] ${data.username || "Anonymous"}: ${data.message}`;
+      chatLog.appendChild(messageElem);
       chatLog.scrollTop = chatLog.scrollHeight;
     });
   
