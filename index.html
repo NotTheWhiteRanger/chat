@@ -195,7 +195,7 @@
       opacity: 0.8;
       text-align: right;
     }
-    /* Input and button styling */
+    /* Input and button styling for chat */
     #chatMessage {
       width: 75%;
       border: 1px solid #ddd;
@@ -400,12 +400,12 @@
   <!-- Invisible Invert Button -->
   <button id="invertBtn" aria-label="Invert Colors"></button>
 
-  <!-- Firebase, Auth, Global Chat & Game Logic -->
+  <!-- Firebase, Auth, Global Chat & Snake High Score Logic -->
   <script type="module">
     /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, remove, query, orderByChild, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
   
     /***** Firebase Config *****/
     const firebaseConfig = {
@@ -425,7 +425,7 @@
   
     // Global variable to store the current user's username
     let currentUsername = "Anonymous";
-    // Variable to track unread messages count
+    // Variable to track unread messages count for chat
     let unreadCount = 0;
   
     /***** Simple Sign-In Logic *****/
@@ -499,7 +499,7 @@
       }
     });
   
-    // Send message only if signed in
+    // Send chat message only if signed in
     sendChat.addEventListener("click", () => {
       if (currentUsername === "Anonymous") {
         alert("Please sign in to chat.");
@@ -513,7 +513,7 @@
       chatMessage.value = "";
     });
   
-    // Allow pressing Enter to send the message
+    // Allow pressing Enter to send the chat message
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
@@ -530,12 +530,12 @@
       }
     }
   
-    // Listen for new messages and create a bubble for each message
+    // Listen for new chat messages and create a bubble for each message
     onChildAdded(ref(db, "chat"), (snapshot) => {
       const data = snapshot.val();
       const messageElem = document.createElement("div");
       messageElem.classList.add("chat-message");
-      // If the user is signed in (not "Anonymous") and the message is from them, style as sent; otherwise, received.
+      // Style as "sent" only if signed in and the message's username matches currentUsername
       if (currentUsername !== "Anonymous" && data.username === currentUsername) {
         messageElem.classList.add("sent");
         messageElem.textContent = data.message;
@@ -548,7 +548,7 @@
       timeSpan.classList.add("timestamp");
       timeSpan.textContent = data.time;
       messageElem.appendChild(timeSpan);
-      
+  
       chatLog.appendChild(messageElem);
       chatLog.scrollTop = chatLog.scrollHeight;
   
@@ -571,27 +571,10 @@
         });
     });
   
-    /***** Snake Game Logic *****/
+    /***** Snake Game & High Score Logic *****/
     const gameModal = document.getElementById("gameModal");
     const closeGame = document.getElementById("closeGame");
     const homeLink = document.getElementById("homeLink");
-  
-    homeLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      gameModal.style.display = "block";
-      displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
-    });
-  
-    closeGame.addEventListener("click", () => {
-      gameModal.style.display = "none";
-    });
-  
-    window.addEventListener("click", (event) => {
-      if (event.target === gameModal) {
-        gameModal.style.display = "none";
-      }
-    });
-  
     const canvas = document.getElementById("snakeGameCanvas");
     const ctx = canvas.getContext("2d");
     const grid = 20;
@@ -604,6 +587,62 @@
     const scoreDisplay = document.getElementById("scoreDisplay");
     scoreDisplay.textContent = score;
   
+    // Push snake high score with username to Firebase (only if signed in)
+    function updateSnakeHighscore(score) {
+      if (currentUsername === "Anonymous") {
+        // Optionally, you can alert or simply do nothing.
+        console.log("Score not recorded because user is not signed in.");
+        return;
+      }
+      const snakeScoreData = { username: currentUsername, score: score, timestamp: new Date().toISOString() };
+      push(ref(db, "snake"), snakeScoreData)
+        .then(() => {
+          console.log("Snake high score recorded:", snakeScoreData);
+        })
+        .catch((error) => {
+          console.error("Error recording snake high score:", error);
+        });
+    }
+  
+    // Query and display the top 5 snake high scores from Firebase
+    function displaySnakeHighscores() {
+      const snakeScoresRef = ref(db, "snake");
+      const snakeQuery = query(snakeScoresRef, orderByChild("score"), limitToLast(5));
+      onValue(snakeQuery, (snapshot) => {
+        const scoresArray = [];
+        snapshot.forEach((childSnapshot) => {
+          scoresArray.push(childSnapshot.val());
+        });
+        // Sort descending by score
+        scoresArray.sort((a, b) => b.score - a.score);
+        const leaderboard = document.getElementById("leaderboard");
+        leaderboard.innerHTML = "";
+        scoresArray.forEach((scoreObj) => {
+          const li = document.createElement("li");
+          li.textContent = scoreObj.username + ": " + scoreObj.score;
+          leaderboard.appendChild(li);
+        });
+      });
+    }
+  
+    // When Home is clicked, open the game modal and display the leaderboard
+    homeLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      gameModal.style.display = "block";
+      displaySnakeHighscores();
+    });
+  
+    closeGame.addEventListener("click", () => {
+      gameModal.style.display = "none";
+    });
+  
+    window.addEventListener("click", (event) => {
+      if (event.target === gameModal) {
+        gameModal.style.display = "none";
+      }
+    });
+  
+    // Snake game loop
     function getRandomFoodPosition() {
       return {
         x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
@@ -615,7 +654,7 @@
       requestAnimationFrame(gameLoop);
       if (++count < 4) return;
       count = 0;
-      
+  
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
   
@@ -632,7 +671,13 @@
         head.y < 0 || head.y >= canvas.height ||
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
       ) {
-        updateHighscores(score);
+        // On game over, record the score if signed in
+        if (currentUsername !== "Anonymous") {
+          updateSnakeHighscore(score);
+        } else {
+          alert("Sign in to record your high score!");
+        }
+        // Reset the game state
         snake = [{ x: 160, y: 160 }];
         dx = grid;
         dy = 0;
@@ -660,25 +705,6 @@
         dx = 0; dy = grid;
       }
     });
-  
-    function updateHighscores(currentScore) {
-      let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
-      highscores.push(currentScore);
-      highscores.sort((a, b) => b - a);
-      highscores = highscores.slice(0, 5);
-      localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
-      displayHighscores(highscores);
-    }
-  
-    function displayHighscores(highscores) {
-      const leaderboard = document.getElementById("leaderboard");
-      leaderboard.innerHTML = "";
-      highscores.forEach(scoreItem => {
-        const li = document.createElement("li");
-        li.textContent = scoreItem;
-        leaderboard.appendChild(li);
-      });
-    }
   
     gameLoop();
   
