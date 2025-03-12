@@ -164,6 +164,40 @@
     #sendChat:hover {
       background: var(--primary-hover);
     }
+    /* Game Modal */
+    #gameModal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    #gameContent {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 15px;
+      width: 90%;
+      max-width: 640px;
+      border-radius: 8px;
+      position: relative;
+      text-align: center;
+    }
+    #closeGame {
+      float: right;
+      font-size: 1.2em;
+      cursor: pointer;
+      color: #555;
+    }
+    #snakeGameCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #eee;
+      border: 1px solid #ddd;
+    }
   </style>
 </head>
 <body>
@@ -171,7 +205,7 @@
     <h1>Cats & Guns Central</h1>
     <nav>
       <ul>
-        <li><a href="#">Home</a></li>
+        <li><a href="#" id="homeLink">Home</a></li>
         <li><a href="#" id="gunsLink">Guns</a></li>
         <li><a href="#" id="catsLink">Cats</a></li>
         <li><a href="#" id="chatLink">Chat</a></li>
@@ -212,6 +246,14 @@
     </div>
   </div>
 
+  <!-- Game Modal -->
+  <div id="gameModal">
+    <div id="gameContent">
+      <span id="closeGame">&times;</span>
+      <canvas id="snakeGameCanvas" width="600" height="400"></canvas>
+    </div>
+  </div>
+
   <script>
     // Set static background image
     document.body.style.backgroundImage = "url('/images/cat10.jpg')";
@@ -226,25 +268,21 @@
     const chatMessage = document.getElementById("chatMessage");
     const sendChat = document.getElementById("sendChat");
 
-    // Open chat modal when "Chat" link is clicked
     chatLink.addEventListener("click", (e) => {
       e.preventDefault();
       chatModal.style.display = "block";
     });
 
-    // Close chat modal
     closeChat.addEventListener("click", () => {
       chatModal.style.display = "none";
     });
 
-    // Close modal if user clicks outside the chatContent
     window.addEventListener("click", (event) => {
       if (event.target === chatModal) {
         chatModal.style.display = "none";
       }
     });
 
-    // Basic chat send logic
     sendChat.addEventListener("click", () => {
       const message = chatMessage.value.trim();
       if (!message) return;
@@ -254,12 +292,95 @@
       chatLog.scrollTop = chatLog.scrollHeight;
     });
 
-    // Allow Enter key to send chat
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
       }
     });
+
+    /* =========================
+       Game Modal & Snake Game Logic
+    ========================== */
+    const gameModal = document.getElementById("gameModal");
+    const closeGame = document.getElementById("closeGame");
+    const homeLink = document.getElementById("homeLink");
+
+    homeLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      gameModal.style.display = "block";
+    });
+
+    closeGame.addEventListener("click", () => {
+      gameModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target === gameModal) {
+        gameModal.style.display = "none";
+      }
+    });
+
+    // Snake game variables and functions
+    const canvas = document.getElementById("snakeGameCanvas");
+    const ctx = canvas.getContext("2d");
+    const grid = 20;
+    let count = 0;
+    let snake = [{x: 160, y: 160}];
+    let dx = grid;
+    let dy = 0;
+    let food = {x: 320, y: 320};
+
+    function getRandomFoodPosition() {
+      return {
+        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
+        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
+      };
+    }
+
+    function gameLoop() {
+      requestAnimationFrame(gameLoop);
+      if (++count < 4) return;
+      count = 0;
+      
+      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        food = getRandomFoodPosition();
+      } else {
+        snake.pop();
+      }
+
+      // Reset if collision with walls or self
+      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
+          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+        snake = [{x: 160, y: 160}];
+        dx = grid;
+        dy = 0;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+      ctx.fillStyle = "green";
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+      });
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && dx === 0) {
+        dx = -grid; dy = 0;
+      } else if (e.key === "ArrowRight" && dx === 0) {
+        dx = grid; dy = 0;
+      } else if (e.key === "ArrowUp" && dy === 0) {
+        dx = 0; dy = -grid;
+      } else if (e.key === "ArrowDown" && dy === 0) {
+        dx = 0; dy = grid;
+      }
+    });
+
+    gameLoop();
   </script>
 </body>
 </html>
