@@ -29,7 +29,6 @@
       position: relative;
       font-size: 14px;
     }
-    /* Smaller Header */
     header {
       background: linear-gradient(135deg, var(--primary-color), #4285f4);
       color: var(--white);
@@ -62,7 +61,6 @@
     nav ul li a:hover {
       color: #cce0ff;
     }
-    /* Hero Section */
     .hero {
       position: relative;
       background: transparent;
@@ -79,13 +77,12 @@
       text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
       margin: 0 20px;
     }
-    /* Shorter About Us (Main) Box */
     main {
       max-width: 800px;
       width: 100%;
       background: var(--white);
-      margin: auto auto 20px auto; /* Centered, with bottom margin */
-      padding: 5px;  /* Reduced padding */
+      margin: auto auto 20px auto;
+      padding: 5px;
       border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
       font-size: 0.95em;
@@ -93,11 +90,11 @@
     }
     main h3 {
       color: var(--primary-color);
-      margin-bottom: 5px; /* Reduced margin */
+      margin-bottom: 5px;
       font-size: 1em;
     }
     main p {
-      margin-bottom: 5px;  /* Reduced spacing between paragraphs */
+      margin-bottom: 5px;
       font-size: 0.9em;
     }
     footer {
@@ -219,14 +216,12 @@
        Rotating Background
     ========================== */
     const memes = [
-      "images/cat7.png",
-      "images/cat8.jpg",
-      "images/cat9.png",
-      "images/cat10.jpg",
-      "images/cat11.jpg",
-      "images/cat12.jpg",
-      "images/cat13.jpg",
-      "images/cat14.jpg",
+      "images/cat1.jpg",
+      "images/cat2.jpg",
+      "images/cat3.png",
+      "images/cat4.jpg",
+      "images/cat5.jpg",
+      "images/cat6.jpg"
     ];
     let memeIndex = 0;
     document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
