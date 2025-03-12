@@ -312,7 +312,26 @@
   <!-- Invisible Invert Button -->
   <button id="invertBtn" aria-label="Invert Colors"></button>
 
-  <script>
+  <!-- Firebase, Global Chat & Game Logic -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // Your Firebase configuration (from your Firebase console)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
+    };
+
+    // Initialize Firebase and get a reference to the database
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
     // Function to redirect to encryptionTool.html
     function callEncryptionTool() {
       window.location.href = "encryptionTool.html";
@@ -332,7 +351,7 @@
     });
 
     /* =========================
-       Chat Modal Logic
+       Global Chat Logic with Firebase
     ========================== */
     const chatModal = document.getElementById("chatModal");
     const closeChat = document.getElementById("closeChat");
@@ -360,15 +379,22 @@
       const message = chatMessage.value.trim();
       if (!message) return;
       const timeStamp = new Date().toLocaleTimeString();
-      chatLog.innerText += `[${timeStamp}] You: ${message}\n`;
+      const chatData = { message, time: timeStamp };
+      push(ref(db, "chat"), chatData);
       chatMessage.value = "";
-      chatLog.scrollTop = chatLog.scrollHeight;
     });
 
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
       }
+    });
+
+    // Listen for new messages globally
+    onChildAdded(ref(db, "chat"), (snapshot) => {
+      const data = snapshot.val();
+      chatLog.innerText += `[${data.time}] ${data.message}\n`;
+      chatLog.scrollTop = chatLog.scrollHeight;
     });
 
     /* =========================
@@ -400,10 +426,10 @@
     const ctx = canvas.getContext("2d");
     const grid = 20;
     let count = 0;
-    let snake = [{x: 160, y: 160}];
+    let snake = [{ x: 160, y: 160 }];
     let dx = grid;
     let dy = 0;
-    let food = {x: 320, y: 320};
+    let food = { x: 320, y: 320 };
     let score = 0;
     const scoreDisplay = document.getElementById("scoreDisplay");
     scoreDisplay.textContent = score;
@@ -420,7 +446,7 @@
       if (++count < 4) return;
       count = 0;
       
-      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
 
       // If snake eats food, increase score and update display; otherwise, remove tail.
@@ -437,7 +463,7 @@
           snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
         updateHighscores(score);
         // Reset game state
-        snake = [{x: 160, y: 160}];
+        snake = [{ x: 160, y: 160 }];
         dx = grid;
         dy = 0;
         score = 0;
