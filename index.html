@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Cats & Guns Central</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Styles -->
   <style>
     :root {
       --primary-color: #1a73e8;
@@ -243,12 +244,47 @@
       border: none;
       background: transparent;
     }
+    /* Simple login form */
+    #loginContainer {
+      position: absolute;
+      top: 60px;
+      right: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 30;
+    }
+    #loginContainer input {
+      margin: 5px 0;
+      display: block;
+      width: 200px;
+      padding: 5px;
+      font-size: 0.9em;
+    }
+    #signInBtn {
+      padding: 5px 10px;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 5px;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
   <!-- Search Bar -->
   <div id="searchBarContainer">
     <input type="text" id="searchBar" placeholder="Search..." />
+  </div>
+
+  <!-- Simple Login Form -->
+  <div id="loginContainer">
+    <input type="email" id="emailInput" placeholder="Email" />
+    <input type="password" id="passwordInput" placeholder="Password" />
+    <button id="signInBtn">Sign In</button>
   </div>
 
   <header>
@@ -312,13 +348,14 @@
   <!-- Invisible Invert Button -->
   <button id="invertBtn" aria-label="Invert Colors"></button>
 
-  <!-- Firebase, Global Chat & Game Logic -->
+  <!-- Firebase, Auth, Global Chat & Game Logic -->
   <script type="module">
-    // Import Firebase modules
+    /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
-    // Your Firebase configuration with the Realtime Database URL
+    /***** Firebase Config *****/
     const firebaseConfig = {
       apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
       authDomain: "new-chat-8d4f4.firebaseapp.com",
@@ -329,19 +366,39 @@
       appId: "1:825077448854:web:3906174c00e1f6604782b7"
     };
 
-    // Initialize Firebase and get a reference to the database
+    /***** Initialize Firebase *****/
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app);
 
-    // Function to redirect to encryptionTool.html
+    /***** Simple Sign-In Logic *****/
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const signInBtn = document.getElementById("signInBtn");
+
+    signInBtn.addEventListener("click", () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          console.log("Signed in as:", userCredential.user.email);
+          alert("Signed in successfully!");
+        })
+        .catch((error) => {
+          console.error("Auth error:", error);
+          alert("Sign-in failed. Check console for details.");
+        });
+    });
+
+    /***** Function to redirect to encryptionTool.html *****/
     function callEncryptionTool() {
       window.location.href = "encryptionTool.html";
     }
 
-    // Set static background image
+    /***** Set static background image *****/
     document.body.style.backgroundImage = "url('/images/cat10.jpg')";
 
-    // Search bar event listener to check for the secret keyword
+    /***** Search bar event listener for secret keyword *****/
     const searchBar = document.getElementById("searchBar");
     searchBar.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
@@ -351,9 +408,7 @@
       }
     });
 
-    /* =========================
-       Global Chat Logic with Firebase
-    ========================== */
+    /***** Global Chat Logic *****/
     const chatModal = document.getElementById("chatModal");
     const closeChat = document.getElementById("closeChat");
     const chatLink = document.getElementById("chatLink");
@@ -376,6 +431,7 @@
       }
     });
 
+    // Send message
     sendChat.addEventListener("click", () => {
       const message = chatMessage.value.trim();
       if (!message) return;
@@ -385,22 +441,21 @@
       chatMessage.value = "";
     });
 
+    // Press Enter to send
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
       }
     });
 
-    // Listen for new messages globally
+    // Listen for new messages
     onChildAdded(ref(db, "chat"), (snapshot) => {
       const data = snapshot.val();
       chatLog.innerText += `[${data.time}] ${data.message}\n`;
       chatLog.scrollTop = chatLog.scrollHeight;
     });
 
-    /* =========================
-       Game Modal & Snake Game Logic
-    ========================== */
+    /***** Snake Game Logic *****/
     const gameModal = document.getElementById("gameModal");
     const closeGame = document.getElementById("closeGame");
     const homeLink = document.getElementById("homeLink");
@@ -408,7 +463,6 @@
     homeLink.addEventListener("click", (e) => {
       e.preventDefault();
       gameModal.style.display = "block";
-      // Display leaderboard on opening game modal
       displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
     });
 
@@ -422,7 +476,6 @@
       }
     });
 
-    // Snake game variables and functions
     const canvas = document.getElementById("snakeGameCanvas");
     const ctx = canvas.getContext("2d");
     const grid = 20;
@@ -450,7 +503,6 @@
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
 
-      // If snake eats food, increase score and update display; otherwise, remove tail.
       if (head.x === food.x && head.y === food.y) {
         score++;
         scoreDisplay.textContent = score;
@@ -459,11 +511,12 @@
         snake.pop();
       }
 
-      // Collision check: walls or self.
-      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
-          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+      if (
+        head.x < 0 || head.x >= canvas.width ||
+        head.y < 0 || head.y >= canvas.height ||
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
         updateHighscores(score);
-        // Reset game state
         snake = [{ x: 160, y: 160 }];
         dx = grid;
         dy = 0;
@@ -472,10 +525,8 @@
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Draw food
       ctx.fillStyle = "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-      // Draw snake
       ctx.fillStyle = "green";
       snake.forEach(segment => {
         ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
@@ -512,10 +563,10 @@
         leaderboard.appendChild(li);
       });
     }
-    
+
     gameLoop();
 
-    // Invert button event listener
+    // Invert button
     const invertBtn = document.getElementById("invertBtn");
     invertBtn.addEventListener("click", () => {
       document.body.classList.toggle("inverted");
