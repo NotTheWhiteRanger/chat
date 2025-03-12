@@ -1,217 +1,525 @@
-<script type="module">
-  /***** Firebase Imports *****/
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-  /***** Firebase Config *****/
-  const firebaseConfig = {
-    apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-    authDomain: "new-chat-8d4f4.firebaseapp.com",
-    databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-    projectId: "new-chat-8d4f4",
-    storageBucket: "new-chat-8d4f4.firebasestorage.app",
-    messagingSenderId: "825077448854",
-    appId: "1:825077448854:web:3906174c00e1f6604782b7"
-  };
-
-  /***** Initialize Firebase *****/
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const auth = getAuth(app);
-
-  /***** SIGN IN WITH EMAIL/PASSWORD *****/
-  // Replace this email/password with a real user you created in Firebase Authentication
-  const email = "bobby@kennedycsi.com";
-  const password = "REPLACE_WITH_BOBBY_PASSWORD";
-
-  signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      console.log("Signed in as:", userCredential.user.email);
-    })
-    .catch((error) => {
-      console.error("Auth error:", error);
-    });
-
-  /***** Rest of Your Code *****/
-
-  // 1. Function to redirect to encryptionTool.html
-  function callEncryptionTool() {
-    window.location.href = "encryptionTool.html";
-  }
-
-  // 2. Set static background image
-  document.body.style.backgroundImage = "url('/images/cat10.jpg')";
-
-  // 3. Secret keyword check in search bar
-  const searchBar = document.getElementById("searchBar");
-  searchBar.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      if (searchBar.value === "CrewhuScammedUs") {
-        callEncryptionTool();
-      }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cats & Guns Central</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --primary-color: #1a73e8;
+      --primary-hover: #1558b0;
+      --white: #fff;
+      --text-color: #333;
+      --shadow: rgba(0, 0, 0, 0.2);
     }
-  });
-
-  /***** CHAT LOGIC *****/
-  const chatModal = document.getElementById("chatModal");
-  const closeChat = document.getElementById("closeChat");
-  const chatLink = document.getElementById("chatLink");
-  const chatLog = document.getElementById("chatLog");
-  const chatMessage = document.getElementById("chatMessage");
-  const sendChat = document.getElementById("sendChat");
-
-  chatLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    chatModal.style.display = "block";
-  });
-
-  closeChat.addEventListener("click", () => {
-    chatModal.style.display = "none";
-  });
-
-  window.addEventListener("click", (event) => {
-    if (event.target === chatModal) {
-      chatModal.style.display = "none";
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
     }
-  });
-
-  sendChat.addEventListener("click", () => {
-    const message = chatMessage.value.trim();
-    if (!message) return;
-    const timeStamp = new Date().toLocaleTimeString();
-    const chatData = { message, time: timeStamp };
-    push(ref(db, "chat"), chatData);
-    chatMessage.value = "";
-  });
-
-  chatMessage.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      sendChat.click();
+    body {
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      background-size: cover;
+      background-position: center;
+      transition: background-image 1s ease-in-out, filter 0.5s ease;
+      color: var(--text-color);
+      line-height: 1.4;
+      position: relative;
+      font-size: 14px;
     }
-  });
-
-  // Listen for new messages globally
-  onChildAdded(ref(db, "chat"), (snapshot) => {
-    const data = snapshot.val();
-    chatLog.innerText += `[${data.time}] ${data.message}\n`;
-    chatLog.scrollTop = chatLog.scrollHeight;
-  });
-
-  /***** SNAKE GAME LOGIC *****/
-  const gameModal = document.getElementById("gameModal");
-  const closeGame = document.getElementById("closeGame");
-  const homeLink = document.getElementById("homeLink");
-
-  homeLink.addEventListener("click", (e) => {
-    e.preventDefault();
-    gameModal.style.display = "block";
-    displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
-  });
-
-  closeGame.addEventListener("click", () => {
-    gameModal.style.display = "none";
-  });
-
-  window.addEventListener("click", (event) => {
-    if (event.target === gameModal) {
-      gameModal.style.display = "none";
+    /* Inverted color scheme */
+    body.inverted {
+      filter: invert(1);
     }
-  });
+    header {
+      background: linear-gradient(135deg, var(--primary-color), #4285f4);
+      color: var(--white);
+      padding: 5px 0;
+      text-align: center;
+      box-shadow: 0 2px 4px var(--shadow);
+      z-index: 10;
+    }
+    header h1 {
+      font-size: 1.2em;
+      margin-bottom: 2px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      justify-content: center;
+      padding: 0;
+      margin: 0;
+    }
+    nav ul li {
+      margin: 0 10px;
+    }
+    nav ul li a {
+      color: var(--white);
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s;
+      font-size: 0.9em;
+    }
+    nav ul li a:hover {
+      color: #cce0ff;
+    }
+    .hero {
+      position: relative;
+      background: transparent;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--white);
+      text-align: center;
+    }
+    .hero h2 {
+      position: relative;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+      margin: 0 20px;
+    }
+    main {
+      max-width: 800px;
+      width: 100%;
+      background: var(--white);
+      margin: auto auto 20px auto;
+      padding: 5px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-size: 0.95em;
+      text-align: center;
+    }
+    main h3 {
+      color: var(--primary-color);
+      margin-bottom: 5px;
+      font-size: 1em;
+    }
+    main p {
+      margin-bottom: 5px;
+      font-size: 0.9em;
+    }
+    footer {
+      background: var(--primary-color);
+      color: var(--white);
+      text-align: center;
+      padding: 10px 0;
+      font-size: 0.85em;
+    }
+    /* Chat Modal */
+    #chatModal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    #chatContent {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 15px;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 8px;
+      position: relative;
+      font-size: 14px;
+    }
+    #closeChat {
+      float: right;
+      font-size: 1.2em;
+      cursor: pointer;
+      color: #555;
+    }
+    #chatLog {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      padding: 10px;
+      overflow-y: auto;
+      font-family: monospace;
+      background: #f7f7f7;
+      white-space: pre-wrap;
+    }
+    #chatMessage {
+      width: 75%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+      font-size: 0.9em;
+    }
+    #sendChat {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+      background: var(--primary-color);
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-size: 0.9em;
+    }
+    #sendChat:hover {
+      background: var(--primary-hover);
+    }
+    /* Game Modal */
+    #gameModal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    #gameContent {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 15px;
+      width: 90%;
+      max-width: 640px;
+      border-radius: 8px;
+      position: relative;
+      text-align: center;
+    }
+    #closeGame {
+      float: right;
+      font-size: 1.2em;
+      cursor: pointer;
+      color: #555;
+    }
+    #snakeGameCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #eee;
+      border: 1px solid #ddd;
+    }
+    /* Score & Leaderboard */
+    #scoreContainer {
+      margin-top: 10px;
+      text-align: center;
+    }
+    #scoreContainer p, #scoreContainer h3 {
+      margin: 5px 0;
+    }
+    #leaderboard {
+      list-style: none;
+      padding: 0;
+    }
+    #leaderboard li {
+      margin: 3px 0;
+    }
+    /* Search Bar */
+    #searchBarContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 20;
+    }
+    #searchBar {
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    /* Invisible Invert Button */
+    #invertBtn {
+      position: fixed;
+      top: 41%;
+      left: 60.5%;
+      transform: translate(-50%, -50%);
+      width: 25px;
+      height: 40px;
+      opacity: 0;
+      z-index: 1000;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <!-- Search Bar -->
+  <div id="searchBarContainer">
+    <input type="text" id="searchBar" placeholder="Search..." />
+  </div>
 
-  const canvas = document.getElementById("snakeGameCanvas");
-  const ctx = canvas.getContext("2d");
-  const grid = 20;
-  let count = 0;
-  let snake = [{ x: 160, y: 160 }];
-  let dx = grid;
-  let dy = 0;
-  let food = { x: 320, y: 320 };
-  let score = 0;
-  const scoreDisplay = document.getElementById("scoreDisplay");
-  scoreDisplay.textContent = score;
+  <header>
+    <h1>Cats & Guns Central</h1>
+    <nav>
+      <ul>
+        <li><a href="#" id="homeLink">Home</a></li>
+        <li><a href="#" id="gunsLink">Guns</a></li>
+        <li><a href="#" id="catsLink">Cats</a></li>
+        <li><a href="#" id="chatLink">Chat</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
 
-  function getRandomFoodPosition() {
-    return {
-      x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-      y: Math.floor(Math.random() * (canvas.height / grid)) * grid
+  <div class="hero">
+    <h2></h2>
+  </div>
+
+  <main>
+    <h3>Welcome to the Cats & Guns Community</h3>
+    <p>
+      Here at Cats & Guns Central, we combine our two passions: adorable felines and high-powered firearms.
+    </p>
+    <p>
+      Explore our gallery of cat images, chat with fellow enthusiasts, and learn more about our unique community.
+    </p>
+    <p>
+      Click "Chat" above to talk with others about your favorite cat memes and firearms!
+    </p>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Cats & Guns Central. All rights reserved.</p>
+  </footer>
+
+  <!-- Chat Modal -->
+  <div id="chatModal">
+    <div id="chatContent">
+      <span id="closeChat">&times;</span>
+      <h2 style="margin-top:0;">Live Chat</h2>
+      <div id="chatLog"></div>
+      <input type="text" id="chatMessage" placeholder="Type your message..." />
+      <button id="sendChat">Send</button>
+    </div>
+  </div>
+
+  <!-- Game Modal -->
+  <div id="gameModal">
+    <div id="gameContent">
+      <span id="closeGame">&times;</span>
+      <canvas id="snakeGameCanvas" width="600" height="400"></canvas>
+      <div id="scoreContainer">
+        <p>Score: <span id="scoreDisplay">0</span></p>
+        <h3>Leaderboard</h3>
+        <ul id="leaderboard"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invisible Invert Button -->
+  <button id="invertBtn" aria-label="Invert Colors"></button>
+
+  <!-- Firebase, Global Chat & Game Logic -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // Your Firebase configuration with the Realtime Database URL
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
     };
-  }
 
-  function gameLoop() {
-    requestAnimationFrame(gameLoop);
-    if (++count < 4) return;
-    count = 0;
+    // Initialize Firebase and get a reference to the database
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Function to redirect to encryptionTool.html
+    function callEncryptionTool() {
+      window.location.href = "encryptionTool.html";
+    }
+
+    // Set static background image
+    document.body.style.backgroundImage = "url('/images/cat10.jpg')";
+
+    // Search bar event listener to check for the secret keyword
+    const searchBar = document.getElementById("searchBar");
+    searchBar.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (searchBar.value === "CrewhuScammedUs") {
+          callEncryptionTool();
+        }
+      }
+    });
+
+    /* =========================
+       Global Chat Logic with Firebase
+    ========================== */
+    const chatModal = document.getElementById("chatModal");
+    const closeChat = document.getElementById("closeChat");
+    const chatLink = document.getElementById("chatLink");
+    const chatLog = document.getElementById("chatLog");
+    const chatMessage = document.getElementById("chatMessage");
+    const sendChat = document.getElementById("sendChat");
+
+    chatLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      chatModal.style.display = "block";
+    });
+
+    closeChat.addEventListener("click", () => {
+      chatModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target === chatModal) {
+        chatModal.style.display = "none";
+      }
+    });
+
+    sendChat.addEventListener("click", () => {
+      const message = chatMessage.value.trim();
+      if (!message) return;
+      const timeStamp = new Date().toLocaleTimeString();
+      const chatData = { message, time: timeStamp };
+      push(ref(db, "chat"), chatData);
+      chatMessage.value = "";
+    });
+
+    chatMessage.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        sendChat.click();
+      }
+    });
+
+    // Listen for new messages globally
+    onChildAdded(ref(db, "chat"), (snapshot) => {
+      const data = snapshot.val();
+      chatLog.innerText += `[${data.time}] ${data.message}\n`;
+      chatLog.scrollTop = chatLog.scrollHeight;
+    });
+
+    /* =========================
+       Game Modal & Snake Game Logic
+    ========================== */
+    const gameModal = document.getElementById("gameModal");
+    const closeGame = document.getElementById("closeGame");
+    const homeLink = document.getElementById("homeLink");
+
+    homeLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      gameModal.style.display = "block";
+      // Display leaderboard on opening game modal
+      displayHighscores(JSON.parse(localStorage.getItem("snakeHighscores")) || []);
+    });
+
+    closeGame.addEventListener("click", () => {
+      gameModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target === gameModal) {
+        gameModal.style.display = "none";
+      }
+    });
+
+    // Snake game variables and functions
+    const canvas = document.getElementById("snakeGameCanvas");
+    const ctx = canvas.getContext("2d");
+    const grid = 20;
+    let count = 0;
+    let snake = [{ x: 160, y: 160 }];
+    let dx = grid;
+    let dy = 0;
+    let food = { x: 320, y: 320 };
+    let score = 0;
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    scoreDisplay.textContent = score;
+
+    function getRandomFoodPosition() {
+      return {
+        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
+        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
+      };
+    }
+
+    function gameLoop() {
+      requestAnimationFrame(gameLoop);
+      if (++count < 4) return;
+      count = 0;
+      
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+      snake.unshift(head);
+
+      // If snake eats food, increase score and update display; otherwise, remove tail.
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreDisplay.textContent = score;
+        food = getRandomFoodPosition();
+      } else {
+        snake.pop();
+      }
+
+      // Collision check: walls or self.
+      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height ||
+          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+        updateHighscores(score);
+        // Reset game state
+        snake = [{ x: 160, y: 160 }];
+        dx = grid;
+        dy = 0;
+        score = 0;
+        scoreDisplay.textContent = score;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Draw food
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+      // Draw snake
+      ctx.fillStyle = "green";
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+      });
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && dx === 0) {
+        dx = -grid; dy = 0;
+      } else if (e.key === "ArrowRight" && dx === 0) {
+        dx = grid; dy = 0;
+      } else if (e.key === "ArrowUp" && dy === 0) {
+        dx = 0; dy = -grid;
+      } else if (e.key === "ArrowDown" && dy === 0) {
+        dx = 0; dy = grid;
+      }
+    });
+
+    function updateHighscores(currentScore) {
+      let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
+      highscores.push(currentScore);
+      highscores.sort((a, b) => b - a);
+      highscores = highscores.slice(0, 5);
+      localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
+      displayHighscores(highscores);
+    }
+
+    function displayHighscores(highscores) {
+      const leaderboard = document.getElementById("leaderboard");
+      leaderboard.innerHTML = "";
+      highscores.forEach(scoreItem => {
+        const li = document.createElement("li");
+        li.textContent = scoreItem;
+        leaderboard.appendChild(li);
+      });
+    }
     
-    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-    snake.unshift(head);
+    gameLoop();
 
-    if (head.x === food.x && head.y === food.y) {
-      score++;
-      scoreDisplay.textContent = score;
-      food = getRandomFoodPosition();
-    } else {
-      snake.pop();
-    }
-
-    if (
-      head.x < 0 || head.x >= canvas.width ||
-      head.y < 0 || head.y >= canvas.height ||
-      snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-    ) {
-      updateHighscores(score);
-      snake = [{ x: 160, y: 160 }];
-      dx = grid;
-      dy = 0;
-      score = 0;
-      scoreDisplay.textContent = score;
-    }
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "red";
-    ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-    ctx.fillStyle = "green";
-    snake.forEach(segment => {
-      ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+    // Invert button event listener
+    const invertBtn = document.getElementById("invertBtn");
+    invertBtn.addEventListener("click", () => {
+      document.body.classList.toggle("inverted");
     });
-  }
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft" && dx === 0) {
-      dx = -grid; dy = 0;
-    } else if (e.key === "ArrowRight" && dx === 0) {
-      dx = grid; dy = 0;
-    } else if (e.key === "ArrowUp" && dy === 0) {
-      dx = 0; dy = -grid;
-    } else if (e.key === "ArrowDown" && dy === 0) {
-      dx = 0; dy = grid;
-    }
-  });
-
-  function updateHighscores(currentScore) {
-    let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
-    highscores.push(currentScore);
-    highscores.sort((a, b) => b - a);
-    highscores = highscores.slice(0, 5);
-    localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
-    displayHighscores(highscores);
-  }
-
-  function displayHighscores(highscores) {
-    const leaderboard = document.getElementById("leaderboard");
-    leaderboard.innerHTML = "";
-    highscores.forEach(scoreItem => {
-      const li = document.createElement("li");
-      li.textContent = scoreItem;
-      leaderboard.appendChild(li);
-    });
-  }
-
-  gameLoop();
-
-  // Invert button event listener
-  const invertBtn = document.getElementById("invertBtn");
-  invertBtn.addEventListener("click", () => {
-    document.body.classList.toggle("inverted");
-  });
-</script>
+  </script>
+</body>
+</html>
