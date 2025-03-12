@@ -23,11 +23,15 @@
       font-family: Arial, sans-serif;
       background-size: cover;
       background-position: center;
-      transition: background-image 1s ease-in-out;
+      transition: background-image 1s ease-in-out, filter 0.5s ease;
       color: var(--text-color);
       line-height: 1.4;
       position: relative;
       font-size: 14px;
+    }
+    /* Inverted color scheme */
+    body.inverted {
+      filter: invert(1);
     }
     header {
       background: linear-gradient(135deg, var(--primary-color), #4285f4);
@@ -225,6 +229,20 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    /* Invisible Invert Button */
+    #invertBtn {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+      z-index: 1000;
+      cursor: pointer;
+      border: none;
+      background: red;
+    }
   </style>
 </head>
 <body>
@@ -291,8 +309,11 @@
     </div>
   </div>
 
+  <!-- Invisible Invert Button -->
+  <button id="invertBtn" aria-label="Invert Colors"></button>
+
   <script>
-    // Function to redirect to encrptionTool.html
+    // Function to redirect to encryptionTool.html
     function callEncryptionTool() {
       window.location.href = "encryptionTool.html";
     }
@@ -466,6 +487,12 @@
     }
     
     gameLoop();
+
+    // Invert button event listener
+    const invertBtn = document.getElementById("invertBtn");
+    invertBtn.addEventListener("click", () => {
+      document.body.classList.toggle("inverted");
+    });
   </script>
 </body>
 </html>
