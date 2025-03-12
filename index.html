@@ -371,6 +371,9 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
+    // Global variable to store the current user's first name (username)
+    let currentUsername = "Anonymous";
+
     /***** Simple Sign-In Logic *****/
     const emailInput = document.getElementById("emailInput");
     const passwordInput = document.getElementById("passwordInput");
@@ -381,8 +384,10 @@
       const password = passwordInput.value.trim();
       signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          console.log("Signed in as:", userCredential.user.email);
-          alert("Signed in successfully!");
+          // Extract the first name from the email (before "@" and first dot)
+          currentUsername = email.split("@")[0].split(".")[0];
+          console.log("Signed in as:", currentUsername);
+          alert("Signed in successfully as " + currentUsername + "!");
         })
         .catch((error) => {
           console.error("Auth error:", error);
@@ -431,27 +436,27 @@
       }
     });
 
-    // Send message
+    // Send message including the currentUsername
     sendChat.addEventListener("click", () => {
       const message = chatMessage.value.trim();
       if (!message) return;
       const timeStamp = new Date().toLocaleTimeString();
-      const chatData = { message, time: timeStamp };
+      const chatData = { username: currentUsername, message, time: timeStamp };
       push(ref(db, "chat"), chatData);
       chatMessage.value = "";
     });
 
-    // Press Enter to send
+    // Allow pressing Enter to send the message
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
       }
     });
 
-    // Listen for new messages
+    // Listen for new messages and display with username
     onChildAdded(ref(db, "chat"), (snapshot) => {
       const data = snapshot.val();
-      chatLog.innerText += `[${data.time}] ${data.message}\n`;
+      chatLog.innerText += `[${data.time}] ${data.username || "Anonymous"}: ${data.message}\n`;
       chatLog.scrollTop = chatLog.scrollHeight;
     });
 
