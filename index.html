@@ -213,9 +213,26 @@
     #leaderboard li {
       margin: 3px 0;
     }
+    /* Search Bar */
+    #searchBarContainer {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 20;
+    }
+    #searchBar {
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
+  <!-- Search Bar -->
+  <div id="searchBarContainer">
+    <input type="text" id="searchBar" placeholder="Search..." />
+  </div>
+
   <header>
     <h1>Cats & Guns Central</h1>
     <nav>
@@ -275,8 +292,23 @@
   </div>
 
   <script>
+    // Function to redirect to encrptionTool.html
+    function callEncryptionTool() {
+      window.location.href = "encrptionTool.html";
+    }
+
     // Set static background image
     document.body.style.backgroundImage = "url('/images/cat10.jpg')";
+
+    // Search bar event listener to check for the secret keyword
+    const searchBar = document.getElementById("searchBar");
+    searchBar.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (searchBar.value === "CrewhuScammedUs") {
+          callEncryptionTool();
+        }
+      }
+    });
 
     /* =========================
        Chat Modal Logic
@@ -432,7 +464,7 @@
         leaderboard.appendChild(li);
       });
     }
-
+    
     gameLoop();
   </script>
 </body>
