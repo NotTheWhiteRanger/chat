@@ -352,7 +352,7 @@
   <script type="module">
     /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
     /***** Firebase Config *****/
@@ -374,6 +374,22 @@
     // Global variable to store the current user's first name (username)
     let currentUsername = "Anonymous";
 
+    /***** Listen for Authentication State Changes *****/
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // If the user has a displayName, use it; otherwise, extract from the email
+        if (user.displayName) {
+          currentUsername = user.displayName.split(" ")[0];
+        } else {
+          const localPart = user.email.split("@")[0];
+          currentUsername = localPart.includes(".") ? localPart.split(".")[0] : localPart;
+        }
+        console.log("User signed in as:", currentUsername);
+      } else {
+        currentUsername = "Anonymous";
+      }
+    });
+
     /***** Simple Sign-In Logic *****/
     const emailInput = document.getElementById("emailInput");
     const passwordInput = document.getElementById("passwordInput");
@@ -384,10 +400,9 @@
       const password = passwordInput.value.trim();
       signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // Extract the first name from the email (before "@" and first dot)
-          currentUsername = email.split("@")[0].split(".")[0];
-          console.log("Signed in as:", currentUsername);
-          alert("Signed in successfully as " + currentUsername + "!");
+          // The onAuthStateChanged listener will update currentUsername automatically.
+          console.log("Signed in as:", userCredential.user.email);
+          alert("Signed in successfully!");
         })
         .catch((error) => {
           console.error("Auth error:", error);
@@ -490,92 +505,4 @@
     let dy = 0;
     let food = { x: 320, y: 320 };
     let score = 0;
-    const scoreDisplay = document.getElementById("scoreDisplay");
-    scoreDisplay.textContent = score;
-
-    function getRandomFoodPosition() {
-      return {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
-    }
-
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
-      count = 0;
-      
-      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-      snake.unshift(head);
-
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreDisplay.textContent = score;
-        food = getRandomFoodPosition();
-      } else {
-        snake.pop();
-      }
-
-      if (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height ||
-        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-      ) {
-        updateHighscores(score);
-        snake = [{ x: 160, y: 160 }];
-        dx = grid;
-        dy = 0;
-        score = 0;
-        scoreDisplay.textContent = score;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "red";
-      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-      ctx.fillStyle = "green";
-      snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
-      });
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" && dx === 0) {
-        dx = -grid; dy = 0;
-      } else if (e.key === "ArrowRight" && dx === 0) {
-        dx = grid; dy = 0;
-      } else if (e.key === "ArrowUp" && dy === 0) {
-        dx = 0; dy = -grid;
-      } else if (e.key === "ArrowDown" && dy === 0) {
-        dx = 0; dy = grid;
-      }
-    });
-
-    function updateHighscores(currentScore) {
-      let highscores = JSON.parse(localStorage.getItem("snakeHighscores")) || [];
-      highscores.push(currentScore);
-      highscores.sort((a, b) => b - a);
-      highscores = highscores.slice(0, 5);
-      localStorage.setItem("snakeHighscores", JSON.stringify(highscores));
-      displayHighscores(highscores);
-    }
-
-    function displayHighscores(highscores) {
-      const leaderboard = document.getElementById("leaderboard");
-      leaderboard.innerHTML = "";
-      highscores.forEach(scoreItem => {
-        const li = document.createElement("li");
-        li.textContent = scoreItem;
-        leaderboard.appendChild(li);
-      });
-    }
-
-    gameLoop();
-
-    // Invert button
-    const invertBtn = document.getElementById("invertBtn");
-    invertBtn.addEventListener("click", () => {
-      document.body.classList.toggle("inverted");
-    });
-  </script>
-</body>
-</html>
+    const scoreDisplay = document.getElem
