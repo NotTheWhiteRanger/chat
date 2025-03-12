@@ -189,7 +189,7 @@
       Here at Cats & Guns Central, we combine our two passions: adorable felines and high-powered firearms.
     </p>
     <p>
-      Explore our rotating gallery of cat images, chat with fellow enthusiasts, and learn more about our unique community.
+      Explore our gallery of cat images, chat with fellow enthusiasts, and learn more about our unique community.
     </p>
     <p>
       Click "Chat" above to talk with others about your favorite cat memes and firearms!
@@ -212,23 +212,8 @@
   </div>
 
   <script>
-    /* =========================
-       Rotating Background
-    ========================== */
-    const memes = [
-      "images/cat1.jpg",
-      "images/cat2.jpg",
-      "images/cat3.png",
-      "images/cat4.jpg",
-      "images/cat5.jpg",
-      "images/cat6.jpg"
-    ];
-    let memeIndex = 0;
-    document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
-    setInterval(() => {
-      memeIndex = (memeIndex + 1) % memes.length;
-      document.body.style.backgroundImage = `url('${memes[memeIndex]}')`;
-    }, 5000);
+    // Set static background image
+    document.body.style.backgroundImage = "url('/images/cat10.jpg')";
 
     /* =========================
        Chat Modal Logic
@@ -263,7 +248,7 @@
       const message = chatMessage.value.trim();
       if (!message) return;
       const timeStamp = new Date().toLocaleTimeString();
-      chatLog.value += `[${timeStamp}] You: ${message}\n`;
+      chatLog.innerText += `[${timeStamp}] You: ${message}\n`;
       chatMessage.value = "";
       chatLog.scrollTop = chatLog.scrollHeight;
     });
