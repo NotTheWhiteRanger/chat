@@ -217,55 +217,6 @@
     #sendChat:hover, #clearFirebaseChat:hover {
       background: var(--primary-hover);
     }
-    /* Game Modal */
-    #gameModal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.6);
-    }
-    #gameContent {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 15px;
-      width: 90%;
-      max-width: 640px;
-      border-radius: 8px;
-      position: relative;
-      text-align: center;
-    }
-    #closeGame {
-      float: right;
-      font-size: 1.2em;
-      cursor: pointer;
-      color: #555;
-    }
-    #snakeGameCanvas {
-      display: block;
-      margin: 0 auto;
-      background: #eee;
-      border: 1px solid #ddd;
-    }
-    /* Score & Leaderboard */
-    #scoreContainer {
-      margin-top: 10px;
-      text-align: center;
-    }
-    #scoreContainer p, #scoreContainer h3 {
-      margin: 5px 0;
-    }
-    #leaderboard {
-      list-style: none;
-      padding: 0;
-    }
-    #leaderboard li {
-      margin: 3px 0;
-    }
     /* Search Bar */
     #searchBarContainer {
       position: absolute;
@@ -339,7 +290,8 @@
     <h1>Cats & Guns Central</h1>
     <nav>
       <ul>
-        <li><a href="#" id="homeLink">Home</a></li>
+        <!-- Home now redirects to the Snake game page -->
+        <li><a href="Snake.html" id="homeLink">Home</a></li>
         <li><a href="#" id="gunsLink">Guns</a></li>
         <li><a href="#" id="catsLink">Cats</a></li>
         <li>
@@ -384,23 +336,10 @@
     </div>
   </div>
 
-  <!-- Game Modal -->
-  <div id="gameModal">
-    <div id="gameContent">
-      <span id="closeGame">&times;</span>
-      <canvas id="snakeGameCanvas" width="600" height="400"></canvas>
-      <div id="scoreContainer">
-        <p>Score: <span id="scoreDisplay">0</span></p>
-        <h3>Leaderboard</h3>
-        <ul id="leaderboard"></ul>
-      </div>
-    </div>
-  </div>
-
   <!-- Invisible Invert Button -->
   <button id="invertBtn" aria-label="Invert Colors"></button>
 
-  <!-- Firebase, Auth, Global Chat & Snake High Score Logic -->
+  <!-- Firebase, Auth & Chat Logic -->
   <script type="module">
     /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -423,9 +362,8 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
   
-    // Global variable to store the current user's username
+    // Global variable to store current username
     let currentUsername = "Anonymous";
-    // Variable to track unread messages count for chat
     let unreadCount = 0;
   
     /***** Simple Sign-In Logic *****/
@@ -438,31 +376,21 @@
       const password = passwordInput.value.trim();
       signInWithEmailAndPassword(auth, email, password)
         .then((userCredential) => {
-          // Extract username from email (everything before the "@")
           currentUsername = email.split("@")[0];
-          console.log("Signed in as:", currentUsername);
-          alert("Signed in successfully as " + currentUsername + "!");
+          alert("Signed in as " + currentUsername + "!");
         })
         .catch((error) => {
-          console.error("Auth error:", error);
           alert("Sign-in failed. Check console for details.");
+          console.error("Auth error:", error);
         });
     });
   
-    /***** Function to redirect to encryptionTool.html *****/
-    function callEncryptionTool() {
-      window.location.href = "encryptionTool.html";
-    }
-  
-    /***** Set static background image *****/
-    document.body.style.backgroundImage = "url('/images/cat10.jpg')";
-  
-    /***** Search bar event listener for secret keyword *****/
+    /***** Search Bar Logic *****/
     const searchBar = document.getElementById("searchBar");
     searchBar.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         if (searchBar.value === "CrewhuScammedUs") {
-          callEncryptionTool();
+          window.location.href = "encryptionTool.html";
         }
       }
     });
@@ -477,7 +405,6 @@
     const clearFirebaseChat = document.getElementById("clearFirebaseChat");
     const unreadBadge = document.getElementById("unreadBadge");
   
-    // Open chat modal only if signed in
     chatLink.addEventListener("click", (e) => {
       e.preventDefault();
       if (currentUsername === "Anonymous") {
@@ -499,7 +426,6 @@
       }
     });
   
-    // Send chat message only if signed in
     sendChat.addEventListener("click", () => {
       if (currentUsername === "Anonymous") {
         alert("Please sign in to chat.");
@@ -513,14 +439,12 @@
       chatMessage.value = "";
     });
   
-    // Allow pressing Enter to send the chat message
     chatMessage.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         sendChat.click();
       }
     });
   
-    // Update unread badge display
     function updateUnreadBadge() {
       if (unreadCount > 0) {
         unreadBadge.textContent = unreadCount;
@@ -530,12 +454,10 @@
       }
     }
   
-    // Listen for new chat messages and create a bubble for each message
     onChildAdded(ref(db, "chat"), (snapshot) => {
       const data = snapshot.val();
       const messageElem = document.createElement("div");
       messageElem.classList.add("chat-message");
-      // Style as "sent" only if signed in and the message is from currentUsername
       if (currentUsername !== "Anonymous" && data.username === currentUsername) {
         messageElem.classList.add("sent");
         messageElem.textContent = data.message;
@@ -543,27 +465,21 @@
         messageElem.classList.add("received");
         messageElem.textContent = data.username + ": " + data.message;
       }
-      // Append timestamp inside bubble
       const timeSpan = document.createElement("span");
       timeSpan.classList.add("timestamp");
       timeSpan.textContent = data.time;
       messageElem.appendChild(timeSpan);
-  
       chatLog.appendChild(messageElem);
       chatLog.scrollTop = chatLog.scrollHeight;
-  
-      // If chat modal is not open, increment unread count and update badge
       if (chatModal.style.display !== "block") {
         unreadCount++;
         updateUnreadBadge();
       }
     });
   
-    // Clear chat history from Firebase and the local display
     clearFirebaseChat.addEventListener("click", () => {
       remove(ref(db, "chat"))
         .then(() => {
-          console.log("Firebase chat history cleared");
           chatLog.innerHTML = "";
         })
         .catch((error) => {
@@ -571,147 +487,7 @@
         });
     });
   
-    /***** Snake Game & High Score Logic *****/
-    const gameModal = document.getElementById("gameModal");
-    const closeGame = document.getElementById("closeGame");
-    const homeLink = document.getElementById("homeLink");
-    const canvas = document.getElementById("snakeGameCanvas");
-    const ctx = canvas.getContext("2d");
-    const grid = 20;
-    let count = 0;
-    let snake = [{ x: 160, y: 160 }];
-    let dx = grid;
-    let dy = 0;
-    let food = { x: 320, y: 320 };
-    let score = 0;
-    const scoreDisplay = document.getElementById("scoreDisplay");
-    scoreDisplay.textContent = score;
-  
-    // Record snake high score with username (only if signed in)
-    function updateSnakeHighscore(score) {
-      if (currentUsername === "Anonymous") {
-        console.log("Score not recorded because user is not signed in.");
-        return;
-      }
-      const snakeScoreData = { username: currentUsername, score: score, timestamp: new Date().toISOString() };
-      push(ref(db, "snake"), snakeScoreData)
-        .then(() => {
-          console.log("Snake high score recorded:", snakeScoreData);
-        })
-        .catch((error) => {
-          console.error("Error recording snake high score:", error);
-        });
-    }
-  
-    // Display the top 5 snake high scores from Firebase using a one-time fetch
-    function displaySnakeHighscores() {
-      const snakeScoresRef = ref(db, "snake");
-      const snakeQuery = query(snakeScoresRef, orderByChild("score"), limitToLast(5));
-      get(snakeQuery)
-        .then((snapshot) => {
-          const scoresArray = [];
-          snapshot.forEach((childSnapshot) => {
-            scoresArray.push(childSnapshot.val());
-          });
-          // Sort scores descending
-          scoresArray.sort((a, b) => b.score - a.score);
-          const leaderboard = document.getElementById("leaderboard");
-          leaderboard.innerHTML = "";
-          scoresArray.forEach((scoreObj) => {
-            const li = document.createElement("li");
-            li.textContent = scoreObj.username + ": " + scoreObj.score;
-            leaderboard.appendChild(li);
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching snake high scores:", error);
-        });
-    }
-  
-    // When Home is clicked, open the snake game modal and display the leaderboard
-    homeLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      gameModal.style.display = "block";
-      displaySnakeHighscores();
-    });
-  
-    closeGame.addEventListener("click", () => {
-      gameModal.style.display = "none";
-    });
-  
-    window.addEventListener("click", (event) => {
-      if (event.target === gameModal) {
-        gameModal.style.display = "none";
-      }
-    });
-  
-    // Snake game loop
-    function getRandomFoodPosition() {
-      return {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
-    }
-  
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
-      count = 0;
-      
-      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-      snake.unshift(head);
-  
-      if (head.x === food.x && head.y === food.y) {
-        score++;
-        scoreDisplay.textContent = score;
-        food = getRandomFoodPosition();
-      } else {
-        snake.pop();
-      }
-  
-      if (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height ||
-        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-      ) {
-        // On collision, record score if signed in; if not, just reset without alerting
-        if (currentUsername !== "Anonymous") {
-          updateSnakeHighscore(score);
-        } else {
-          console.log("High score not recorded (user not signed in).");
-        }
-        // Reset game state
-        snake = [{ x: 160, y: 160 }];
-        dx = grid;
-        dy = 0;
-        score = 0;
-        scoreDisplay.textContent = score;
-      }
-  
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "red";
-      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-      ctx.fillStyle = "green";
-      snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
-      });
-    }
-  
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" && dx === 0) {
-        dx = -grid; dy = 0;
-      } else if (e.key === "ArrowRight" && dx === 0) {
-        dx = grid; dy = 0;
-      } else if (e.key === "ArrowUp" && dy === 0) {
-        dx = 0; dy = -grid;
-      } else if (e.key === "ArrowDown" && dy === 0) {
-        dx = 0; dy = grid;
-      }
-    });
-  
-    gameLoop();
-  
-    // Invert button
+    /***** Invert Button *****/
     const invertBtn = document.getElementById("invertBtn");
     invertBtn.addEventListener("click", () => {
       document.body.classList.toggle("inverted");
