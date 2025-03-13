@@ -144,7 +144,8 @@
     let snake = [{ x: 160, y: 160 }];
     let dx = grid; // initial movement to the right
     let dy = 0;
-    let food = getRandomFoodPosition();
+    // Initialize food using the spawnFood() function.
+    let food = spawnFood();
     let score = 0;
     // Flag to prevent multiple direction changes in one frame
     let changingDirection = false;
@@ -155,6 +156,29 @@
         x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
         y: Math.floor(Math.random() * (canvas.height / grid)) * grid
       };
+    }
+
+    // Function to spawn food with a 5% chance of being "special" (yellow, 5 points) 
+    // Special food will disappear after 3 seconds if not picked up.
+    function spawnFood() {
+      const pos = getRandomFoodPosition();
+      let type = "normal";
+      let points = 1;
+      let timeoutId = null;
+      if (Math.random() < 0.05) {
+        type = "special";
+        points = 5;
+      }
+      const newFood = { x: pos.x, y: pos.y, type: type, points: points, timeoutId: timeoutId };
+      if (type === "special") {
+        newFood.timeoutId = setTimeout(() => {
+          // Only remove if the current food is still this special food.
+          if (food && food.type === "special" && food.x === newFood.x && food.y === newFood.y) {
+            food = spawnFood();
+          }
+        }, 3000);
+      }
+      return newFood;
     }
 
     // Main game loop using requestAnimationFrame for smooth animation
@@ -169,9 +193,14 @@
 
       // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
-        score++;
+        // Increase score by food.points (1 for normal, 5 for special)
+        score += food.points;
         scoreDisplay.textContent = score;
-        food = getRandomFoodPosition();
+        // If it's special food, clear the timeout so it doesn't trigger after being eaten.
+        if (food.type === "special" && food.timeoutId) {
+          clearTimeout(food.timeoutId);
+        }
+        food = spawnFood();
       } else {
         snake.pop();
       }
@@ -186,9 +215,9 @@
         return;  // Stop further drawing in this frame
       }
 
-      // Draw food and snake
+      // Draw food (yellow for special, red for normal) and snake
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "red";
+      ctx.fillStyle = (food.type === "special") ? "yellow" : "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
       ctx.fillStyle = "green";
       snake.forEach(segment => {
@@ -210,7 +239,7 @@
       snake = [{ x: 160, y: 160 }];
       dx = grid;
       dy = 0;
-      food = getRandomFoodPosition();
+      food = spawnFood();
       score = 0;
       scoreDisplay.textContent = score;
     }
