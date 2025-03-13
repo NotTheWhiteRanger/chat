@@ -272,6 +272,66 @@
       margin-top: 5px;
       font-size: 0.9em;
     }
+
+    /* --- New CSS for the Story Modal and Invisible Story Button --- */
+
+    /* Invisible Story Button */
+    #storyBtn {
+      position: fixed;
+      bottom: 41%;
+      left: -72.5%;
+      width: 25px;
+      height: 40px;
+      opacity: 0;
+      z-index: 1000;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+    /* Story Modal */
+    #storyModal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: rgba(0,0,0,0.6);
+    }
+    /* Story Content Container */
+    #storyContent {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 20px;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 12px;
+      position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      overflow: hidden;
+      height: 80%;
+    }
+    /* Scrolling text container */
+    .scrolling-text {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      animation: scrollText 120s linear forwards;
+    }
+    /* Keyframes for scrolling text */
+    @keyframes scrollText {
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(-100%); }
+    }
+    /* Close button for story modal */
+    #closeStory {
+      float: right;
+      font-size: 1.2em;
+      cursor: pointer;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -339,13 +399,66 @@
 
   <!-- Invisible Invert Button -->
   <button id="invertBtn" aria-label="Invert Colors"></button>
+  <!-- Invisible Story Button -->
+  <button id="storyBtn" aria-label="Open Story"></button>
+
+  <!-- Story Modal -->
+  <div id="storyModal">
+    <div id="storyContent">
+      <span id="closeStory">&times;</span>
+      <div class="scrolling-text">
+        <h2>Chapter 1: The Origins of Enchantment</h2>
+        <p>In a quaint garden nestled behind a white picket fence, magic was as common as dandelions in the spring. The lawn gnomes, small but determined figures with beards as wise as ancient scrolls, had called this lush expanse home for countless generations. They believed the earth whispered secrets of survival and wisdom, and each meticulously carved stone and flowerbed was a tribute to their humble, steadfast guardianship.</p>
+        <p>On the other side of the garden, beneath the towering rose bushes and beside the sparkling birdbath, resided the elegant lawn flamingos. Their vibrant pink plumes shimmered under the sun’s gaze, and they prided themselves on being symbols of artful expression and flamboyant style. They had migrated to the lawn one fateful summer, drawn by the allure of a land that promised both beauty and a taste of freedom from their traditional, static existence.</p>
+        <p>The first encounter between the two groups was, in a way, accidental. The gnomes, busy arranging pebbles into tiny mosaics, marveled at the delicate and mysterious arrival of the flamingos. But misunderstandings soon festered. The gnomes, with their earthy pragmatism, couldn’t fathom the flamboyant ways of the flamingos—who, in turn, saw the gnomes’ slow, deliberate routines as archaic and dull. And so, the stage was set for a rivalry that would echo through the ages.</p>
+        <h2>Chapter 2: The Early Skirmishes</h2>
+        <p>At first, the rivalry was little more than a series of petty squabbles. Every morning, as the sun rose over the dew-soaked grass, the gnomes would be found rearranging their formations, believing that their steadfast order was the true path to harmony. Meanwhile, the flamingos would preen and strut along the edges of the garden, their reflections in the pond a reminder of their graceful superiority.</p>
+        <p>One particularly bright morning, a flamingo named Felicity—a graceful yet headstrong leader—decided that the flamingos needed to claim more territory for their elegant display. With a flourish of her wings, she challenged the gnome leader, Gregor, over a patch of prime grass next to a magnificent tulip bed. Gregor, known for his unyielding sense of duty and calm wisdom, stood his ground. The ensuing argument escalated rapidly, morphing into a series of bold gestures and even bolder declarations.</p>
+        <p>Words turned into actions, and soon the early skirmishes began. The flamingos would occasionally tiptoe (or rather, strut imperiously) into gnome territory at night, leaving behind mysterious footprints that puzzled the gnomes by morning. In retaliation, the gnomes would rearrange the flamingos’ iconic poses, tilting their heads ever so slightly to break the symmetry that the flamingos held so dear. Though these early battles were more symbolic than violent, they set the tone for what was to come—a rivalry fueled by pride and a relentless desire to prove supremacy.</p>
+        <h2>Chapter 3: The Rise of the Factions</h2>
+        <p>As decades passed, what began as lighthearted mischief grew into an intricate web of alliances, betrayals, and deep-seated grievances. The lawn was divided into territories: the sunlit eastern patch, where the gnomes built their humble cottages among the clover, and the dazzling western side, which the flamingos adorned with carefully positioned accessories, from miniature lanterns to delicate sculptures fashioned out of recycled glass.</p>
+        <p>During a particularly balmy summer, a charismatic gnome named Bromley emerged from the ranks. Bromley was a visionary, one who believed that the gnomes could no longer afford to stand idly by while the flamingos flaunted their newfound power. He rallied his kin, speaking of honor, history, and the need to protect their ancestral grounds. His speeches, filled with passion and poetic fervor, ignited a fire among the gnomes—a call to arms that resonated with every stone, every blade of grass.</p>
+        <p>Not to be outdone, the flamingos soon found their own leader in the enigmatic Seraphina, whose wit was as sharp as her beak. Seraphina believed that the flamingos should embrace the ever-changing nature of the world by forging alliances not only among themselves but also with other decorative beings that roamed the garden. With charismatic gestures and a voice that could calm a storm, she led the flamingos into a series of daring endeavors, including spectacular parades and nocturnal ballets that celebrated their unique identity.</p>
+        <p>Yet, in the midst of rising tensions, an unspoken truth loomed large: both factions secretly yearned for a day when they could coexist without conflict, each admiring the beauty of the other. However, pride and the scars of ancient slights made reconciliation seem like a distant dream.</p>
+        <h2>Chapter 4: The Great Lawn War</h2>
+        <p>The garden soon became a battlefield. One cool autumn evening, as a harvest moon rose over the yard, the simmering rivalry finally erupted into what history would later call The Great Lawn War. It began with a daring raid. Under the cover of twilight, a band of flamingos, led by Seraphina herself, swooped down to capture the prized “Stone of Serenity”—a smooth pebble that the gnomes had long believed was a talisman of their unity and strength.</p>
+        <p>The gnomes, caught off guard by the audacity of the flamingos’ assault, rallied quickly. Bromley, with his trusty lantern staff, led a counterattack. For hours, the garden echoed with the clatter of tiny pebbles and the squawks of determined flamingos. The flamingos, with their graceful but fierce aerial maneuvers, attempted to outflank the gnomes at every turn. The battle raged among the rose bushes, across the winding garden path, and even spilled into the forbidden territory of the vegetable patch—a place sacred to both sides, now turned into a chaotic chessboard of strategy and survival.</p>
+        <p>It wasn’t just about territory; it was a war of ideals. The gnomes fought for the sanctity of tradition and the quiet dignity of a life rooted in history. The flamingos, meanwhile, battled to embrace the ever-changing spirit of freedom and modernity. Amid the chaos, there were moments of sheer absurdity—imagine a flamingo and a gnome locked in a dramatic duel over a misplaced garden hose, or a sudden ceasefire sparked by a mutual admiration of a particularly breathtaking sunrise.</p>
+        <h2>Chapter 5: A Momentary Truce</h2>
+        <p>After many days of relentless skirmishing, both sides began to tire. The garden, once a vibrant tapestry of life, now bore the scars of war—scuffed pathways, trampled flowers, and broken garden ornaments. In the aftermath of one particularly fierce clash near the ancient oak tree, an unexpected proposal emerged: a temporary truce, a pause in the conflict to tend to the wounded and repair the damage inflicted upon their shared home.</p>
+        <p>During this lull, Bromley and Seraphina met in secret, far from the prying eyes of their followers. In the dim light of the twilight hours, they exchanged words that were both conciliatory and cautionary. They spoke of a future where the gnomes and flamingos could coexist in mutual respect, sharing in the beauty of the garden rather than fighting over its every inch. For one magical night, it seemed that the bitter rivalry might finally thaw into a lasting alliance.</p>
+        <p>Together, they organized a grand festival—a celebration of the garden’s natural wonders, where gnomes and flamingos alike contributed their unique talents. There were dancing, storytelling, and even a contest to see who could create the most beautiful mosaic from fallen leaves and scattered petals. In that brief interlude, laughter and music filled the air, and the ancient lawn felt alive with hope and unity.</p>
+        <h2>Chapter 6: Betrayals in the Midst of Hope</h2>
+        <p>The truce, as promising as it had been, was not to last. Beneath the surface of newfound camaraderie, whispers of betrayal began to stir. A faction within the gnomes, led by the ambitious and cunning Malrick, harbored a secret resentment toward the proposed peace. Malrick believed that the truce was a betrayal of their proud heritage—a weakness that would only invite further humiliation.</p>
+        <p>Late one moonless night, Malrick and a handful of disillusioned gnomes conspired to seize the flamingos’ prized relic: a dazzling, iridescent feather said to hold the essence of freedom and beauty. They planned to use the feather to strike a decisive blow, proving once and for all that the gnomes could reclaim their rightful place as the masters of the garden.</p>
+        <p>But secrets have a way of coming to light. One of the flamingos, a young but perceptive member named Marisol, overheard the conspiracies as she perched silently atop a garden bench. With a heavy heart, she reported the treachery to Seraphina, igniting a chain of events that would once again plunge the garden into turmoil.</p>
+        <p>The betrayal cut deep. Trust, which had just begun to bud, was shattered. The flamingos, feeling the sting of deceit, retaliated swiftly and ruthlessly. In a series of covert maneuvers, they reclaimed their lost relic and exposed the traitors, leaving both communities to face the bitter truth: their shared garden could no longer be a sanctuary for half-measures and den ambitions.</p>
+        <h2>Chapter 7: The Reckoning</h2>
+        <p>With betrayal now a tangible scar on their collective memory, both sides braced themselves for the final reckoning. The once-beautiful garden had transformed into a battleground where every leaf, every stone, and every blossom bore witness to the enmity that had taken root.</p>
+        <p>Bromley and Seraphina, each representing the more moderate voices within their communities, attempted to rally support for a united front against the extremists on both sides. They called for a grand assembly beneath the ancient oak—the symbolic heart of the garden—where every gnome and flamingo would come together to decide the fate of their shared home.</p>
+        <p>The assembly was a cacophony of emotions. Impassioned speeches filled the air as old wounds were revisited and new grievances aired. Yet, even in the midst of heated debates, there were moments of quiet understanding—glances shared between a gnome and a flamingo that hinted at the possibility of reconciliation.</p>
+        <p>As the night wore on, it became painfully clear that the extremists on both sides were determined to plunge the garden into endless conflict. In a desperate bid to restore peace, Bromley and Seraphina devised one final, daring plan: a symbolic act of unity that would require both sides to relinquish their deepest grudges and work together to heal the garden.</p>
+        <p>With trembling hands and hopeful hearts, gnomes and flamingos gathered to plant a new garden bed—a living mosaic of colors, textures, and scents. Each flower was a promise, each stone a testament to resilience. It was an act of defiance against the chaos of the past, a declaration that even the most bitter rivalry could give way to the beauty of renewal.</p>
+        <h2>Chapter 8: A New Dawn</h2>
+        <p>The garden slowly began to heal. Though scars of conflict were still visible in places, the joint efforts of the gnomes and flamingos had rekindled a sense of shared purpose. The new garden bed became a symbol of what might be achieved when differences are embraced rather than feared.</p>
+        <p>In time, the most ardent supporters of the old ways softened. The annual festival was revived, not as a celebration of victory or defeat, but as a commemoration of unity and hope. Stories of the long, tumultuous rivalry were told and retold—less as grim warnings and more as reminders of how far they had come.</p>
+        <p>Bromley and Seraphina, having weathered storms of betrayal and bloodshed, became legends in their own right. Their names were spoken not in the context of a fight, but as emblems of a shared vision for a better future. The garden, with its eclectic mix of meticulously tended patches and wild bursts of color, stood as a living testament to the power of reconciliation and the strength found in diversity.</p>
+        <p>Over the years, the lawn gnomes and lawn flamingos learned that their rivalry, while fierce and fraught with trials, had also brought them lessons in compassion, unity, and the enduring beauty of transformation. They discovered that every scar told a story—a story of battles fought, alliances forged, and the ultimate triumph of hope over hatred.</p>
+        <h2>Epilogue: Reflections on the Lawn</h2>
+        <p>Now, if you ever find yourself wandering through a quiet neighborhood and you happen upon a garden that seems almost magical, take a moment to observe its inhabitants. Look closely at the lawn gnomes, their silent wisdom etched into every carved detail, and the elegant lawn flamingos, standing proudly as if guarding ancient secrets. In every whispered breeze and every ray of sunlight, you might just hear the echoes of a rivalry that once tore a garden apart, only to later weave a tapestry of unity and renewal.</p>
+        <p>This long, winding saga reminds us that even the most unlikely adversaries can learn to coexist—transforming conflict into creativity, and rivalry into a symphony of diverse voices. So, let your imagination wander, and remember: sometimes, the most beautiful stories are written right under our feet, in the very heart of the gardens we call home.</p>
+        <p>Isn’t it wonderful to think about how, with a bit of understanding and a lot of courage, even the smallest beings can change the course of history? The tale of the Lawn Gnomes and the Lawn Flamingos teaches us that our differences can be the very things that, when embraced, lead us to build something truly extraordinary.</p>
+        <p>— End of Story —</p>
+      </div>
+    </div>
+  </div>
 
   <!-- Firebase, Auth & Chat Logic -->
   <script type="module">
     /***** Firebase Imports *****/
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded, remove, query, orderByChild, limitToLast, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, push, onChildAdded, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
   
     /***** Firebase Config *****/
     const firebaseConfig = {
@@ -511,6 +624,30 @@
           document.body.removeChild(overlay);
         }
       });
+    });
+
+    /***** Story Modal Logic *****/
+    const storyModal = document.getElementById("storyModal");
+    const storyBtn = document.getElementById("storyBtn");
+    const closeStory = document.getElementById("closeStory");
+
+    storyBtn.addEventListener("click", () => {
+      storyModal.style.display = "block";
+      // Reset the scrolling text animation
+      const scrollingText = document.querySelector(".scrolling-text");
+      scrollingText.style.animation = 'none';
+      scrollingText.offsetHeight; // Trigger reflow
+      scrollingText.style.animation = 'scrollText 120s linear forwards';
+    });
+
+    closeStory.addEventListener("click", () => {
+      storyModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target === storyModal) {
+        storyModal.style.display = "none";
+      }
     });
   </script>
 </body>
