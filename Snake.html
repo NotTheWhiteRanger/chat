@@ -147,6 +147,7 @@
     // Initialize food using the spawnFood() function.
     let food = spawnFood();
     let score = 0;
+    let normalScoreCount = 0; // Tracks points from normal food for speed increase
     // Flag to prevent multiple direction changes in one frame
     let changingDirection = false;
 
@@ -196,16 +197,22 @@
 
       // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
-        // Increase score by food.points (1 for normal, 5 for special)
-        score += food.points;
-        scoreDisplay.textContent = score;
-        // If it's special food, clear the timeout and increase game speed (i.e., reduce the threshold)
         if (food.type === "special") {
+          score += food.points; // Adds 5 points
           if (food.timeoutId) {
             clearTimeout(food.timeoutId);
           }
-          speedThreshold = Math.max(speedThreshold - 1, 2);  // Increase speed but ensure it doesn't get too fast
+          // Increase speed by 5 times the normal increment
+          speedThreshold = Math.max(speedThreshold - 5, 2);
+        } else { // Normal food
+          score += food.points; // Adds 1 point
+          normalScoreCount++;
+          // Every 10 normal points, increase speed slightly
+          if (normalScoreCount % 10 === 0) {
+            speedThreshold = Math.max(speedThreshold - 1, 2);
+          }
         }
+        scoreDisplay.textContent = score;
         food = spawnFood();
       } else {
         snake.pop();
@@ -247,6 +254,7 @@
       dy = 0;
       food = spawnFood();
       score = 0;
+      normalScoreCount = 0; // Reset normal food counter
       scoreDisplay.textContent = score;
       speedThreshold = 6; // Reset speed to base speed
     }
