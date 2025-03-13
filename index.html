@@ -54,9 +54,35 @@
       border-radius: 5px;
       margin-top: 10px;
     }
-    #gameContainer {
-      margin-top: 20px;
-      display: none; /* Hide initially */
+    #gameModal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+    }
+    #gameContent {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+    }
+    #closeGame {
+      margin-top: 10px;
+      background: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px;
     }
   </style>
 </head>
@@ -69,18 +95,25 @@
     <h3>Welcome to the Cats & Guns Community</h3>
     <p>Click below to play Quick Draw Duel!</p>
     <button id="loadQuickDraw">Play Quick Draw Duel</button>
-    <div id="gameContainer"></div>
   </main>
   
   <footer>
     <p>&copy; 2025 Cats & Guns Central. All rights reserved.</p>
   </footer>
   
+  <div id="gameModal">
+    <div id="gameContent">
+      <button id="closeGame">Close</button>
+      <div id="gameContainer"></div>
+    </div>
+  </div>
+  
   <script>
       document.getElementById("loadQuickDraw").addEventListener("click", function() {
+          const gameModal = document.getElementById("gameModal");
           const gameContainer = document.getElementById("gameContainer");
-          gameContainer.innerHTML = ""; // Clear previous content
-          gameContainer.style.display = "block"; // Show the container
+          gameContainer.innerHTML = "";
+          gameModal.style.display = "flex";
 
           fetch("Guns/quick_draw.html")
               .then(response => response.text())
@@ -89,6 +122,11 @@
                   executeGameScripts();
               })
               .catch(error => console.error("Error loading the game:", error));
+      });
+
+      document.getElementById("closeGame").addEventListener("click", function() {
+          document.getElementById("gameModal").style.display = "none";
+          document.getElementById("gameContainer").innerHTML = "";
       });
 
       function executeGameScripts() {
