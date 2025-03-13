@@ -203,13 +203,13 @@
             clearTimeout(food.timeoutId);
           }
           // Increase speed by 5 times the normal increment
-          speedThreshold = Math.max(speedThreshold - 5, 2);
+          speedThreshold = Math.max(speedThreshold - .1, 2);
         } else { // Normal food
           score += food.points; // Adds 1 point
           normalScoreCount++;
           // Every 10 normal points, increase speed slightly
           if (normalScoreCount % 10 === 0) {
-            speedThreshold = Math.max(speedThreshold - 1, 2);
+            speedThreshold = Math.max(speedThreshold - .02, 2);
           }
         }
         scoreDisplay.textContent = score;
