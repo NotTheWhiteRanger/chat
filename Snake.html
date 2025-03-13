@@ -150,6 +150,8 @@
     let normalScoreCount = 0; // Tracks points from normal food for speed increase
     // Flag to prevent multiple direction changes in one frame
     let changingDirection = false;
+    // Tracks when to change background color
+    let lastBackgroundChangeScore = 0;
 
     // Set initial game speed threshold (higher value means slower game speed)
     let speedThreshold = 6; // Base speed is slower than before
@@ -185,6 +187,15 @@
       return newFood;
     }
 
+    // Function to change the canvas background color randomly
+    function changeBackgroundColor() {
+      let randomColor = Math.floor(Math.random() * 16777215).toString(16);
+      while(randomColor.length < 6) {
+        randomColor = "0" + randomColor;
+      }
+      canvas.style.backgroundColor = "#" + randomColor;
+    }
+
     // Main game loop using requestAnimationFrame for smooth animation
     function gameLoop() {
       requestAnimationFrame(gameLoop);
@@ -203,16 +214,21 @@
             clearTimeout(food.timeoutId);
           }
           // Increase speed by 5 times the normal increment
-          speedThreshold = Math.max(speedThreshold - .1, 2);
+          speedThreshold = Math.max(speedThreshold - 0.1, 2);
         } else { // Normal food
           score += food.points; // Adds 1 point
           normalScoreCount++;
           // Every 10 normal points, increase speed slightly
           if (normalScoreCount % 10 === 0) {
-            speedThreshold = Math.max(speedThreshold - .02, 2);
+            speedThreshold = Math.max(speedThreshold - 0.02, 2);
           }
         }
         scoreDisplay.textContent = score;
+        // Change background color every 25 points
+        if (score >= lastBackgroundChangeScore + 25) {
+          lastBackgroundChangeScore += 25;
+          changeBackgroundColor();
+        }
         food = spawnFood();
       } else {
         snake.pop();
@@ -257,6 +273,9 @@
       normalScoreCount = 0; // Reset normal food counter
       scoreDisplay.textContent = score;
       speedThreshold = 6; // Reset speed to base speed
+      lastBackgroundChangeScore = 0; // Reset background change threshold
+      // Reset canvas background to default (optional)
+      canvas.style.backgroundColor = "#000";
     }
 
     // Handle game over: save score and reset game state
