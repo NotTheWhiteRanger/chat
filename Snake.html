@@ -150,6 +150,9 @@
     // Flag to prevent multiple direction changes in one frame
     let changingDirection = false;
 
+    // Set initial game speed threshold (higher value means slower game speed)
+    let speedThreshold = 6; // Base speed is slower than before
+
     // Return a random position for the food within the canvas grid
     function getRandomFoodPosition() {
       return {
@@ -158,8 +161,8 @@
       };
     }
 
-    // Function to spawn food with a 5% chance of being "special" (yellow, 5 points) 
-    // Special food will disappear after 3 seconds if not picked up.
+    // Function to spawn food with a 5% chance of being "special" (yellow, 5 points)
+    // Special food will now despawn after 5 seconds if not picked up.
     function spawnFood() {
       const pos = getRandomFoodPosition();
       let type = "normal";
@@ -176,7 +179,7 @@
           if (food && food.type === "special" && food.x === newFood.x && food.y === newFood.y) {
             food = spawnFood();
           }
-        }, 3000);
+        }, 5000); // Despawn after 5 seconds
       }
       return newFood;
     }
@@ -184,7 +187,7 @@
     // Main game loop using requestAnimationFrame for smooth animation
     function gameLoop() {
       requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
+      if (++count < speedThreshold) return;
       count = 0;
       
       // Create new head based on the current direction
@@ -196,9 +199,12 @@
         // Increase score by food.points (1 for normal, 5 for special)
         score += food.points;
         scoreDisplay.textContent = score;
-        // If it's special food, clear the timeout so it doesn't trigger after being eaten.
-        if (food.type === "special" && food.timeoutId) {
-          clearTimeout(food.timeoutId);
+        // If it's special food, clear the timeout and increase game speed (i.e., reduce the threshold)
+        if (food.type === "special") {
+          if (food.timeoutId) {
+            clearTimeout(food.timeoutId);
+          }
+          speedThreshold = Math.max(speedThreshold - 1, 2);  // Increase speed but ensure it doesn't get too fast
         }
         food = spawnFood();
       } else {
@@ -242,6 +248,7 @@
       food = spawnFood();
       score = 0;
       scoreDisplay.textContent = score;
+      speedThreshold = 6; // Reset speed to base speed
     }
 
     // Handle game over: save score and reset game state
