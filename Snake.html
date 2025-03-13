@@ -1,228 +1,293 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Snake Game - Cats & Guns Central</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snake Game with Global Leaderboard</title>
   <style>
     body {
-      background: #000;
-      color: #fff;
       font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
       margin: 0;
-    }
-    header {
-      margin-bottom: 20px;
-    }
-    header a {
-      color: #1a73e8;
-      text-decoration: none;
-      font-weight: bold;
-    }
-    canvas {
-      background: #eee;
-      border: 1px solid #ddd;
-      display: block;
-      margin: 0 auto;
-    }
-    #scoreContainer {
-      margin-top: 10px;
-    }
-    #leaderboard {
-      list-style: none;
       padding: 0;
+      background-color: #f0f0f0;
     }
-    #leaderboard li {
-      margin: 3px 0;
+    /* Containers */
+    #login-container, #game-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+    #login-container { display: block; }
+    #game-container { display: none; }
+    /* Canvas styling */
+    #gameCanvas {
+      background: #000;
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+    }
+    /* Leaderboard styling */
+    #leaderboard {
+      margin-top: 20px;
+    }
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+    }
+    /* Logout button */
+    #logout-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 5px 10px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Snake Game</h1>
-    <nav>
-      <!-- Make sure this link name matches your actual index file -->
-      <a href="index.html">Back to Main Page</a>
-    </nav>
-  </header>
-  
-  <canvas id="snakeGameCanvas" width="600" height="400"></canvas>
-  <div id="scoreContainer">
-    <p>Score: <span id="scoreDisplay">0</span></p>
-    <h3>Leaderboard</h3>
-    <ul id="leaderboard"></ul>
+
+  <!-- Login Container -->
+  <div id="login-container">
+    <h2>Sign In</h2>
+    <input type="email" id="email" placeholder="Email"><br><br>
+    <input type="password" id="password" placeholder="Password"><br><br>
+    <button id="login-btn">Sign In</button>
+    <p id="login-error" style="color: red;"></p>
   </div>
+
+  <!-- Game Container -->
+  <div id="game-container">
+    <button id="logout-btn">Logout</button>
+    <h1>Snake Game</h1>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <p>Score: <span id="score">0</span></p>
+    <div id="leaderboard">
+      <h2>Global Leaderboard</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   
-  <script type="module">
-    /***** Firebase Imports *****/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import {
-      getDatabase,
-      ref,
-      push,
-      query,
-      orderByChild,
-      limitToLast,
-      get
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-    
-    /***** Firebase Config (with your snake-9161f-default-rtdb URL) *****/
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
+  <script>
+    // Firebase configuration – replace the placeholders with your actual config details.
+    var firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "snake-9161f.firebaseapp.com",
       databaseURL: "https://snake-9161f-default-rtdb.firebaseio.com",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
+      projectId: "snake-9161f",
+      storageBucket: "snake-9161f.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
-    
-    /***** Initialize Firebase *****/
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
-    
-    /***** Track User & Snake Game State *****/
-    let currentUsername = "Anonymous";
-    const canvas = document.getElementById("snakeGameCanvas");
-    const ctx = canvas.getContext("2d");
-    const grid = 20;
-    let count = 0;
-    let snake = [{ x: 160, y: 160 }];
-    let dx = grid;
-    let dy = 0;
-    let food = { x: 320, y: 320 };
-    let score = 0;
-    const scoreDisplay = document.getElementById("scoreDisplay");
-    scoreDisplay.textContent = score;
-    
-    /***** Listen for Auth State Changes *****/
-    onAuthStateChanged(auth, (user) => {
-      if (user && user.email) {
-        // If the user is signed in, set the username
-        currentUsername = user.email.split("@")[0];
-        console.log("Snake page sees user:", user.email);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  
+    // DOM Elements
+    const loginContainer = document.getElementById('login-container');
+    const gameContainer = document.getElementById('game-container');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginError = document.getElementById('login-error');
+  
+    // Listen for authentication state changes
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        loginContainer.style.display = "none";
+        gameContainer.style.display = "block";
+        startGame();
+        loadLeaderboard();
       } else {
-        currentUsername = "Anonymous";
-        console.log("No user is signed in; defaulting to Anonymous.");
+        gameContainer.style.display = "none";
+        loginContainer.style.display = "block";
       }
-      // Now that we know the user status, display the leaderboard
-      displaySnakeHighscores();
     });
-    
-    /***** Save High Score If Signed In *****/
-    function updateSnakeHighscore(finalScore) {
-      if (currentUsername === "Anonymous") {
-        console.log("Score not recorded; user not signed in.");
+  
+    // Sign In Event
+    loginBtn.addEventListener('click', () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+          loginError.textContent = "";
+        })
+        .catch(error => {
+          loginError.textContent = error.message;
+        });
+    });
+  
+    // Logout Event
+    logoutBtn.addEventListener('click', () => {
+      firebase.auth().signOut().then(() => {
+        location.reload();
+      });
+    });
+  
+    // -------------------------------
+    // Snake Game Implementation
+    // -------------------------------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let snake = [{x: 10, y: 10}];
+    let direction = {x: 0, y: 0};
+    let apple = {x: 15, y: 15};
+    let score = 0;
+    const gridSize = 20; // pixel size of each cell
+    const canvasCells = canvas.width / gridSize;
+    let gameInterval;
+  
+    // Listen for arrow key presses to change snake direction.
+    document.addEventListener('keydown', e => {
+      switch(e.key) {
+        case "ArrowUp":
+          if(direction.y === 0) { direction = {x: 0, y: -1}; }
+          break;
+        case "ArrowDown":
+          if(direction.y === 0) { direction = {x: 0, y: 1}; }
+          break;
+        case "ArrowLeft":
+          if(direction.x === 0) { direction = {x: -1, y: 0}; }
+          break;
+        case "ArrowRight":
+          if(direction.x === 0) { direction = {x: 1, y: 0}; }
+          break;
+      }
+    });
+  
+    // Start or restart the game.
+    function startGame() {
+      resetGame();
+      gameInterval = setInterval(gameLoop, 100);
+    }
+  
+    // Reset game state.
+    function resetGame() {
+      snake = [{x: 10, y: 10}];
+      direction = {x: 0, y: 0};
+      apple = {
+        x: Math.floor(Math.random() * canvasCells),
+        y: Math.floor(Math.random() * canvasCells)
+      };
+      score = 0;
+      document.getElementById('score').textContent = score;
+    }
+  
+    // Main game loop.
+    function gameLoop() {
+      const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+  
+      // Check for collision with walls.
+      if(head.x < 0 || head.x >= canvasCells || head.y < 0 || head.y >= canvasCells) {
+        gameOver();
         return;
       }
-      const snakeScoreData = {
-        username: currentUsername,
-        score: finalScore,
-        timestamp: new Date().toISOString()
-      };
-      push(ref(db, "snake"), snakeScoreData)
-        .then(() => console.log("High score recorded:", snakeScoreData))
-        .catch((error) => console.error("Error recording high score:", error));
-    }
-    
-    /***** Display Top 5 High Scores *****/
-    function displaySnakeHighscores() {
-      const snakeScoresRef = ref(db, "snake");
-      const snakeQuery = query(snakeScoresRef, orderByChild("score"), limitToLast(5));
-      get(snakeQuery)
-        .then((snapshot) => {
-          const scoresArray = [];
-          snapshot.forEach((childSnapshot) => {
-            scoresArray.push(childSnapshot.val());
-          });
-          // Sort scores descending
-          scoresArray.sort((a, b) => b.score - a.score);
-          const leaderboard = document.getElementById("leaderboard");
-          leaderboard.innerHTML = "";
-          scoresArray.forEach((scoreObj) => {
-            const li = document.createElement("li");
-            li.textContent = scoreObj.username + ": " + scoreObj.score;
-            leaderboard.appendChild(li);
-          });
-        })
-        .catch((error) => {
-          console.error("Error fetching high scores:", error);
-        });
-    }
-    
-    /***** Random Food Position *****/
-    function getRandomFoodPosition() {
-      return {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
-    }
-    
-    /***** Main Game Loop *****/
-    function gameLoop() {
-      requestAnimationFrame(gameLoop);
-      if (++count < 4) return;
-      count = 0;
-      
-      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+  
+      // Check for collision with itself.
+      for(let segment of snake) {
+        if(head.x === segment.x && head.y === segment.y) {
+          gameOver();
+          return;
+        }
+      }
+  
       snake.unshift(head);
-      
-      // Check if we ate the food
-      if (head.x === food.x && head.y === food.y) {
+  
+      // Check if apple is eaten.
+      if(head.x === apple.x && head.y === apple.y) {
         score++;
-        scoreDisplay.textContent = score;
-        food = getRandomFoodPosition();
+        document.getElementById('score').textContent = score;
+        apple = {
+          x: Math.floor(Math.random() * canvasCells),
+          y: Math.floor(Math.random() * canvasCells)
+        };
       } else {
         snake.pop();
       }
-      
-      // Check for collisions
-      if (
-        head.x < 0 || head.x >= canvas.width ||
-        head.y < 0 || head.y >= canvas.height ||
-        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
-      ) {
-        // On collision, record score if user is signed in
-        if (currentUsername !== "Anonymous") {
-          updateSnakeHighscore(score);
-        }
-        // Reset game state
-        snake = [{ x: 160, y: 160 }];
-        dx = grid;
-        dy = 0;
-        score = 0;
-        scoreDisplay.textContent = score;
-      }
-      
-      // Render everything
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+      draw();
+    }
+  
+    // Draw the game state on the canvas.
+    function draw() {
+      // Clear the canvas.
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+      // Draw the apple.
       ctx.fillStyle = "red";
-      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
-      ctx.fillStyle = "green";
+      ctx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize, gridSize);
+  
+      // Draw the snake.
+      ctx.fillStyle = "lime";
       snake.forEach(segment => {
-        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 1, gridSize - 1);
       });
     }
-    
-    /***** Keyboard Controls *****/
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" && dx === 0) {
-        dx = -grid; dy = 0;
-      } else if (e.key === "ArrowRight" && dx === 0) {
-        dx = grid; dy = 0;
-      } else if (e.key === "ArrowUp" && dy === 0) {
-        dx = 0; dy = -grid;
-      } else if (e.key === "ArrowDown" && dy === 0) {
-        dx = 0; dy = grid;
+  
+    // Handle game over.
+    function gameOver() {
+      clearInterval(gameInterval);
+      alert("Game Over! Your score: " + score);
+      saveScore(score);
+      resetGame();
+      gameInterval = setInterval(gameLoop, 100);
+    }
+  
+    // -------------------------------
+    // Firebase Leaderboard Integration
+    // -------------------------------
+    // Save the current user's score to the leaderboard.
+    function saveScore(score) {
+      const user = firebase.auth().currentUser;
+      if(user) {
+        const leaderboardRef = firebase.database().ref('leaderboard');
+        leaderboardRef.push({
+          username: user.email,
+          score: score,
+          timestamp: Date.now()
+        });
       }
-    });
-    
-    /***** Start Game *****/
-    gameLoop();
+    }
+  
+    // Load and display the top 10 scores from the leaderboard.
+    function loadLeaderboard() {
+      const leaderboardRef = firebase.database().ref('leaderboard').orderByChild('score').limitToLast(10);
+      leaderboardRef.on('value', snapshot => {
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        leaderboardBody.innerHTML = "";
+        let scores = [];
+        snapshot.forEach(childSnapshot => {
+          scores.push(childSnapshot.val());
+        });
+        // Sort scores in descending order.
+        scores.sort((a, b) => b.score - a.score);
+  
+        scores.forEach(entry => {
+          const row = document.createElement('tr');
+          const userCell = document.createElement('td');
+          const scoreCell = document.createElement('td');
+          userCell.textContent = entry.username;
+          scoreCell.textContent = entry.score;
+          row.appendChild(userCell);
+          row.appendChild(scoreCell);
+          leaderboardBody.appendChild(row);
+        });
+      });
+    }
   </script>
 </body>
 </html>
