@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Cats & Guns Central</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Styles -->
   <style>
     :root {
       --primary-color: #1a73e8;
@@ -34,70 +33,6 @@
       position: relative;
       font-size: 14px;
     }
-    /* Inverted color scheme */
-    body.inverted {
-      filter: invert(1);
-    }
-    header {
-      background: linear-gradient(135deg, var(--primary-color), #4285f4);
-      color: var(--white);
-      padding: 5px 0;
-      text-align: center;
-      box-shadow: 0 2px 4px var(--shadow);
-      z-index: 10;
-    }
-    header h1 {
-      font-size: 1.2em;
-      margin-bottom: 2px;
-    }
-    nav ul {
-      list-style: none;
-      display: flex;
-      justify-content: center;
-      padding: 0;
-      margin: 0;
-    }
-    nav ul li {
-      margin: 0 10px;
-      position: relative;
-    }
-    nav ul li a {
-      color: var(--white);
-      font-weight: bold;
-      text-decoration: none;
-      transition: color 0.3s;
-      font-size: 0.9em;
-    }
-    nav ul li a:hover {
-      color: #cce0ff;
-    }
-    /* Unread badge styling */
-    #unreadBadge {
-      background-color: red;
-      color: white;
-      border-radius: 50%;
-      padding: 2px 6px;
-      font-size: 12px;
-      margin-left: 5px;
-      vertical-align: middle;
-      display: none;
-    }
-    .hero {
-      position: relative;
-      background: transparent;
-      height: 400px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--white);
-      text-align: center;
-    }
-    .hero h2 {
-      position: relative;
-      font-size: 2.5em;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-      margin: 0 20px;
-    }
     main {
       max-width: 800px;
       width: 100%;
@@ -109,389 +44,56 @@
       font-size: 0.95em;
       text-align: center;
     }
-    main h3 {
-      color: var(--primary-color);
-      margin-bottom: 5px;
-      font-size: 1em;
-    }
-    main p {
-      margin-bottom: 5px;
-      font-size: 0.9em;
-    }
-    footer {
-      background: var(--primary-color);
-      color: var(--white);
-      text-align: center;
-      padding: 10px 0;
-      font-size: 0.85em;
-    }
-    /* Chat Modal */
-    #chatModal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.6);
-    }
-    #chatContent {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 20px;
-      width: 90%;
-      max-width: 600px;
-      border-radius: 12px;
-      position: relative;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    #closeChat {
-      float: right;
-      font-size: 1.2em;
-      cursor: pointer;
-      color: #555;
-    }
-    /* Chat log styling with flex layout for bubbles */
-    #chatLog {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 300px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 10px;
+    button {
       padding: 10px;
-      overflow-y: auto;
-      background: #f7f7f7;
-    }
-    /* iPhone-style message bubbles */
-    .chat-message {
-      max-width: 65%;
-      margin: 8px 0;
-      padding: 10px 14px;
-      border-radius: 20px;
-      overflow-wrap: break-word;
-      box-sizing: border-box;
-      font-size: 0.9em;
-      line-height: 1.3;
-      position: relative;
-    }
-    .chat-message.sent {
-      background-color: #007aff;
+      font-size: 16px;
+      cursor: pointer;
+      background: var(--primary-color);
       color: white;
-      align-self: flex-end;
-    }
-    .chat-message.received {
-      background-color: #e5e5ea;
-      color: black;
-      align-self: flex-start;
-    }
-    .chat-message span.timestamp {
-      display: block;
-      font-size: 10px;
-      margin-top: 4px;
-      opacity: 0.8;
-      text-align: right;
-    }
-    /* Input and button styling for chat */
-    #chatMessage {
-      width: 75%;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 5px;
-      font-size: 0.9em;
-    }
-    #sendChat, #clearFirebaseChat {
-      padding: 6px 10px;
       border: none;
-      border-radius: 4px;
-      background: var(--primary-color);
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.3s;
-      font-size: 0.9em;
-      margin-top: 5px;
+      border-radius: 5px;
+      margin-top: 10px;
     }
-    #sendChat:hover, #clearFirebaseChat:hover {
-      background: var(--primary-hover);
-    }
-    /* Search Bar */
-    #searchBarContainer {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 20;
-    }
-    #searchBar {
-      padding: 5px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-    /* Invisible Invert Button */
-    #invertBtn {
-      position: fixed;
-      top: 41%;
-      left: 60.5%;
-      transform: translate(-50%, -50%);
-      width: 25px;
-      height: 40px;
-      opacity: 0;
-      z-index: 1000;
-      cursor: pointer;
-      border: none;
-      background: transparent;
-    }
-    /* Simple login form */
-    #loginContainer {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      background: rgba(255,255,255,0.9);
-      padding: 10px;
-      border-radius: 6px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      z-index: 30;
-    }
-    #loginContainer input {
-      margin: 5px 0;
-      display: block;
-      width: 200px;
-      padding: 5px;
-      font-size: 0.9em;
-    }
-    #signInBtn {
-      padding: 5px 10px;
-      background: var(--primary-color);
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 5px;
-      font-size: 0.9em;
+    #gameContainer {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <!-- Search Bar -->
-  <div id="searchBarContainer">
-    <input type="text" id="searchBar" placeholder="Search..." />
-  </div>
-
-  <!-- Simple Login Form -->
-  <div id="loginContainer">
-    <input type="email" id="emailInput" placeholder="Email" />
-    <input type="password" id="passwordInput" placeholder="Password" />
-    <button id="signInBtn">Sign In</button>
-  </div>
-
   <header>
     <h1>Cats & Guns Central</h1>
-    <nav>
-      <ul>
-        <!-- Home now redirects to the Snake game page -->
-        <li><a href="Snake.html" id="homeLink">Home</a></li>
-        <li><a href="#" id="gunsLink">Guns</a></li>
-        <li><a href="#" id="catsLink">Cats</a></li>
-        <li>
-          <a href="#" id="chatLink">Chat</a>
-          <span id="unreadBadge"></span>
-        </li>
-        <li><a href="#">Contact</a></li>
-      </ul>
-    </nav>
   </header>
-
-  <div class="hero">
-    <h2></h2>
-  </div>
-
+  
   <main>
     <h3>Welcome to the Cats & Guns Community</h3>
-    <p>
-      Here at Cats & Guns Central, we combine our two passions: adorable felines and high-powered firearms.
-    </p>
-    <p>
-      Explore our gallery of cat images, chat with fellow enthusiasts, and learn more about our unique community.
-    </p>
-    <p>
-      Click "Chat" above to talk with others about your favorite cat memes and firearms!
-    </p>
+    <p>Click below to play Quick Draw Duel!</p>
+    <button id="loadQuickDraw">Play Quick Draw Duel</button>
+    <div id="gameContainer"></div>
   </main>
-
+  
   <footer>
     <p>&copy; 2025 Cats & Guns Central. All rights reserved.</p>
   </footer>
+  
+  <script>
+      document.getElementById("loadQuickDraw").addEventListener("click", function() {
+          fetch("Guns/quick_draw.html")
+              .then(response => response.text())
+              .then(data => {
+                  document.getElementById("gameContainer").innerHTML = data;
+                  executeGameScripts();
+              })
+              .catch(error => console.error("Error loading the game:", error));
+      });
 
-  <!-- Chat Modal -->
-  <div id="chatModal">
-    <div id="chatContent">
-      <span id="closeChat">&times;</span>
-      <h2 style="margin-top:0;">Live Chat</h2>
-      <div id="chatLog"></div>
-      <input type="text" id="chatMessage" placeholder="Type your message..." />
-      <button id="sendChat">Send</button>
-      <button id="clearFirebaseChat">Clear Chat History</button>
-    </div>
-  </div>
-
-  <!-- Invisible Invert Button -->
-  <button id="invertBtn" aria-label="Invert Colors"></button>
-
-  <!-- Firebase, Auth & Chat Logic -->
-  <script type="module">
-    /***** Firebase Imports *****/
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, push, onChildAdded, remove, query, orderByChild, limitToLast, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-  
-    /***** Firebase Config *****/
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
-    };
-  
-    /***** Initialize Firebase *****/
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
-  
-    // Global variable to store current username
-    let currentUsername = "Anonymous";
-    let unreadCount = 0;
-  
-    /***** Simple Sign-In Logic *****/
-    const emailInput = document.getElementById("emailInput");
-    const passwordInput = document.getElementById("passwordInput");
-    const signInBtn = document.getElementById("signInBtn");
-  
-    signInBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-      signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-          currentUsername = email.split("@")[0];
-          alert("Signed in as " + currentUsername + "!");
-        })
-        .catch((error) => {
-          alert("Sign-in failed. Check console for details.");
-          console.error("Auth error:", error);
-        });
-    });
-  
-    /***** Search Bar Logic *****/
-    const searchBar = document.getElementById("searchBar");
-    searchBar.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        if (searchBar.value === "CrewhuScammedUs") {
-          window.location.href = "encryptionTool.html";
-        }
+      function executeGameScripts() {
+          const scripts = document.getElementById("gameContainer").getElementsByTagName("script");
+          for (let i = 0; i < scripts.length; i++) {
+              const newScript = document.createElement("script");
+              newScript.textContent = scripts[i].textContent;
+              document.body.appendChild(newScript);
+          }
       }
-    });
-  
-    /***** Global Chat Logic *****/
-    const chatModal = document.getElementById("chatModal");
-    const closeChat = document.getElementById("closeChat");
-    const chatLink = document.getElementById("chatLink");
-    const chatLog = document.getElementById("chatLog");
-    const chatMessage = document.getElementById("chatMessage");
-    const sendChat = document.getElementById("sendChat");
-    const clearFirebaseChat = document.getElementById("clearFirebaseChat");
-    const unreadBadge = document.getElementById("unreadBadge");
-  
-    chatLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      if (currentUsername === "Anonymous") {
-        alert("Please sign in to chat.");
-        return;
-      }
-      chatModal.style.display = "block";
-      unreadCount = 0;
-      updateUnreadBadge();
-    });
-  
-    closeChat.addEventListener("click", () => {
-      chatModal.style.display = "none";
-    });
-  
-    window.addEventListener("click", (event) => {
-      if (event.target === chatModal) {
-        chatModal.style.display = "none";
-      }
-    });
-  
-    sendChat.addEventListener("click", () => {
-      if (currentUsername === "Anonymous") {
-        alert("Please sign in to chat.");
-        return;
-      }
-      const message = chatMessage.value.trim();
-      if (!message) return;
-      const timeStamp = new Date().toLocaleTimeString();
-      const chatData = { username: currentUsername, message, time: timeStamp };
-      push(ref(db, "chat"), chatData);
-      chatMessage.value = "";
-    });
-  
-    chatMessage.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        sendChat.click();
-      }
-    });
-  
-    function updateUnreadBadge() {
-      if (unreadCount > 0) {
-        unreadBadge.textContent = unreadCount;
-        unreadBadge.style.display = "inline-block";
-      } else {
-        unreadBadge.style.display = "none";
-      }
-    }
-  
-    onChildAdded(ref(db, "chat"), (snapshot) => {
-      const data = snapshot.val();
-      const messageElem = document.createElement("div");
-      messageElem.classList.add("chat-message");
-      if (currentUsername !== "Anonymous" && data.username === currentUsername) {
-        messageElem.classList.add("sent");
-        messageElem.textContent = data.message;
-      } else {
-        messageElem.classList.add("received");
-        messageElem.textContent = data.username + ": " + data.message;
-      }
-      const timeSpan = document.createElement("span");
-      timeSpan.classList.add("timestamp");
-      timeSpan.textContent = data.time;
-      messageElem.appendChild(timeSpan);
-      chatLog.appendChild(messageElem);
-      chatLog.scrollTop = chatLog.scrollHeight;
-      if (chatModal.style.display !== "block") {
-        unreadCount++;
-        updateUnreadBadge();
-      }
-    });
-  
-    clearFirebaseChat.addEventListener("click", () => {
-      remove(ref(db, "chat"))
-        .then(() => {
-          chatLog.innerHTML = "";
-        })
-        .catch((error) => {
-          console.error("Error clearing chat history:", error);
-        });
-    });
-  
-    /***** Invert Button *****/
-    const invertBtn = document.getElementById("invertBtn");
-    invertBtn.addEventListener("click", () => {
-      document.body.classList.toggle("inverted");
-    });
   </script>
 </body>
 </html>
