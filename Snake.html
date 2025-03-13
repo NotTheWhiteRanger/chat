@@ -82,15 +82,15 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   
   <script>
-    // Firebase configuration – update as needed.
+    // Firebase configuration – update messagingSenderId and appId as needed.
     var firebaseConfig = {
       apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
       authDomain: "new-chat-8d4f4-default-rtdb.firebaseio.com/",
       databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
       projectId: "new-chat-8d4f4",
       storageBucket: "snake-9161f.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",  // Replace with your actual messaging sender ID
+      appId: "YOUR_APP_ID"  // Replace with your actual app ID
     };
     firebase.initializeApp(firebaseConfig);
 
@@ -142,12 +142,14 @@
     const grid = 20;
     let count = 0;
     let snake = [{ x: 160, y: 160 }];
-    let dx = grid; // initial movement right
+    let dx = grid; // initial movement to the right
     let dy = 0;
     let food = getRandomFoodPosition();
     let score = 0;
+    // Flag to prevent multiple direction changes in one frame
     let changingDirection = false;
 
+    // Return a random position for the food within the canvas grid
     function getRandomFoodPosition() {
       return {
         x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
@@ -155,24 +157,17 @@
       };
     }
 
-    // Draw worm segment (ellipse) at a given grid position.
-    function drawWorm(x, y, rx, ry, color) {
-      const centerX = x + grid / 2;
-      const centerY = y + grid / 2;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.ellipse(centerX, centerY, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
+    // Main game loop using requestAnimationFrame for smooth animation
     function gameLoop() {
       requestAnimationFrame(gameLoop);
       if (++count < 4) return;
       count = 0;
       
+      // Create new head based on the current direction
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
 
+      // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
         score++;
         scoreDisplay.textContent = score;
@@ -181,35 +176,36 @@
         snake.pop();
       }
 
+      // Check for collisions with walls or self
       if (
         head.x < 0 || head.x >= canvas.width ||
         head.y < 0 || head.y >= canvas.height ||
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
       ) {
         gameOver();
-        return;
+        return;  // Stop further drawing in this frame
       }
 
+      // Draw food and snake
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // Draw food as a smaller worm segment.
-      drawWorm(food.x, food.y, grid * 0.2, grid * 0.1, "red");
-      // Draw snake segments as worm segments (head is brighter).
-      snake.forEach((segment, index) => {
-        if (index === 0) {
-          drawWorm(segment.x, segment.y, grid * 0.4, grid * 0.2, "lime");
-        } else {
-          drawWorm(segment.x, segment.y, grid * 0.4, grid * 0.2, "green");
-        }
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+      ctx.fillStyle = "green";
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
       });
       
+      // Reset the direction-change flag at the end of the frame
       changingDirection = false;
     }
 
+    // Start or restart the game
     function startGame() {
       resetGame();
       gameLoop();
     }
 
+    // Reset game state
     function resetGame() {
       snake = [{ x: 160, y: 160 }];
       dx = grid;
@@ -219,15 +215,19 @@
       scoreDisplay.textContent = score;
     }
 
+    // Handle game over: save score and reset game state
     function gameOver() {
       alert("Game Over! Your score: " + score);
       saveScore(score);
       resetGame();
     }
 
+    // Listen for arrow key presses to control the snake
     document.addEventListener("keydown", (e) => {
+      // Prevent multiple rapid changes in one frame
       if (changingDirection) return;
       
+      // Store the new direction values temporarily
       let newDx = dx;
       let newDy = dy;
       
@@ -241,7 +241,10 @@
         newDx = 0; newDy = grid;
       }
       
+      // Check to ensure that the new direction isn't directly opposite to the current one.
       if (newDx === -dx && newDy === -dy) return;
+      
+      // Update the direction and set the flag so that further changes won't register until the frame is done.
       dx = newDx;
       dy = newDy;
       changingDirection = true;
@@ -250,6 +253,7 @@
     // ------------------------------
     // Firebase Leaderboard Integration
     // ------------------------------
+    // Save the score to the "leaderboard" node using the player's first name (extracted from the email)
     function saveScore(score) {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -263,6 +267,8 @@
       }
     }
 
+    // Load and display the top three scores from the leaderboard.
+    // The scores are sorted in descending order and display only the player's first name.
     function loadLeaderboard() {
       const leaderboardRef = firebase.database().ref('leaderboard')
                               .orderByChild('score')
@@ -272,6 +278,7 @@
         snapshot.forEach(childSnapshot => {
           scores.push(childSnapshot.val());
         });
+        // Sort the scores in descending order
         scores.sort((a, b) => b.score - a.score);
         leaderboardBody.innerHTML = "";
         scores.forEach(entry => {
