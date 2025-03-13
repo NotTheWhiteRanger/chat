@@ -1,73 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quick Draw Duel</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-            background: #f4f4f4;
-        }
-        #quick-draw-game {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.2);
-            max-width: 400px;
-            margin: auto;
-        }
-        button {
-            padding: 10px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Quick Draw Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #222;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      font-size: 2em;
+    }
+    #message {
+      max-width: 90%;
+    }
+  </style>
 </head>
 <body>
+  <div id="message">Click to start</div>
+  <script>
+    let gameState = "idle"; // states: idle, waiting, ready
+    let startTime;
+    let timeoutID;
+    const message = document.getElementById("message");
 
-    <div id="quick-draw-game">
-        <h3>Quick Draw Duel</h3>
-        <p>Press "Start" and wait for the "DRAW!" signal. Press any key as fast as you can to win!</p>
-        <button id="start">Start</button>
-        <p id="message">Press "Start" to begin.</p>
-        <p id="reaction-time"></p>
-    </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const startButton = document.getElementById("start");
-            const message = document.getElementById("message");
-            const reactionTimeDisplay = document.getElementById("reaction-time");
-            let gameActive = false;
-            let drawTime;
-
-            startButton.addEventListener("click", () => {
-                message.textContent = "Get Ready...";
-                reactionTimeDisplay.textContent = "";
-                gameActive = false;
-
-                const delay = Math.random() * 3000 + 2000;
-                setTimeout(() => {
-                    message.textContent = "DRAW!";
-                    drawTime = Date.now();
-                    gameActive = true;
-                }, delay);
-            });
-
-            document.addEventListener("keydown", () => {
-                if (gameActive) {
-                    const reactionTime = Date.now() - drawTime;
-                    reactionTimeDisplay.textContent = `Reaction Time: ${reactionTime} ms`;
-                    message.textContent = "You shot!";
-                    gameActive = false;
-                }
-            });
-        });
-    </script>
-
+    document.body.addEventListener("click", function() {
+      if (gameState === "idle") {
+        message.textContent = "Get Ready...";
+        gameState = "waiting";
+        timeoutID = setTimeout(() => {
+          message.textContent = "DRAW!";
+          startTime = new Date().getTime();
+          gameState = "ready";
+        }, Math.random() * 3000 + 2000);
+      } else if (gameState === "waiting") {
+        clearTimeout(timeoutID);
+        message.textContent = "Too soon! Click to try again.";
+        gameState = "idle";
+      } else if (gameState === "ready") {
+        const reactionTime = new Date().getTime() - startTime;
+        message.textContent = `Your reaction time: ${reactionTime} ms. Click to play again.`;
+        gameState = "idle";
+      }
+    });
+  </script>
 </body>
 </html>
-
