@@ -12,7 +12,6 @@
     button { padding: 5px 10px; margin: 3px; border: none; border-radius: 3px; cursor: pointer; }
     .btn-green { background: darkgreen; color: white; }
     .btn-gray { background: dimgray; color: white; }
-    #logArea { width: 100%; height: 100px; display: none; }
     .small-input { width: 50px; }
   </style>
 </head>
@@ -90,7 +89,6 @@
     <button id="resetSettingsButton" class="btn-gray">Reset Settings</button>
     <button id="reorderButton" class="btn-gray">Reorder Ciphers</button>
     <button id="restoreOrderButton" class="btn-gray">Restore Order</button>
-    <button id="toggleLogButton" class="btn-gray">Show Log</button>
     <br>
     <span id="orderLabel">Cipher Order: (default)</span>
   </div>
@@ -99,27 +97,16 @@
   <input type="file" id="importSettingsInput" style="display:none">
   <input type="file" id="importProfilesInput" style="display:none">
 
-  <!-- Log Area -->
-  <div class="section">
-    <label for="logArea">Log:</label><br>
-    <textarea id="logArea" readonly></textarea>
-  </div>
-
   <script>
     let profiles = {}, customCipherOrder = [];
-
-    function log(msg) {
-      const logArea = document.getElementById("logArea");
-      logArea.value += `[${new Date().toLocaleString()}] ${msg}\n`;
-      logArea.scrollTop = logArea.scrollHeight;
-    }
 
     function trimInput() {
       let inp = document.getElementById("inputText");
       if (inp.value.length >= 2) {
         inp.value = inp.value.slice(1, -1);
-        log("Trimmed input.");
-      } else alert("Input too short to trim.");
+      } else {
+        alert("Input too short to trim.");
+      }
     }
 
     // Cipher Functions
@@ -149,7 +136,9 @@
           if (code < 0) code += 26;
           result += String.fromCharCode(code + 65);
           keyIndex++;
-        } else result += c;
+        } else {
+          result += c;
+        }
       }
       return result;
     }
@@ -171,7 +160,11 @@
                          .sort((a, b) => a.l.localeCompare(b.l))
                          .map(o => o.i);
         let out = "";
-        order.forEach(c => { for (let r = 0; r < rows; r++) out += table[r][c]; });
+        order.forEach(c => {
+          for (let r = 0; r < rows; r++) {
+            out += table[r][c];
+          }
+        });
         return out;
       } else {
         let numFull = text.length % cols || cols;
@@ -186,7 +179,9 @@
         });
         let out = "";
         for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) out += (colsArr[c] && colsArr[c][r]) || "";
+          for (let c = 0; c < cols; c++) {
+            out += (colsArr[c] && colsArr[c][r]) || "";
+          }
         }
         return out.replace(/X+$/, "");
       }
@@ -200,7 +195,9 @@
       }).join("");
     }
 
-    function reverseCipher(text) { return text.split("").reverse().join(""); }
+    function reverseCipher(text) {
+      return text.split("").reverse().join("");
+    }
 
     function beaufort(text, key) {
       text = text.toUpperCase();
@@ -212,8 +209,11 @@
         if (alpha.includes(c)) {
           let pos = (alpha.indexOf(key[ki % key.length]) - alpha.indexOf(c)) % 26;
           if (pos < 0) pos += 26;
-          res += alpha[pos]; ki++;
-        } else res += c;
+          res += alpha[pos];
+          ki++;
+        } else {
+          res += c;
+        }
       }
       return res;
     }
@@ -223,6 +223,7 @@
       let state = seed % m;
       return () => { state = (a * state) % m; return state / m; }
     }
+
     function shuffle(text, key, decrypt = false) {
       if (!key.trim()) throw "Shuffle requires a key.";
       let n = text.length;
@@ -248,7 +249,9 @@
     function processCiphers(text, decrypt = false) {
       let list = [];
       if (customCipherOrder.length) {
-        customCipherOrder.forEach(c => { if (document.getElementById("checkbox_" + c).checked) list.push(c); });
+        customCipherOrder.forEach(c => {
+          if (document.getElementById("checkbox_" + c).checked) list.push(c);
+        });
       } else {
         ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"].forEach(c => {
           if (document.getElementById("checkbox_" + c).checked) list.push(c);
@@ -315,9 +318,9 @@
       profiles[name] = prof;
       let sel = document.getElementById("profileSelect");
       let opt = document.createElement("option");
-      opt.value = name; opt.text = name;
+      opt.value = name; 
+      opt.text = name;
       sel.add(opt);
-      log("Profile '" + name + "' saved.");
       alert("Profile '" + name + "' saved.");
     }
     function deleteProfile() {
@@ -326,7 +329,6 @@
       if (confirm("Delete profile '" + name + "'?")) {
         delete profiles[name];
         sel.remove(sel.selectedIndex);
-        log("Profile '" + name + "' deleted.");
         alert("Profile '" + name + "' deleted.");
       }
     }
@@ -346,182 +348,4 @@
       document.getElementById("transpositionKey").value = p.transpositionKey;
       document.getElementById("beaufortKey").value = p.beaufortKey;
       document.getElementById("shuffleKey").value = p.shuffleKey;
-      customCipherOrder = p.order.slice();
-      document.getElementById("orderLabel").textContent = customCipherOrder.length ? "Cipher Order: " + customCipherOrder.join(" -> ") : "Cipher Order: (default)";
-      log("Profile '" + name + "' loaded.");
-    }
-    function exportSettings() {
-      let settings = {
-        Caesar: document.getElementById("checkbox_Caesar").checked,
-        Vigenere: document.getElementById("checkbox_Vigenere").checked,
-        Transposition: document.getElementById("checkbox_Transposition").checked,
-        Atbash: document.getElementById("checkbox_Atbash").checked,
-        Reverse: document.getElementById("checkbox_Reverse").checked,
-        Beaufort: document.getElementById("checkbox_Beaufort").checked,
-        Shuffle: document.getElementById("checkbox_Shuffle").checked,
-        caesarShift: document.getElementById("caesarShift").value,
-        vigenereKey: document.getElementById("vigenereKey").value,
-        transpositionKey: document.getElementById("transpositionKey").value,
-        beaufortKey: document.getElementById("beaufortKey").value,
-        shuffleKey: document.getElementById("shuffleKey").value,
-        order: customCipherOrder
-      };
-      let blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
-      let a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "EnchiridionSettings.json";
-      a.click();
-      log("Settings exported.");
-    }
-    function importSettings() {
-      document.getElementById("importSettingsInput").click();
-    }
-    document.getElementById("importSettingsInput").addEventListener("change", e => {
-      let file = e.target.files[0];
-      if (file) {
-        let reader = new FileReader();
-        reader.onload = evt => {
-          try {
-            let s = JSON.parse(evt.target.result);
-            document.getElementById("checkbox_Caesar").checked = s.Caesar;
-            document.getElementById("checkbox_Vigenere").checked = s.Vigenere;
-            document.getElementById("checkbox_Transposition").checked = s.Transposition;
-            document.getElementById("checkbox_Atbash").checked = s.Atbash;
-            document.getElementById("checkbox_Reverse").checked = s.Reverse;
-            document.getElementById("checkbox_Beaufort").checked = s.Beaufort;
-            document.getElementById("checkbox_Shuffle").checked = s.Shuffle;
-            document.getElementById("caesarShift").value = s.caesarShift;
-            document.getElementById("vigenereKey").value = s.vigenereKey;
-            document.getElementById("transpositionKey").value = s.transpositionKey;
-            document.getElementById("beaufortKey").value = s.beaufortKey;
-            document.getElementById("shuffleKey").value = s.shuffleKey;
-            customCipherOrder = s.order || [];
-            document.getElementById("orderLabel").textContent = customCipherOrder.length ? "Cipher Order: " + customCipherOrder.join(" -> ") : "Cipher Order: (default)";
-            log("Settings imported.");
-          } catch (e) { alert("Import error: " + e); log("Import error: " + e); }
-        };
-        reader.readAsText(file);
-      }
-    });
-    function exportProfiles() {
-      let blob = new Blob([JSON.stringify(profiles, null, 2)], { type: "application/json" });
-      let a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "EnchiridionProfiles.json";
-      a.click();
-      log("Profiles exported.");
-      alert("Profiles exported.");
-    }
-    function importProfiles() {
-      document.getElementById("importProfilesInput").click();
-    }
-    document.getElementById("importProfilesInput").addEventListener("change", e => {
-      let file = e.target.files[0];
-      if (file) {
-        let reader = new FileReader();
-        reader.onload = evt => {
-          try {
-            profiles = JSON.parse(evt.target.result);
-            let sel = document.getElementById("profileSelect");
-            sel.innerHTML = '<option value="">-- Select Profile --</option>';
-            for (let key in profiles) {
-              let opt = document.createElement("option");
-              opt.value = key; opt.text = key;
-              sel.add(opt);
-            }
-            log("Profiles imported.");
-            alert("Profiles imported.");
-          } catch (e) { alert("Import error: " + e); log("Import error: " + e); }
-        };
-        reader.readAsText(file);
-      }
-    });
-    function resetSettings() {
-      document.getElementById("checkbox_Caesar").checked = false;
-      document.getElementById("checkbox_Vigenere").checked = false;
-      document.getElementById("checkbox_Transposition").checked = false;
-      document.getElementById("checkbox_Atbash").checked = false;
-      document.getElementById("checkbox_Reverse").checked = false;
-      document.getElementById("checkbox_Beaufort").checked = false;
-      document.getElementById("checkbox_Shuffle").checked = false;
-      document.getElementById("caesarShift").value = 3;
-      document.getElementById("vigenereKey").value = "";
-      document.getElementById("transpositionKey").value = "";
-      document.getElementById("beaufortKey").value = "";
-      document.getElementById("shuffleKey").value = "";
-      customCipherOrder = [];
-      document.getElementById("orderLabel").textContent = "Cipher Order: (default)";
-      log("Settings reset.");
-    }
-    function reorderCiphers() {
-      let enabled = [];
-      ["Caesar","Vigenere","Transposition","Atbash","Reverse","Beaufort","Shuffle"].forEach(c => {
-        if (document.getElementById("checkbox_" + c).checked) enabled.push(c);
-      });
-      if (!enabled.length) { alert("No ciphers selected."); return; }
-      let order = prompt("New order (comma-separated):\n" + enabled.join(", "), enabled.join(","));
-      if (order) {
-        let arr = order.split(",").map(s => s.trim());
-        if (arr.sort().join(",") !== enabled.sort().join(",")) { alert("Invalid order."); return; }
-        customCipherOrder = arr;
-        document.getElementById("orderLabel").textContent = "Cipher Order: " + customCipherOrder.join(" -> ");
-        log("Cipher order updated: " + customCipherOrder.join(" -> "));
-      }
-    }
-    function restoreOrder() {
-      customCipherOrder = [];
-      document.getElementById("orderLabel").textContent = "Cipher Order: (default)";
-      log("Cipher order restored.");
-    }
-    function toggleLog() {
-      let logArea = document.getElementById("logArea"), btn = document.getElementById("toggleLogButton");
-      if (logArea.style.display === "none" || !logArea.style.display) {
-        logArea.style.display = "block"; btn.textContent = "Hide Log"; log("Log shown.");
-      } else {
-        logArea.style.display = "none"; btn.textContent = "Show Log"; log("Log hidden.");
-      }
-    }
-
-    // Event Listeners
-    document.getElementById("trimButton").addEventListener("click", trimInput);
-    document.getElementById("encryptButton").addEventListener("click", () => {
-      let txt = document.getElementById("inputText").value;
-      if (txt.trim() === "") { alert("Provide input."); return; }
-      try {
-        let enc = processCiphers(txt, false);
-        document.getElementById("outputText").value = '"' + enc + '"';
-        log("Encryption done.");
-      } catch (e) { }
-    });
-    document.getElementById("decryptButton").addEventListener("click", () => {
-      let txt = document.getElementById("inputText").value;
-      if (txt.trim() === "") { alert("Provide input."); return; }
-      try {
-        let dec = processCiphers(txt, true);
-        document.getElementById("outputText").value = '"' + dec + '"';
-        log("Decryption done.");
-      } catch (e) { }
-    });
-    document.getElementById("copyButton").addEventListener("click", () => {
-      let out = document.getElementById("outputText").value;
-      if (out) { navigator.clipboard.writeText(out); log("Copied output."); }
-    });
-    document.getElementById("clearButton").addEventListener("click", () => {
-      document.getElementById("inputText").value = "";
-      document.getElementById("outputText").value = "";
-      log("Cleared input/output.");
-    });
-    document.getElementById("resetSettingsButton").addEventListener("click", resetSettings);
-    document.getElementById("reorderButton").addEventListener("click", reorderCiphers);
-    document.getElementById("restoreOrderButton").addEventListener("click", restoreOrder);
-    document.getElementById("toggleLogButton").addEventListener("click", toggleLog);
-    document.getElementById("saveProfileButton").addEventListener("click", saveProfile);
-    document.getElementById("deleteProfileButton").addEventListener("click", deleteProfile);
-    document.getElementById("exportProfilesButton").addEventListener("click", exportProfiles);
-    document.getElementById("importProfilesButton").addEventListener("click", importProfiles);
-    document.getElementById("exportButton").addEventListener("click", exportSettings);
-    document.getElementById("importButton").addEventListener("click", importSettings);
-    document.getElementById("profileSelect").addEventListener("change", loadProfile);
-  </script>
-</body>
-</html>
+      cus
