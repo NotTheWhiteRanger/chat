@@ -2,279 +2,327 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enchiridion - Real-Time Encryption Tool</title>
+  <title>Enchiridion - Encrypt / Decrypt Tool</title>
   <style>
-    /* Overall Page Styling */
     body {
-      background: #000; /* deep black */
-      color: #39FF14;  /* neon green */
-      font-family: 'Roboto Mono', monospace;
+      background-color: #000;
+      color: #0f0;
+      font-family: "Segoe UI", Arial, sans-serif;
       padding: 20px;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-    }
-    #encryptionTool {
-      max-width: 800px;
-      width: 100%;
     }
     h1 {
-      font-size: 28px;
-      margin-bottom: 20px;
-      text-align: center;
-      text-shadow: 0 0 5px #39FF14;
-    }
-    /* Input, textarea, and button styling */
-    textarea, input {
-      font-size: 16px;
-      background-color: #111;
-      color: #39FF14;
-      border: 1px solid #39FF14;
-      border-radius: 4px;
-      padding: 8px;
-      width: calc(100% - 20px);
-      box-sizing: border-box;
-    }
-    textarea:focus, input:focus {
-      outline: none;
-      box-shadow: 0 0 5px #39FF14;
-    }
-    .button-green {
-      background-color: #1B5E20;
-      color: #FFF;
-      border: 1px solid #39FF14;
-      border-radius: 4px;
-      padding: 8px 12px;
-      margin: 5px 2px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-    .button-green:hover {
-      background-color: #2E7D32;
+      font-size: 1.8em;
+      font-weight: bold;
     }
     .section {
       margin-bottom: 20px;
     }
     label {
-      margin-right: 10px;
+      display: inline-block;
+      width: 120px;
     }
-    /* Special styling for readonly output textarea */
-    #outputText {
-      background-color: #222;
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      padding: 5px;
+      margin: 3px 0;
+      border: 1px solid #666;
+      border-radius: 3px;
     }
-    /* Mode Toggle Styling */
-    .mode-toggle label {
-      margin-right: 20px;
-      font-weight: bold;
+    textarea {
+      resize: vertical;
+    }
+    button {
+      padding: 5px 10px;
+      margin: 3px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .btn-green {
+      background-color: darkgreen;
+      color: white;
+    }
+    .btn-gray {
+      background-color: dimgray;
+      color: white;
+    }
+    .checkbox-group {
+      margin-bottom: 10px;
+    }
+    .checkbox-group label {
+      width: auto;
+      margin-right: 15px;
+    }
+    #logArea {
+      width: 100%;
+      height: 100px;
+      margin-top: 10px;
+      display: none;
+    }
+    .small-input {
+      width: 50px;
     }
   </style>
 </head>
 <body>
-  <div id="encryptionTool">
-    <h1>Enchiridion - Real-Time Encrypt/Decrypt</h1>
+  <h1>Enchiridion - Encrypt / Decrypt Tool</h1>
 
-    <!-- Mode Toggle -->
-    <div class="section mode-toggle">
-      <strong>Mode:</strong>
-      <label><input type="radio" name="mode" value="encrypt" checked> Encrypt</label>
-      <label><input type="radio" name="mode" value="decrypt"> Decrypt</label>
+  <!-- Input Section -->
+  <div class="section" id="inputSection">
+    <label for="inputText">Input Text:</label><br>
+    <textarea id="inputText" rows="3" cols="80"></textarea>
+    <br>
+    <button id="trimButton" class="btn-gray">Trim</button>
+  </div>
+
+  <!-- Cipher Selection & Keys -->
+  <div class="section" id="cipherSection">
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="checkbox_Caesar"> Caesar</label>
+      <label><input type="checkbox" id="checkbox_Vigenere"> Vigenere</label>
+      <label><input type="checkbox" id="checkbox_Transposition"> Transposition</label>
+      <label><input type="checkbox" id="checkbox_Atbash"> Atbash</label>
+      <label><input type="checkbox" id="checkbox_Reverse"> Reverse</label>
+      <label><input type="checkbox" id="checkbox_Beaufort"> Beaufort</label>
+      <label><input type="checkbox" id="checkbox_Shuffle"> Shuffle</label>
     </div>
-
-    <!-- Input Section -->
-    <div class="section">
-      <label for="inputText">Input Text:</label><br>
-      <textarea id="inputText" rows="4" placeholder="Type your text here..."></textarea>
-      <button id="trimButton" class="button-green">Trim</button>
-    </div>
-
-    <!-- Cipher Checkboxes -->
-    <div class="section">
-      <strong>Ciphers:</strong><br>
-      <input type="checkbox" id="caesarCheckbox">
-      <label for="caesarCheckbox">Caesar</label>
-      <input type="checkbox" id="vigenereCheckbox">
-      <label for="vigenereCheckbox">Vigenere</label>
-      <input type="checkbox" id="transpositionCheckbox">
-      <label for="transpositionCheckbox">Transposition</label>
-      <input type="checkbox" id="atbashCheckbox">
-      <label for="atbashCheckbox">Atbash</label>
-      <input type="checkbox" id="reverseCheckbox">
-      <label for="reverseCheckbox">Reverse</label>
-      <input type="checkbox" id="beaufortCheckbox">
-      <label for="beaufortCheckbox">Beaufort</label>
-      <input type="checkbox" id="shuffleCheckbox">
-      <label for="shuffleCheckbox">Shuffle</label>
-    </div>
-
-    <!-- Key Input Fields -->
-    <div class="section">
+    <div>
       <label for="caesarShift">Caesar Shift:</label>
-      <input type="number" id="caesarShift" value="3" min="-25" max="25"><br><br>
-
+      <input type="number" id="caesarShift" class="small-input" value="3">
+    </div>
+    <div>
       <label for="vigenereKey">Vigenere Key:</label>
-      <input type="text" id="vigenereKey"><br><br>
-
+      <input type="text" id="vigenereKey">
+    </div>
+    <div>
       <label for="transpositionKey">Transposition Key:</label>
-      <input type="text" id="transpositionKey"><br><br>
-
+      <input type="text" id="transpositionKey">
+    </div>
+    <div>
       <label for="beaufortKey">Beaufort Key:</label>
-      <input type="text" id="beaufortKey"><br><br>
-
+      <input type="text" id="beaufortKey">
+    </div>
+    <div>
       <label for="shuffleKey">Shuffle Key:</label>
       <input type="text" id="shuffleKey">
     </div>
+  </div>
 
-    <!-- Output Section -->
-    <div class="section">
-      <label for="outputText">Output:</label><br>
-      <textarea id="outputText" rows="4" readonly></textarea>
-    </div>
+  <!-- Profile Section -->
+  <div class="section" id="profileSection">
+    <label for="profileSelect">Profile:</label>
+    <select id="profileSelect">
+      <option value="">-- Select Profile --</option>
+    </select>
+    <button id="saveProfileButton" class="btn-gray">+</button>
+    <button id="deleteProfileButton" class="btn-gray">–</button>
+    <button id="exportProfilesButton" class="btn-gray">Export Profiles</button>
+    <button id="importProfilesButton" class="btn-gray">Import Profiles</button>
+  </div>
 
-    <!-- Additional Action Buttons -->
-    <div class="section">
-      <button id="copyButton" class="button-green">Copy Output</button>
-      <button id="clearButton" class="button-green">Clear</button>
-      <button id="natoButton" class="button-green">NATO Converter</button>
-    </div>
+  <!-- Output Section -->
+  <div class="section" id="outputSection">
+    <label for="outputText">Output:</label><br>
+    <textarea id="outputText" rows="3" cols="80" readonly style="background-color: LightGray;"></textarea>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="section" id="buttonSection">
+    <button id="encryptButton" class="btn-green">Encrypt</button>
+    <button id="decryptButton" class="btn-green">Decrypt</button>
+    <button id="copyButton" class="btn-green">Copy Output</button>
+    <button id="clearButton" class="btn-green">Clear</button>
+    <button id="natoButton" class="btn-green">NATO Converter</button>
+    <br>
+    <button id="importButton" class="btn-gray">Import Settings</button>
+    <button id="exportButton" class="btn-gray">Export Settings</button>
+    <button id="resetSettingsButton" class="btn-gray">Reset Settings</button>
+    <button id="reorderButton" class="btn-gray">Reorder Ciphers</button>
+    <button id="restoreOrderButton" class="btn-gray">Restore Order</button>
+    <button id="toggleLogButton" class="btn-gray">Show Log</button>
+    <br>
+    <span id="orderLabel">Cipher Order: (default)</span>
+  </div>
+
+  <!-- Hidden File Inputs for Import -->
+  <input type="file" id="importSettingsInput" style="display:none">
+  <input type="file" id="importProfilesInput" style="display:none">
+
+  <!-- Log Area -->
+  <div class="section">
+    <label for="logArea">Log:</label><br>
+    <textarea id="logArea" readonly></textarea>
   </div>
 
   <script>
-    /* =========================
+    // Global variables for profiles and custom cipher order
+    let profiles = {};
+    let customCipherOrder = [];
+
+    /* ======================
        Cipher Functions
-    ========================== */
-    function caesarCipher(text, shift, decrypt) {
-      shift = parseInt(shift);
-      if (decrypt) shift = -shift;
-      let result = '';
+       ====================== */
+
+    function caesarCipher(text, shift, decrypt = false) {
       text = text.toUpperCase();
-      for (let i = 0; i < text.length; i++) {
-        let c = text.charCodeAt(i);
-        if (c >= 65 && c <= 90) {
-          let shifted = ((c - 65 + shift) % 26);
-          if (shifted < 0) shifted += 26;
-          result += String.fromCharCode(65 + shifted);
+      if (decrypt) shift = -shift;
+      let result = "";
+      for (let char of text) {
+        if (char >= "A" && char <= "Z") {
+          let code = char.charCodeAt(0) - 65;
+          code = (code + shift) % 26;
+          if (code < 0) code += 26;
+          result += String.fromCharCode(code + 65);
         } else {
-          result += text[i];
+          result += char;
         }
       }
       return result;
     }
 
-    function vigenereCipher(text, key, decrypt) {
+    function vigenereCipher(text, key, decrypt = false) {
       text = text.toUpperCase();
-      key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      let result = '';
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (key.length === 0) return text;
+      let result = "";
       let keyIndex = 0;
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (c >= 'A' && c <= 'Z') {
+      for (let char of text) {
+        if (char >= "A" && char <= "Z") {
           let shift = key.charCodeAt(keyIndex % key.length) - 65;
           if (decrypt) shift = -shift;
-          let charCode = c.charCodeAt(0) - 65;
-          let shifted = (charCode + shift) % 26;
-          if (shifted < 0) shifted += 26;
-          result += String.fromCharCode(65 + shifted);
+          let code = char.charCodeAt(0) - 65;
+          code = (code + shift) % 26;
+          if (code < 0) code += 26;
+          result += String.fromCharCode(code + 65);
           keyIndex++;
         } else {
-          result += c;
+          result += char;
         }
       }
       return result;
+    }
+
+    function transpositionCipher(text, key, decrypt = false) {
+      text = text.toUpperCase();
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (key.length === 0) return text;
+      let numCols = key.length;
+      if (!decrypt) {
+        let numRows = Math.ceil(text.length / numCols);
+        let table = [];
+        let pos = 0;
+        for (let r = 0; r < numRows; r++) {
+          table[r] = [];
+          for (let c = 0; c < numCols; c++) {
+            table[r][c] = (pos < text.length) ? text.charAt(pos) : "X";
+            pos++;
+          }
+        }
+        // Determine column order (sort key letters by alphabetical order)
+        let keyArr = key.split("").map((letter, index) => ({ letter, index }));
+        keyArr.sort((a, b) => a.letter.localeCompare(b.letter) || a.index - b.index);
+        let sortedCols = keyArr.map(item => item.index);
+        let cipherText = "";
+        sortedCols.forEach(c => {
+          for (let r = 0; r < numRows; r++) {
+            cipherText += table[r][c];
+          }
+        });
+        return cipherText;
+      } else {
+        // Decryption: a simple approach based on splitting columns
+        let numRows = Math.ceil(text.length / numCols);
+        let numFullCols = text.length % numCols;
+        if (numFullCols === 0) numFullCols = numCols;
+        let keyArr = key.split("").map((letter, index) => ({ letter, index }));
+        keyArr.sort((a, b) => a.letter.localeCompare(b.letter) || a.index - b.index);
+        let columns = [];
+        let pos = 0;
+        keyArr.forEach(item => {
+          let colLength = (item.index < numFullCols) ? numRows : numRows - 1;
+          columns[item.index] = text.substr(pos, colLength).split("");
+          pos += colLength;
+        });
+        let plainText = "";
+        for (let r = 0; r < numRows; r++) {
+          for (let c = 0; c < numCols; c++) {
+            if (columns[c] && columns[c][r]) {
+              plainText += columns[c][r];
+            }
+          }
+        }
+        return plainText.replace(/X+$/,"");
+      }
     }
 
     function atbashCipher(text) {
-      let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      let reverse = alphabet.split('').reverse().join('');
       text = text.toUpperCase();
-      let result = '';
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        let index = alphabet.indexOf(c);
-        if (index !== -1) {
-          result += reverse[index];
-        } else {
-          result += c;
-        }
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const reverse = alphabet.split("").reverse().join("");
+      let result = "";
+      for (let char of text) {
+        let index = alphabet.indexOf(char);
+        result += (index !== -1) ? reverse.charAt(index) : char;
       }
       return result;
     }
 
     function reverseCipher(text) {
-      return text.split('').reverse().join('');
-    }
-
-    function transpositionCipher(text, key, decrypt) {
-      text = text.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      if (!decrypt) {
-        let numCols = key.length;
-        let numRows = Math.ceil(text.length / numCols);
-        let matrix = [];
-        for (let r = 0; r < numRows; r++) {
-          matrix[r] = [];
-          for (let c = 0; c < numCols; c++) {
-            let index = r * numCols + c;
-            matrix[r][c] = index < text.length ? text[index] : 'X';
-          }
-        }
-        let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
-          .sort((a, b) => a.char.localeCompare(b.char));
-        let result = '';
-        order.forEach(o => {
-          for (let r = 0; r < numRows; r++) {
-            result += matrix[r][o.index];
-          }
-        });
-        return result;
-      } else {
-        // Decryption stub – could be enhanced as needed
-        return text;
-      }
+      return text.split("").reverse().join("");
     }
 
     function beaufortCipher(text, key) {
       text = text.toUpperCase();
-      key = key.toUpperCase().replace(/[^A-Z]/g, '');
-      if (!key) return text;
-      let result = '';
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (key.length === 0) return text;
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let result = "";
       let keyIndex = 0;
-      let alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (alphabet.indexOf(c) !== -1) {
-          let K = key.charCodeAt(keyIndex % key.length) - 65;
-          let C = c.charCodeAt(0) - 65;
+      for (let char of text) {
+        if (alphabet.indexOf(char) !== -1) {
+          let K = alphabet.indexOf(key.charAt(keyIndex % key.length));
+          let C = alphabet.indexOf(char);
           let newPos = (K - C) % 26;
           if (newPos < 0) newPos += 26;
-          result += alphabet[newPos];
+          result += alphabet.charAt(newPos);
           keyIndex++;
         } else {
-          result += c;
+          result += char;
         }
       }
       return result;
     }
 
-    function shuffleCipher(text, key, decrypt) {
-      if (!key.trim()) {
-        alert("Shuffle Cipher requires a key.");
-        return text;
+    // Seeded random generator for Shuffle Cipher
+    function seededRandom(seed) {
+      const m = 2147483647, a = 16807;
+      let state = seed % m;
+      return function() {
+        state = (a * state) % m;
+        return state / m;
       }
-      let arr = text.split('');
-      let seed = 0;
-      for (let i = 0; i < key.length; i++) {
-        seed = (seed * 31 + key.charCodeAt(i)) % 2147483647;
+    }
+
+    function shuffleCipher(text, key, decrypt = false) {
+      if (!key.trim()) throw "Shuffle Cipher requires a key.";
+      function getPermutation(length, key) {
+        let seed = 0;
+        for (let char of key) {
+          seed = (seed * 31 + char.charCodeAt(0)) % 2147483647;
+        }
+        let rand = seededRandom(seed);
+        let array = [];
+        for (let i = 0; i < length; i++) array.push(i);
+        for (let i = length - 1; i > 0; i--) {
+          let j = Math.floor(rand() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
       }
-      function random() {
-        seed = (seed * 16807) % 2147483647;
-        return seed / 2147483647;
-      }
-      let permutation = arr.map((_, i) => i);
-      for (let i = permutation.length - 1; i > 0; i--) {
-        let j = Math.floor(random() * (i + 1));
-        [permutation[i], permutation[j]] = [permutation[j], permutation[i]];
-      }
+      let length = text.length;
+      let permutation = getPermutation(length, key);
       if (decrypt) {
         let inverse = [];
         for (let i = 0; i < permutation.length; i++) {
@@ -282,127 +330,431 @@
         }
         permutation = inverse;
       }
-      let shuffled = [];
-      for (let i = 0; i < permutation.length; i++) {
-        shuffled[i] = arr[permutation[i]];
+      let resultArr = [];
+      for (let i = 0; i < length; i++) {
+        resultArr.push(text.charAt(permutation[i]));
       }
-      return shuffled.join('');
+      return resultArr.join("");
     }
 
-    function processCiphers(text, decrypt) {
-      let result = text;
-      let order = [];
-      if (document.getElementById('caesarCheckbox').checked) order.push('Caesar');
-      if (document.getElementById('vigenereCheckbox').checked) order.push('Vigenere');
-      if (document.getElementById('transpositionCheckbox').checked) order.push('Transposition');
-      if (document.getElementById('atbashCheckbox').checked) order.push('Atbash');
-      if (document.getElementById('reverseCheckbox').checked) order.push('Reverse');
-      if (document.getElementById('beaufortCheckbox').checked) order.push('Beaufort');
-      if (document.getElementById('shuffleCheckbox').checked) order.push('Shuffle');
-
-      if (decrypt) order = order.reverse();
-
-      order.forEach(cipher => {
+    // Process ciphers in order
+    function processCiphers(text, decrypt = false) {
+      let cipherList = [];
+      // If a custom cipher order exists, filter it by enabled checkboxes; otherwise use default order.
+      if (customCipherOrder.length > 0) {
+        customCipherOrder.forEach(cipher => {
+          if (document.getElementById("checkbox_" + cipher).checked) {
+            cipherList.push(cipher);
+          }
+        });
+      } else {
+        const defaultOrder = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
+        defaultOrder.forEach(cipher => {
+          if (document.getElementById("checkbox_" + cipher).checked) {
+            cipherList.push(cipher);
+          }
+        });
+      }
+      if (cipherList.length === 0) {
+        alert("No cipher selected. Please select at least one cipher.");
+        throw "No cipher selected.";
+      }
+      if (decrypt) cipherList.reverse();
+      let processedText = text;
+      cipherList.forEach(cipher => {
         switch (cipher) {
-          case 'Caesar':
-            let shift = document.getElementById('caesarShift').value;
-            result = caesarCipher(result, shift, decrypt);
+          case "Caesar":
+            let shift = parseInt(document.getElementById("caesarShift").value);
+            processedText = caesarCipher(processedText, shift, decrypt);
             break;
-          case 'Vigenere':
-            let vkey = document.getElementById('vigenereKey').value;
-            result = vigenereCipher(result, vkey, decrypt);
+          case "Vigenere":
+            let vKey = document.getElementById("vigenereKey").value;
+            if (!vKey.trim()) { alert("Vigenere is checked but no key was provided."); throw "Missing Vigenere key."; }
+            processedText = vigenereCipher(processedText, vKey, decrypt);
             break;
-          case 'Transposition':
-            let tkey = document.getElementById('transpositionKey').value;
-            result = transpositionCipher(result, tkey, decrypt);
+          case "Transposition":
+            let tKey = document.getElementById("transpositionKey").value;
+            if (!tKey.trim()) { alert("Transposition is checked but no key was provided."); throw "Missing Transposition key."; }
+            processedText = transpositionCipher(processedText, tKey, decrypt);
             break;
-          case 'Atbash':
-            result = atbashCipher(result);
+          case "Atbash":
+            processedText = atbashCipher(processedText);
             break;
-          case 'Reverse':
-            result = reverseCipher(result);
+          case "Reverse":
+            processedText = reverseCipher(processedText);
             break;
-          case 'Beaufort':
-            let bkey = document.getElementById('beaufortKey').value;
-            result = beaufortCipher(result, bkey);
+          case "Beaufort":
+            let bKey = document.getElementById("beaufortKey").value;
+            if (!bKey.trim()) { alert("Beaufort is checked but no key was provided."); throw "Missing Beaufort key."; }
+            processedText = beaufortCipher(processedText, bKey);
             break;
-          case 'Shuffle':
-            let skey = document.getElementById('shuffleKey').value;
-            result = shuffleCipher(result, skey, decrypt);
+          case "Shuffle":
+            let sKey = document.getElementById("shuffleKey").value;
+            if (!sKey.trim()) { alert("Shuffle is checked but no key was provided."); throw "Missing Shuffle key."; }
+            processedText = shuffleCipher(processedText, sKey, decrypt);
             break;
         }
       });
-      return result;
+      return processedText;
     }
 
-    /* =========================
-       Event Listeners & Real-Time Processing
-    ========================== */
-    // Real-time processing as text is typed
-    document.getElementById('inputText').addEventListener('input', () => {
-      const mode = document.querySelector('input[name="mode"]:checked').value;
-      const isDecrypt = (mode === 'decrypt');
-      const text = document.getElementById('inputText').value;
-      try {
-        const processed = processCiphers(text, isDecrypt);
-        document.getElementById('outputText').value = processed;
-      } catch(e) {
-        document.getElementById('outputText').value = "Error: " + e.message;
-      }
-    });
+    /* ======================
+       UI Helper Functions
+       ====================== */
 
-    // Trim Button
-    document.getElementById('trimButton').addEventListener('click', () => {
-      let input = document.getElementById('inputText').value;
-      if (input.length >= 2) {
-        document.getElementById('inputText').value = input.substring(1, input.length - 1);
-        // Trigger update after trim
-        document.getElementById('inputText').dispatchEvent(new Event('input'));
+    function logMessage(msg) {
+      const logArea = document.getElementById("logArea");
+      let timestamp = new Date().toLocaleString();
+      logArea.value += `[${timestamp}] ${msg}\n`;
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    function trimInput() {
+      const inputElem = document.getElementById("inputText");
+      if (inputElem.value.length >= 2) {
+        inputElem.value = inputElem.value.substring(1, inputElem.value.length - 1);
+        logMessage("Trimmed first and last character from input.");
       } else {
         alert("Input too short to trim.");
       }
-    });
+    }
 
-    // Copy Output Button
-    document.getElementById('copyButton').addEventListener('click', () => {
-      let output = document.getElementById('outputText').value;
-      if (output) {
-        navigator.clipboard.writeText(output);
-      }
-    });
-
-    // Clear Button
-    document.getElementById('clearButton').addEventListener('click', () => {
-      document.getElementById('inputText').value = '';
-      document.getElementById('outputText').value = '';
-    });
-
-    // NATO Converter Button
-    document.getElementById('natoButton').addEventListener('click', () => {
-      const natoMapping = {
-        'A': 'Alpha', 'B': 'Bravo', 'C': 'Charlie', 'D': 'Delta',
-        'E': 'Echo', 'F': 'Foxtrot', 'G': 'Golf', 'H': 'Hotel',
-        'I': 'India', 'J': 'Juliet', 'K': 'Kilo', 'L': 'Lima',
-        'M': 'Mike', 'N': 'November', 'O': 'Oscar', 'P': 'Papa',
-        'Q': 'Quebec', 'R': 'Romeo', 'S': 'Sierra', 'T': 'Tango',
-        'U': 'Uniform', 'V': 'Victor', 'W': 'Whiskey', 'X': 'X-ray',
-        'Y': 'Yankee', 'Z': 'Zulu'
-      };
-      let input = document.getElementById('inputText').value;
-      if (!input.trim()) {
+    function natoConverter() {
+      let text = prompt("Enter text for NATO conversion:");
+      if (!text || text.trim() === "") {
         alert("Please enter text to convert.");
         return;
       }
-      let outputLetters = [];
-      for (let char of input.toUpperCase()) {
-        if (natoMapping[char]) {
-          outputLetters.push(natoMapping[char]);
-        } else {
-          outputLetters.push(char);
-        }
+      const natoMapping = {
+        A: "Alpha", B: "Bravo", C: "Charlie", D: "Delta", E: "Echo", F: "Foxtrot",
+        G: "Golf", H: "Hotel", I: "Indigo", J: "Juliet", K: "Kilo", L: "Lima",
+        M: "Mike", N: "November", O: "Oscar", P: "Papa", Q: "Quebec", R: "Romeo",
+        S: "Sierra", T: "Tango", U: "Uniform", V: "Victor", W: "Whiskey",
+        X: "X-ray", Y: "Yankee", Z: "Zulu"
+      };
+      let result = [];
+      for (let char of text.toUpperCase()) {
+        result.push(natoMapping[char] || char);
       }
-      document.getElementById('outputText').value = outputLetters.join('-');
+      alert("NATO Conversion: " + result.join("-"));
+    }
+
+    /* Profile & Settings Functions */
+
+    function saveProfile() {
+      let profileName = prompt("Enter a name for this profile:");
+      if (!profileName) {
+        alert("No profile name entered.");
+        return;
+      }
+      let profileSettings = {
+        CaesarChecked: document.getElementById("checkbox_Caesar").checked,
+        VigenereChecked: document.getElementById("checkbox_Vigenere").checked,
+        TranspositionChecked: document.getElementById("checkbox_Transposition").checked,
+        AtbashChecked: document.getElementById("checkbox_Atbash").checked,
+        ReverseChecked: document.getElementById("checkbox_Reverse").checked,
+        BeaufortChecked: document.getElementById("checkbox_Beaufort").checked,
+        ShuffleChecked: document.getElementById("checkbox_Shuffle").checked,
+        CaesarShift: document.getElementById("caesarShift").value,
+        VigenereKey: document.getElementById("vigenereKey").value,
+        TranspositionKey: document.getElementById("transpositionKey").value,
+        BeaufortKey: document.getElementById("beaufortKey").value,
+        ShuffleKey: document.getElementById("shuffleKey").value,
+        CustomCipherOrder: customCipherOrder.slice()
+      };
+      profiles[profileName] = profileSettings;
+      let profileSelect = document.getElementById("profileSelect");
+      let option = document.createElement("option");
+      option.value = profileName;
+      option.text = profileName;
+      profileSelect.add(option);
+      logMessage("Profile '" + profileName + "' saved.");
+      alert("Profile '" + profileName + "' saved successfully.");
+    }
+
+    function deleteProfile() {
+      let profileSelect = document.getElementById("profileSelect");
+      let profileName = profileSelect.value;
+      if (!profileName) {
+        alert("Please select a profile to delete.");
+        return;
+      }
+      if (confirm("Are you sure you want to delete the profile '" + profileName + "'?")) {
+        delete profiles[profileName];
+        profileSelect.remove(profileSelect.selectedIndex);
+        logMessage("Profile '" + profileName + "' deleted.");
+        alert("Profile '" + profileName + "' deleted successfully.");
+      }
+    }
+
+    function loadProfile() {
+      let profileSelect = document.getElementById("profileSelect");
+      let profileName = profileSelect.value;
+      if (!profileName || !profiles[profileName]) return;
+      let settings = profiles[profileName];
+      document.getElementById("checkbox_Caesar").checked = settings.CaesarChecked;
+      document.getElementById("checkbox_Vigenere").checked = settings.VigenereChecked;
+      document.getElementById("checkbox_Transposition").checked = settings.TranspositionChecked;
+      document.getElementById("checkbox_Atbash").checked = settings.AtbashChecked;
+      document.getElementById("checkbox_Reverse").checked = settings.ReverseChecked;
+      document.getElementById("checkbox_Beaufort").checked = settings.BeaufortChecked;
+      document.getElementById("checkbox_Shuffle").checked = settings.ShuffleChecked;
+      document.getElementById("caesarShift").value = settings.CaesarShift;
+      document.getElementById("vigenereKey").value = settings.VigenereKey;
+      document.getElementById("transpositionKey").value = settings.TranspositionKey;
+      document.getElementById("beaufortKey").value = settings.BeaufortKey;
+      document.getElementById("shuffleKey").value = settings.ShuffleKey;
+      customCipherOrder = settings.CustomCipherOrder.slice();
+      updateOrderLabel();
+      logMessage("Profile '" + profileName + "' loaded automatically.");
+    }
+
+    function exportSettings() {
+      let settings = {
+        CaesarChecked: document.getElementById("checkbox_Caesar").checked,
+        VigenereChecked: document.getElementById("checkbox_Vigenere").checked,
+        TranspositionChecked: document.getElementById("checkbox_Transposition").checked,
+        AtbashChecked: document.getElementById("checkbox_Atbash").checked,
+        ReverseChecked: document.getElementById("checkbox_Reverse").checked,
+        BeaufortChecked: document.getElementById("checkbox_Beaufort").checked,
+        ShuffleChecked: document.getElementById("checkbox_Shuffle").checked,
+        CaesarShift: document.getElementById("caesarShift").value,
+        VigenereKey: document.getElementById("vigenereKey").value,
+        TranspositionKey: document.getElementById("transpositionKey").value,
+        BeaufortKey: document.getElementById("beaufortKey").value,
+        ShuffleKey: document.getElementById("shuffleKey").value,
+        CustomCipherOrder: customCipherOrder
+      };
+      let json = JSON.stringify(settings, null, 2);
+      let blob = new Blob([json], { type: "application/json" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "EnchiridionSettings.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      logMessage("Settings exported successfully.");
+    }
+
+    function importSettings() {
+      document.getElementById("importSettingsInput").click();
+    }
+
+    document.getElementById("importSettingsInput").addEventListener("change", function (event) {
+      let file = event.target.files[0];
+      if (file) {
+        let reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            let settings = JSON.parse(e.target.result);
+            document.getElementById("checkbox_Caesar").checked = settings.CaesarChecked;
+            document.getElementById("checkbox_Vigenere").checked = settings.VigenereChecked;
+            document.getElementById("checkbox_Transposition").checked = settings.TranspositionChecked;
+            document.getElementById("checkbox_Atbash").checked = settings.AtbashChecked;
+            document.getElementById("checkbox_Reverse").checked = settings.ReverseChecked;
+            document.getElementById("checkbox_Beaufort").checked = settings.BeaufortChecked;
+            document.getElementById("checkbox_Shuffle").checked = settings.ShuffleChecked;
+            document.getElementById("caesarShift").value = settings.CaesarShift;
+            document.getElementById("vigenereKey").value = settings.VigenereKey;
+            document.getElementById("transpositionKey").value = settings.TranspositionKey;
+            document.getElementById("beaufortKey").value = settings.BeaufortKey;
+            document.getElementById("shuffleKey").value = settings.ShuffleKey;
+            customCipherOrder = settings.CustomCipherOrder || [];
+            updateOrderLabel();
+            logMessage("Settings imported successfully.");
+          } catch (err) {
+            alert("Error importing settings: " + err);
+            logMessage("Error importing settings: " + err);
+          }
+        };
+        reader.readAsText(file);
+      }
     });
+
+    function exportProfiles() {
+      let json = JSON.stringify(profiles, null, 2);
+      let blob = new Blob([json], { type: "application/json" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "EnchiridionProfiles.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      logMessage("Profiles exported successfully.");
+      alert("Profiles exported successfully.");
+    }
+
+    function importProfiles() {
+      document.getElementById("importProfilesInput").click();
+    }
+
+    document.getElementById("importProfilesInput").addEventListener("change", function (event) {
+      let file = event.target.files[0];
+      if (file) {
+        let reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            let imported = JSON.parse(e.target.result);
+            profiles = imported;
+            let profileSelect = document.getElementById("profileSelect");
+            profileSelect.innerHTML = '<option value="">-- Select Profile --</option>';
+            for (let key in profiles) {
+              let option = document.createElement("option");
+              option.value = key;
+              option.text = key;
+              profileSelect.add(option);
+            }
+            logMessage("Profiles imported successfully.");
+            alert("Profiles imported successfully.");
+          } catch (err) {
+            alert("Error importing profiles: " + err);
+            logMessage("Error importing profiles: " + err);
+          }
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    function resetSettings() {
+      document.getElementById("checkbox_Caesar").checked = false;
+      document.getElementById("checkbox_Vigenere").checked = false;
+      document.getElementById("checkbox_Transposition").checked = false;
+      document.getElementById("checkbox_Atbash").checked = false;
+      document.getElementById("checkbox_Reverse").checked = false;
+      document.getElementById("checkbox_Beaufort").checked = false;
+      document.getElementById("checkbox_Shuffle").checked = false;
+      document.getElementById("caesarShift").value = 3;
+      document.getElementById("vigenereKey").value = "";
+      document.getElementById("transpositionKey").value = "";
+      document.getElementById("beaufortKey").value = "";
+      document.getElementById("shuffleKey").value = "";
+      customCipherOrder = [];
+      updateOrderLabel();
+      logMessage("Settings reset to default.");
+    }
+
+    function reorderCiphers() {
+      let enabled = [];
+      const ciphers = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
+      ciphers.forEach(cipher => {
+        if (document.getElementById("checkbox_" + cipher).checked) {
+          enabled.push(cipher);
+        }
+      });
+      if (enabled.length === 0) {
+        alert("No ciphers selected to reorder.");
+        return;
+      }
+      let order = prompt("Enter new order for selected ciphers (comma-separated):\n" + enabled.join(", "), enabled.join(","));
+      if (order) {
+        let newOrder = order.split(",").map(s => s.trim());
+        if (newOrder.sort().join(",") !== enabled.sort().join(",")) {
+          alert("Invalid order. Please include the same ciphers.");
+          return;
+        }
+        customCipherOrder = newOrder;
+        updateOrderLabel();
+        logMessage("Cipher order updated: " + customCipherOrder.join(" -> "));
+      }
+    }
+
+    function restoreOrder() {
+      customCipherOrder = [];
+      updateOrderLabel();
+      logMessage("Cipher order restored to default.");
+    }
+
+    function toggleLog() {
+      const logArea = document.getElementById("logArea");
+      const toggleBtn = document.getElementById("toggleLogButton");
+      if (logArea.style.display === "none" || logArea.style.display === "") {
+        logArea.style.display = "block";
+        toggleBtn.textContent = "Hide Log";
+        logMessage("Log shown.");
+      } else {
+        logArea.style.display = "none";
+        toggleBtn.textContent = "Show Log";
+        logMessage("Log hidden.");
+      }
+    }
+
+    function updateOrderLabel() {
+      const orderLabel = document.getElementById("orderLabel");
+      if (customCipherOrder.length > 0) {
+        orderLabel.textContent = "Cipher Order: " + customCipherOrder.join(" -> ");
+      } else {
+        orderLabel.textContent = "Cipher Order: (default)";
+      }
+    }
+
+    /* ======================
+       Event Handlers
+       ====================== */
+
+    document.getElementById("trimButton").addEventListener("click", trimInput);
+
+    document.getElementById("natoButton").addEventListener("click", natoConverter);
+
+    document.getElementById("encryptButton").addEventListener("click", function () {
+      let inputText = document.getElementById("inputText").value;
+      if (inputText.trim() === "") {
+        alert("Please provide some input text first.");
+        return;
+      }
+      try {
+        let encrypted = processCiphers(inputText, false);
+        document.getElementById("outputText").value = '"' + encrypted + '"';
+        logMessage("Encryption completed.");
+      } catch (e) {
+        alert("Encryption error: " + e);
+        logMessage("Encryption error: " + e);
+      }
+    });
+
+    document.getElementById("decryptButton").addEventListener("click", function () {
+      let inputText = document.getElementById("inputText").value;
+      if (inputText.trim() === "") {
+        alert("Please provide some input text first.");
+        return;
+      }
+      try {
+        let decrypted = processCiphers(inputText, true);
+        document.getElementById("outputText").value = '"' + decrypted + '"';
+        logMessage("Decryption completed.");
+      } catch (e) {
+        alert("Decryption error: " + e);
+        logMessage("Decryption error: " + e);
+      }
+    });
+
+    document.getElementById("copyButton").addEventListener("click", function () {
+      let outputText = document.getElementById("outputText").value;
+      if (outputText) {
+        navigator.clipboard.writeText(outputText);
+        logMessage("Output copied to clipboard.");
+      }
+    });
+
+    document.getElementById("clearButton").addEventListener("click", function () {
+      document.getElementById("inputText").value = "";
+      document.getElementById("outputText").value = "";
+      logMessage("Input and output cleared.");
+    });
+
+    document.getElementById("resetSettingsButton").addEventListener("click", resetSettings);
+    document.getElementById("reorderButton").addEventListener("click", reorderCiphers);
+    document.getElementById("restoreOrderButton").addEventListener("click", restoreOrder);
+    document.getElementById("toggleLogButton").addEventListener("click", toggleLog);
+
+    document.getElementById("saveProfileButton").addEventListener("click", saveProfile);
+    document.getElementById("deleteProfileButton").addEventListener("click", deleteProfile);
+    document.getElementById("exportProfilesButton").addEventListener("click", exportProfiles);
+    document.getElementById("importProfilesButton").addEventListener("click", importProfiles);
+
+    document.getElementById("exportButton").addEventListener("click", exportSettings);
+    document.getElementById("importButton").addEventListener("click", importSettings);
+
+    document.getElementById("profileSelect").addEventListener("change", loadProfile);
   </script>
 </body>
 </html>
