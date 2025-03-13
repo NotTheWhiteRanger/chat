@@ -7,7 +7,7 @@
   <style>
     body { background: #000; color: #fff; font-family: Arial, sans-serif; text-align: center; padding: 20px; }
     header { margin-bottom: 20px; }
-    header a { color: var(--primary-color); text-decoration: none; font-weight: bold; }
+    header a { color: #1a73e8; text-decoration: none; font-weight: bold; }
     canvas { background: #eee; border: 1px solid #ddd; display: block; margin: 0 auto; }
     #scoreContainer { margin-top: 10px; }
     #leaderboard { list-style: none; padding: 0; }
@@ -35,11 +35,11 @@
     import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { getDatabase, ref, push, query, orderByChild, limitToLast, get } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
     
-    // Firebase Config
+    // Firebase Config with updated databaseURL
     const firebaseConfig = {
       apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
       authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+      databaseURL: "https://snake-9161f-default-rtdb.firebaseio.com",
       projectId: "new-chat-8d4f4",
       storageBucket: "new-chat-8d4f4.firebasestorage.app",
       messagingSenderId: "825077448854",
@@ -89,6 +89,7 @@
           snapshot.forEach((childSnapshot) => {
             scoresArray.push(childSnapshot.val());
           });
+          // Sort scores descending
           scoresArray.sort((a, b) => b.score - a.score);
           const leaderboard = document.getElementById("leaderboard");
           leaderboard.innerHTML = "";
@@ -124,9 +125,12 @@
         snake.pop();
       }
       
-      if (head.x < 0 || head.x >= canvas.width ||
-          head.y < 0 || head.y >= canvas.height ||
-          snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)) {
+      if (
+        head.x < 0 || head.x >= canvas.width ||
+        head.y < 0 || head.y >= canvas.height ||
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        // On collision, record score if signed in; then reset game state
         if (currentUsername !== "Anonymous") {
           updateSnakeHighscore(score);
         } else {
@@ -143,7 +147,9 @@
       ctx.fillStyle = "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
       ctx.fillStyle = "green";
-      snake.forEach(segment => ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1));
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
+      });
     }
     
     document.addEventListener("keydown", (e) => {
