@@ -130,7 +130,6 @@
         head.y < 0 || head.y >= canvas.height ||
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
       ) {
-        // On collision, record score if signed in; then reset game state
         if (currentUsername !== "Anonymous") {
           updateSnakeHighscore(score);
         } else {
