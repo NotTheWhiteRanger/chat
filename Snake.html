@@ -146,6 +146,8 @@
     let dy = 0;
     let food = getRandomFoodPosition();
     let score = 0;
+    // Flag to prevent multiple direction changes in one frame
+    let changingDirection = false;
 
     // Return a random position for the food within the canvas grid
     function getRandomFoodPosition() {
@@ -181,6 +183,7 @@
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
       ) {
         gameOver();
+        return;  // Stop further drawing in this frame
       }
 
       // Draw food and snake
@@ -191,6 +194,9 @@
       snake.forEach(segment => {
         ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
       });
+      
+      // Reset the direction-change flag at the end of the frame
+      changingDirection = false;
     }
 
     // Start or restart the game
@@ -218,15 +224,30 @@
 
     // Listen for arrow key presses to control the snake
     document.addEventListener("keydown", (e) => {
+      // Prevent multiple rapid changes in one frame
+      if (changingDirection) return;
+      
+      // Store the new direction values temporarily
+      let newDx = dx;
+      let newDy = dy;
+      
       if (e.key === "ArrowLeft" && dx === 0) {
-        dx = -grid; dy = 0;
+        newDx = -grid; newDy = 0;
       } else if (e.key === "ArrowRight" && dx === 0) {
-        dx = grid; dy = 0;
+        newDx = grid; newDy = 0;
       } else if (e.key === "ArrowUp" && dy === 0) {
-        dx = 0; dy = -grid;
+        newDx = 0; newDy = -grid;
       } else if (e.key === "ArrowDown" && dy === 0) {
-        dx = 0; dy = grid;
+        newDx = 0; newDy = grid;
       }
+      
+      // Check to ensure that the new direction isn't directly opposite to the current one.
+      if (newDx === -dx && newDy === -dy) return;
+      
+      // Update the direction and set the flag so that further changes won't register until the frame is done.
+      dx = newDx;
+      dy = newDy;
+      changingDirection = true;
     });
 
     // ------------------------------
