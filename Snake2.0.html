@@ -16,7 +16,7 @@
       margin-top: 50px;
     }
     #login-container { display: block; }
-    #game-container { display: none; }
+    #game-container { display: block; position: relative; }
     /* Canvas styling */
     canvas {
       background: #000;
@@ -24,17 +24,30 @@
       margin: 20px auto;
       border: 1px solid #ccc;
     }
-    /* Leaderboard styling */
-    #leaderboard {
-      margin-top: 20px;
+    /* Sidebar styling */
+    #sidebar {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      width: 250px;
+      text-align: left;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    }
+    #sidebar h2 {
+      margin-top: 0;
     }
     table {
-      margin: 0 auto;
+      width: 100%;
       border-collapse: collapse;
+      margin-bottom: 20px;
     }
     th, td {
       border: 1px solid #ccc;
-      padding: 8px 12px;
+      padding: 5px 8px;
+      text-align: center;
     }
     /* Logout button */
     #logout-btn {
@@ -63,17 +76,35 @@
     <!-- Bigger map: increased canvas dimensions -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <p>Your Score: <span id="score">0</span></p>
-    <div id="leaderboard">
-      <h2>Global Leaderboard</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body"></tbody>
-      </table>
+
+    <!-- Sidebar for Leaderboard and Current Players -->
+    <div id="sidebar">
+      <!-- Global Leaderboard -->
+      <div id="leaderboard">
+        <h2>Global Leaderboard</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+      </div>
+      <!-- Current Players List -->
+      <div id="current-players">
+        <h2>Current Players</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="players-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -128,6 +159,7 @@
         playerId = user.uid;
         initMultiplayer();
         loadLeaderboard();
+        loadCurrentPlayers();
       } else {
         gameContainer.style.display = "none";
         loginContainer.style.display = "block";
@@ -431,6 +463,32 @@
           row.appendChild(scoreCell);
           leaderboardBody.appendChild(row);
         });
+      });
+    }
+
+    // ------------------------------
+    // Current Players Integration
+    // ------------------------------
+    function loadCurrentPlayers() {
+      gameStateRef.child('players').on('value', snapshot => {
+        const playersData = snapshot.val();
+        const playersBody = document.getElementById('players-body');
+        playersBody.innerHTML = "";
+        if (playersData) {
+          Object.keys(playersData).forEach(pid => {
+            const player = playersData[pid];
+            const row = document.createElement('tr');
+            const nameCell = document.createElement('td');
+            const statusCell = document.createElement('td');
+            // Display player's username (derived from email)
+            nameCell.textContent = player.email ? player.email.split('@')[0] : pid;
+            // Display player's current status
+            statusCell.textContent = player.alive ? "Alive" : "Dead";
+            row.appendChild(nameCell);
+            row.appendChild(statusCell);
+            playersBody.appendChild(row);
+          });
+        }
       });
     }
   </script>
