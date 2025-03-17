@@ -113,6 +113,9 @@
     let playerId = null;
     let hasDied = false; // Flag to ensure respawn is scheduled only once per death
 
+    // Throttle for key presses (in milliseconds)
+    let lastKeyPressTime = 0;
+
     // Firebase references for multiplayer game state
     const multiplayerRef = firebase.database().ref('multiplayer');
     const gameStateRef = multiplayerRef.child('gameState');
@@ -201,9 +204,14 @@
     }
 
     // ------------------------------
-    // Handle Keyboard Input
+    // Handle Keyboard Input with Throttling
     // ------------------------------
     function handleKeyDown(e) {
+      // Throttle key events to avoid multiple rapid inputs (adjust threshold as needed)
+      const now = Date.now();
+      if (now - lastKeyPressTime < 100) return; // ignore if within 100ms of last key press
+      lastKeyPressTime = now;
+
       const playerRef = gameStateRef.child('players').child(playerId);
       playerRef.once('value', snapshot => {
         const playerData = snapshot.val();
