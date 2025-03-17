@@ -49,6 +49,35 @@
       padding: 5px 8px;
       text-align: center;
     }
+    /* Kill Feed styling */
+    #kill-feed {
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    #kill-feed ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    #kill-feed li {
+      font-size: 14px;
+      padding: 2px 0;
+    }
+    /* Respawn Timer styling */
+    #respawn-timer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: white;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      z-index: 1000;
+    }
     /* Logout button */
     #logout-btn {
       position: absolute;
@@ -76,8 +105,9 @@
     <!-- Bigger map: increased canvas dimensions -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     <p>Your Score: <span id="score">0</span></p>
-
-    <!-- Sidebar for Leaderboard and Current Players -->
+    <!-- Respawn Timer Overlay -->
+    <div id="respawn-timer"></div>
+    <!-- Sidebar for Leaderboard, Current Players, and Kill Feed -->
     <div id="sidebar">
       <!-- Global Leaderboard -->
       <div id="leaderboard">
@@ -104,6 +134,11 @@
           </thead>
           <tbody id="players-body"></tbody>
         </table>
+      </div>
+      <!-- Kill Feed -->
+      <div id="kill-feed">
+        <h2>Kill Feed</h2>
+        <ul id="kill-feed-list"></ul>
       </div>
     </div>
   </div>
@@ -137,12 +172,13 @@
     const scoreDisplay = document.getElementById('score');
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const respawnTimerDiv = document.getElementById('respawn-timer');
 
     // Game globals
     const grid = 20;
     let isHost = false;
     let playerId = null;
-    let hasDied = false; // Flag to ensure respawn is scheduled only once per death
+    let hasDied = false; // Prevents multiple respawn timers
 
     // Throttle for key presses (in milliseconds)
     let lastKeyPressTime = 0;
@@ -151,7 +187,41 @@
     const multiplayerRef = firebase.database().ref('multiplayer');
     const gameStateRef = multiplayerRef.child('gameState');
 
-    // Auth listener: show login or game container
+    // ------------------------------
+    // Kill Feed Functions
+    // ------------------------------
+    function recordKillFeed(message) {
+      const killFeedRef = multiplayerRef.child('killFeed');
+      killFeedRef.push({
+        message: message,
+        timestamp: Date.now()
+      });
+    }
+
+    function loadKillFeed() {
+      const killFeedRef = multiplayerRef.child('killFeed');
+      killFeedRef.on('value', snapshot => {
+        const killFeedList = document.getElementById('kill-feed-list');
+        killFeedList.innerHTML = "";
+        const events = [];
+        snapshot.forEach(childSnapshot => {
+          events.push(childSnapshot.val());
+        });
+        // Sort by timestamp (oldest first)
+        events.sort((a, b) => a.timestamp - b.timestamp);
+        events.forEach(event => {
+          const li = document.createElement('li');
+          li.textContent = event.message;
+          killFeedList.appendChild(li);
+        });
+        // Scroll to bottom
+        killFeedList.scrollTop = killFeedList.scrollHeight;
+      });
+    }
+
+    // ------------------------------
+    // Auth and Initialization
+    // ------------------------------
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         loginContainer.style.display = "none";
@@ -160,13 +230,13 @@
         initMultiplayer();
         loadLeaderboard();
         loadCurrentPlayers();
+        loadKillFeed();
       } else {
         gameContainer.style.display = "none";
         loginContainer.style.display = "block";
       }
     });
 
-    // Sign In event
     loginBtn.addEventListener('click', () => {
       const email = emailInput.value;
       const password = passwordInput.value;
@@ -175,7 +245,6 @@
         .catch(error => { loginError.textContent = error.message; });
     });
 
-    // Logout event
     logoutBtn.addEventListener('click', () => {
       firebase.auth().signOut().then(() => { location.reload(); });
     });
@@ -184,8 +253,7 @@
     // Multiplayer Initialization
     // ------------------------------
     function initMultiplayer() {
-      // Create/update the current player's entry in the game state.
-      // The snake starts at a random grid-aligned position.
+      // Create/update current player's entry.
       const startX = Math.floor(Math.random() * (canvas.width / grid)) * grid;
       const startY = Math.floor(Math.random() * (canvas.height / grid)) * grid;
       const playerRef = gameStateRef.child('players').child(playerId);
@@ -195,10 +263,11 @@
         dy: 0,
         score: 0,
         alive: true,
-        email: firebase.auth().currentUser.email
+        email: firebase.auth().currentUser.email,
+        invincibleUntil: 0
       });
 
-      // Try to become the host. The first player to claim the host spot will run the game loop.
+      // Try to become the host (first player claims the host spot).
       const hostRef = multiplayerRef.child('host');
       hostRef.transaction(currentHost => {
         if (currentHost === null) {
@@ -216,32 +285,42 @@
         }
       });
 
-      // Listen for game state updates to render the shared game
+      // Listen for game state updates.
       gameStateRef.on('value', snapshot => {
         const state = snapshot.val();
         if (state) {
           renderGame(state);
-          // When your snake dies, schedule a respawn (if not already done).
+          // When your snake dies, start a 3 second respawn timer.
           if (state.players && state.players[playerId] && state.players[playerId].alive === false && !hasDied) {
             hasDied = true;
-            alert("Game Over! Your final score: " + state.players[playerId].score);
             saveScore(state.players[playerId].score);
-            setTimeout(respawnPlayer, 3000);  // Respawn after 3 seconds
+            let countdown = 3;
+            respawnTimerDiv.style.display = 'block';
+            respawnTimerDiv.textContent = "Respawning in " + countdown + "...";
+            const countdownInterval = setInterval(() => {
+              countdown--;
+              if (countdown > 0) {
+                respawnTimerDiv.textContent = "Respawning in " + countdown + "...";
+              } else {
+                clearInterval(countdownInterval);
+                respawnTimerDiv.style.display = 'none';
+                respawnPlayer();
+              }
+            }, 1000);
           }
         }
       });
 
-      // Listen for key presses to update your snake's direction.
+      // Listen for key presses.
       document.addEventListener("keydown", handleKeyDown);
     }
 
     // ------------------------------
-    // Handle Keyboard Input with Throttling
+    // Handle Keyboard Input (no reversal prevention)
     // ------------------------------
     function handleKeyDown(e) {
-      // Throttle key events to avoid multiple rapid inputs (adjust threshold as needed)
       const now = Date.now();
-      if (now - lastKeyPressTime < 100) return; // ignore if within 100ms of last key press
+      if (now - lastKeyPressTime < 100) return;
       lastKeyPressTime = now;
 
       const playerRef = gameStateRef.child('players').child(playerId);
@@ -250,19 +329,16 @@
         if (playerData && playerData.alive) {
           let newDx = playerData.dx;
           let newDy = playerData.dy;
-          if ((e.key === "ArrowLeft" || e.key.toLowerCase() === "a") && playerData.dx === 0) {
+          if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
             newDx = -grid; newDy = 0;
-          } else if ((e.key === "ArrowRight" || e.key.toLowerCase() === "d") && playerData.dx === 0) {
+          } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
             newDx = grid; newDy = 0;
-          } else if ((e.key === "ArrowUp" || e.key.toLowerCase() === "w") && playerData.dy === 0) {
+          } else if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") {
             newDx = 0; newDy = -grid;
-          } else if ((e.key === "ArrowDown" || e.key.toLowerCase() === "s") && playerData.dy === 0) {
+          } else if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") {
             newDx = 0; newDy = grid;
           }
-          playerRef.update({
-            dx: newDx,
-            dy: newDy
-          });
+          playerRef.update({ dx: newDx, dy: newDy });
         }
       });
     }
@@ -273,9 +349,15 @@
     function renderGame(state) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw the food (red for normal, yellow for special)
+      // Draw the food with color based on type.
       if (state.food) {
-        ctx.fillStyle = (state.food.type === "special") ? "yellow" : "red";
+        if (state.food.type === "pink") {
+          ctx.fillStyle = "pink";
+        } else if (state.food.type === "special") {
+          ctx.fillStyle = "yellow";
+        } else {
+          ctx.fillStyle = "red";
+        }
         ctx.fillRect(state.food.x, state.food.y, grid - 1, grid - 1);
       }
 
@@ -284,7 +366,6 @@
         Object.keys(state.players).forEach(pid => {
           const player = state.players[pid];
           if (player.alive) {
-            // Highlight your own snake in blue; others in green.
             ctx.fillStyle = (pid === playerId) ? "blue" : "green";
             player.snake.forEach(segment => {
               ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
@@ -293,7 +374,7 @@
         });
       }
 
-      // Update your score display.
+      // Update your score.
       if (state.players && state.players[playerId]) {
         scoreDisplay.textContent = state.players[playerId].score;
       }
@@ -303,7 +384,7 @@
     // Host Game Loop (Authoritative Simulation)
     // ------------------------------
     function startHostGameLoop() {
-      // Ensure food is present in the game state.
+      // Ensure food exists.
       gameStateRef.child('food').once('value', snapshot => {
         if (!snapshot.exists()) {
           gameStateRef.child('food').set(spawnFood());
@@ -319,18 +400,16 @@
           let food = state.food;
           let foodEaten = false;
 
-          // Process each player's snake.
           Object.keys(players).forEach(pid => {
             const player = players[pid];
             if (!player.alive) return;
             let snake = player.snake;
             let dx = player.dx;
             let dy = player.dy;
-
             // Calculate new head position.
             let head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-            // Wrap around if head goes off the canvas edges.
+            // Wrap around the canvas.
             if (head.x < 0) {
               head.x = canvas.width - grid;
             } else if (head.x >= canvas.width) {
@@ -342,24 +421,36 @@
               head.y = 0;
             }
 
-            // Check for collisions with any snake segment (self or others).
-            Object.keys(players).forEach(otherPid => {
-              const otherPlayer = players[otherPid];
-              if (otherPlayer.snake) {
-                otherPlayer.snake.forEach(segment => {
-                  if (head.x === segment.x && head.y === segment.y) {
-                    player.alive = false;
+            // If not invincible, check for collisions with any snake segment.
+            if (!(player.invincibleUntil && Date.now() < player.invincibleUntil)) {
+              let collisionDetected = false;
+              Object.keys(players).forEach(otherPid => {
+                const otherPlayer = players[otherPid];
+                if (otherPlayer.snake) {
+                  for (let segment of otherPlayer.snake) {
+                    if (head.x === segment.x && head.y === segment.y) {
+                      player.alive = false;
+                      if (!collisionDetected) {
+                        const playerName = player.email ? player.email.split('@')[0] : pid;
+                        recordKillFeed(playerName + " died.");
+                        collisionDetected = true;
+                      }
+                      break;
+                    }
                   }
-                });
-              }
-            });
+                }
+              });
+            }
 
-            // If the player is still alive, update their snake.
             if (player.alive) {
               snake.unshift(head);
-              // If the head is on the food, update score and flag food for respawn.
+              // Check if food is eaten.
               if (food && head.x === food.x && head.y === food.y) {
                 player.score += food.points;
+                // Grant temporary invincibility if pink food is eaten.
+                if (food.type === "pink") {
+                  player.invincibleUntil = Date.now() + 5000;
+                }
                 foodEaten = true;
               } else {
                 snake.pop();
@@ -368,34 +459,39 @@
             }
           });
 
-          // If any player ate the food, spawn new food.
+          // If food was eaten, spawn new food.
           if (foodEaten) {
             food = spawnFood();
           }
 
-          // Update the game state with new player positions and food.
+          // Update game state.
           gameStateRef.update({
             players: players,
             food: food
           });
-
         });
       }, 100);
     }
 
     // ------------------------------
-    // Spawn Food Function
+    // Spawn Food Function (with pink food)
     // ------------------------------
     function spawnFood() {
       const pos = {
         x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
         y: Math.floor(Math.random() * (canvas.height / grid)) * grid
       };
-      let type = "normal";
-      let points = 1;
-      if (Math.random() < 0.05) {
-        type = "special";
+      let rand = Math.random();
+      let type, points;
+      if (rand < 0.02) {
+        type = "pink";    // 2% chance for pink food (invincibility)
+        points = 3;
+      } else if (rand < 0.07) {
+        type = "special"; // 5% chance for special food
         points = 5;
+      } else {
+        type = "normal";
+        points = 1;
       }
       return {
         x: pos.x,
@@ -407,22 +503,22 @@
     }
 
     // ------------------------------
-    // Respawn Function
+    // Respawn Function (clears invincibility)
     // ------------------------------
     function respawnPlayer() {
       const startX = Math.floor(Math.random() * (canvas.width / grid)) * grid;
       const startY = Math.floor(Math.random() * (canvas.height / grid)) * grid;
       const playerRef = gameStateRef.child('players').child(playerId);
-      // Reset player's state: new snake position, reset score (or keep it if preferred)
       playerRef.set({
         snake: [{ x: startX, y: startY }],
         dx: grid,
         dy: 0,
         score: 0,
         alive: true,
-        email: firebase.auth().currentUser.email
+        email: firebase.auth().currentUser.email,
+        invincibleUntil: 0
       });
-      hasDied = false;  // Reset the death flag so future deaths can trigger respawn
+      hasDied = false;
     }
 
     // ------------------------------
@@ -480,9 +576,7 @@
             const row = document.createElement('tr');
             const nameCell = document.createElement('td');
             const statusCell = document.createElement('td');
-            // Display player's username (derived from email)
             nameCell.textContent = player.email ? player.email.split('@')[0] : pid;
-            // Display player's current status
             statusCell.textContent = player.alive ? "Alive" : "Dead";
             row.appendChild(nameCell);
             row.appendChild(statusCell);
