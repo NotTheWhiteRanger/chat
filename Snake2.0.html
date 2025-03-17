@@ -1,423 +1,84 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Multiplayer Snake Game</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f0f0f0;
-      text-align: center;
-    }
-    /* Containers */
-    #login-container, #game-container {
-      margin-top: 50px;
-    }
-    #login-container { display: block; }
-    #game-container { display: none; }
-    /* Canvas styling */
-    canvas {
-      background: #000;
-      display: block;
-      margin: 20px auto;
-      border: 1px solid #ccc;
-    }
-    /* Leaderboard styling */
-    #leaderboard {
-      margin-top: 20px;
-    }
-    table {
-      margin: 0 auto;
-      border-collapse: collapse;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px 12px;
-    }
-    /* Logout button */
-    #logout-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 5px 10px;
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Login Container -->
-  <div id="login-container">
-    <h2>Sign In</h2>
-    <input type="email" id="email" placeholder="Email"><br><br>
-    <input type="password" id="password" placeholder="Password"><br><br>
-    <button id="login-btn">Sign In</button>
-    <p id="login-error" style="color: red;"></p>
-  </div>
-
-  <!-- Game Container -->
-  <div id="game-container">
-    <button id="logout-btn">Logout</button>
-    <h1>Multiplayer Snake Game</h1>
-    <!-- Bigger map: increased canvas dimensions -->
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <p>Your Score: <span id="score">0</span></p>
-    <div id="leaderboard">
-      <h2>Global Leaderboard</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Player</th>
-            <th>Score</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboard-body"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Firebase SDKs (v8) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  
-  <script>
-    // Firebase configuration – update messagingSenderId and appId as needed.
-    var firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4-default-rtdb.firebaseio.com/",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "snake-9161f.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",  // Replace with your actual messaging sender ID
-      appId: "YOUR_APP_ID"  // Replace with your actual app ID
-    };
-    firebase.initializeApp(firebaseConfig);
-
-    // DOM Elements
-    const loginContainer = document.getElementById('login-container');
-    const gameContainer = document.getElementById('game-container');
-    const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const loginError = document.getElementById('login-error');
-    const scoreDisplay = document.getElementById('score');
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    // Game globals
-    const grid = 20;
-    let isHost = false;
-    let playerId = null;
-    let hasDied = false; // Flag to ensure respawn is scheduled only once per death
-    
-    // Firebase references for multiplayer game state
-    const multiplayerRef = firebase.database().ref('multiplayer');
-    const gameStateRef = multiplayerRef.child('gameState');
-    
-    // Auth listener: show login or game container
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        loginContainer.style.display = "none";
-        gameContainer.style.display = "block";
-        playerId = user.uid;
-        initMultiplayer();
-        loadLeaderboard();
-      } else {
-        gameContainer.style.display = "none";
-        loginContainer.style.display = "block";
+<!-- Only the modified JavaScript section is shown below -->
+<script>
+  // Host Game Loop (Authoritative Simulation)
+  function startHostGameLoop() {
+    // Ensure food is present in the game state.
+    gameStateRef.child('food').once('value', snapshot => {
+      if (!snapshot.exists()) {
+        gameStateRef.child('food').set(spawnFood());
       }
     });
-    
-    // Sign In event
-    loginBtn.addEventListener('click', () => {
-      const email = emailInput.value;
-      const password = passwordInput.value;
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(() => { loginError.textContent = ""; })
-        .catch(error => { loginError.textContent = error.message; });
-    });
-    
-    // Logout event
-    logoutBtn.addEventListener('click', () => {
-      firebase.auth().signOut().then(() => { location.reload(); });
-    });
-    
-    // ------------------------------
-    // Multiplayer Initialization
-    // ------------------------------
-    function initMultiplayer() {
-      // Create/update the current player's entry in the game state.
-      // The snake starts at a random grid-aligned position.
-      const startX = Math.floor(Math.random() * (canvas.width / grid)) * grid;
-      const startY = Math.floor(Math.random() * (canvas.height / grid)) * grid;
-      const playerRef = gameStateRef.child('players').child(playerId);
-      playerRef.set({
-        snake: [{ x: startX, y: startY }],
-        dx: grid,
-        dy: 0,
-        score: 0,
-        alive: true,
-        email: firebase.auth().currentUser.email
-      });
-    
-      // Try to become the host. The first player to claim the host spot will run the game loop.
-      const hostRef = multiplayerRef.child('host');
-      hostRef.transaction(currentHost => {
-        if (currentHost === null) {
-          return playerId;
-        } else {
-          return currentHost;
-        }
-      }, (error, committed, snapshot) => {
-        if (committed && snapshot.val() === playerId) {
-          isHost = true;
-          console.log("You are the host.");
-          startHostGameLoop();
-        } else {
-          console.log("You are not the host.");
-        }
-      });
-    
-      // Listen for game state updates to render the shared game
-      gameStateRef.on('value', snapshot => {
+
+    // Run the game tick every 100ms.
+    setInterval(() => {
+      gameStateRef.once('value', snapshot => {
         const state = snapshot.val();
-        if (state) {
-          renderGame(state);
-          // When your snake dies, schedule a respawn (if not already done).
-          if (state.players && state.players[playerId] && state.players[playerId].alive === false && !hasDied) {
-            hasDied = true;
-            alert("Game Over! Your final score: " + state.players[playerId].score);
-            saveScore(state.players[playerId].score);
-            setTimeout(respawnPlayer, 3000);  // Respawn after 3 seconds
+        if (!state) return;
+        const players = state.players || {};
+        let food = state.food;
+        let foodEaten = false;
+
+        // Process each player's snake.
+        Object.keys(players).forEach(pid => {
+          const player = players[pid];
+          if (!player.alive) return;
+          let snake = player.snake;
+          let dx = player.dx;
+          let dy = player.dy;
+
+          // Calculate new head position.
+          let head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+          // Wrap around if head goes off the canvas edges.
+          if (head.x < 0) {
+            head.x = canvas.width - grid;
+          } else if (head.x >= canvas.width) {
+            head.x = 0;
           }
-        }
-      });
-    
-      // Listen for key presses to update your snake's direction.
-      document.addEventListener("keydown", handleKeyDown);
-    }
-    
-    // ------------------------------
-    // Handle Keyboard Input
-    // ------------------------------
-    function handleKeyDown(e) {
-      const playerRef = gameStateRef.child('players').child(playerId);
-      playerRef.once('value', snapshot => {
-        const playerData = snapshot.val();
-        if (playerData && playerData.alive) {
-          let newDx = playerData.dx;
-          let newDy = playerData.dy;
-          if ((e.key === "ArrowLeft" || e.key.toLowerCase() === "a") && playerData.dx === 0) {
-            newDx = -grid; newDy = 0;
-          } else if ((e.key === "ArrowRight" || e.key.toLowerCase() === "d") && playerData.dx === 0) {
-            newDx = grid; newDy = 0;
-          } else if ((e.key === "ArrowUp" || e.key.toLowerCase() === "w") && playerData.dy === 0) {
-            newDx = 0; newDy = -grid;
-          } else if ((e.key === "ArrowDown" || e.key.toLowerCase() === "s") && playerData.dy === 0) {
-            newDx = 0; newDy = grid;
+          if (head.y < 0) {
+            head.y = canvas.height - grid;
+          } else if (head.y >= canvas.height) {
+            head.y = 0;
           }
-          playerRef.update({
-            dx: newDx,
-            dy: newDy
+
+          // Check for collisions with any snake segment (self or others).
+          Object.keys(players).forEach(otherPid => {
+            const otherPlayer = players[otherPid];
+            if (otherPlayer.snake) {
+              otherPlayer.snake.forEach(segment => {
+                if (head.x === segment.x && head.y === segment.y) {
+                  player.alive = false;
+                }
+              });
+            }
           });
-        }
-      });
-    }
-    
-    // ------------------------------
-    // Rendering the Game
-    // ------------------------------
-    function renderGame(state) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-      // Draw the food (red for normal, yellow for special)
-      if (state.food) {
-        ctx.fillStyle = (state.food.type === "special") ? "yellow" : "red";
-        ctx.fillRect(state.food.x, state.food.y, grid - 1, grid - 1);
-      }
-    
-      // Draw each player's snake.
-      if (state.players) {
-        Object.keys(state.players).forEach(pid => {
-          const player = state.players[pid];
+
+          // If the player is still alive, update their snake.
           if (player.alive) {
-            // Highlight your own snake in blue; others in green.
-            ctx.fillStyle = (pid === playerId) ? "blue" : "green";
-            player.snake.forEach(segment => {
-              ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
-            });
+            snake.unshift(head);
+            // If the head is on the food, update score and flag food for respawn.
+            if (food && head.x === food.x && head.y === food.y) {
+              player.score += food.points;
+              foodEaten = true;
+            } else {
+              snake.pop();
+            }
+            players[pid].snake = snake;
           }
         });
-      }
-    
-      // Update your score display.
-      if (state.players && state.players[playerId]) {
-        scoreDisplay.textContent = state.players[playerId].score;
-      }
-    }
-    
-    // ------------------------------
-    // Host Game Loop (Authoritative Simulation)
-    // ------------------------------
-    function startHostGameLoop() {
-      // Ensure food is present in the game state.
-      gameStateRef.child('food').once('value', snapshot => {
-        if (!snapshot.exists()) {
-          gameStateRef.child('food').set(spawnFood());
+
+        // If any player ate the food, spawn new food.
+        if (foodEaten) {
+          food = spawnFood();
         }
+
+        // Update the game state with new player positions and food.
+        gameStateRef.update({
+          players: players,
+          food: food
+        });
+
       });
-    
-      // Run the game tick every 100ms.
-      setInterval(() => {
-        gameStateRef.once('value', snapshot => {
-          const state = snapshot.val();
-          if (!state) return;
-          const players = state.players || {};
-          let food = state.food;
-          let foodEaten = false;
-    
-          // Process each player's snake.
-          Object.keys(players).forEach(pid => {
-            const player = players[pid];
-            if (!player.alive) return;
-            let snake = player.snake;
-            let dx = player.dx;
-            let dy = player.dy;
-    
-            // Calculate new head position.
-            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-    
-            // Check for wall collisions.
-            if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-              player.alive = false;
-            }
-    
-            // Check for collisions with any snake segment (self or others).
-            Object.keys(players).forEach(otherPid => {
-              const otherPlayer = players[otherPid];
-              if (otherPlayer.snake) {
-                otherPlayer.snake.forEach(segment => {
-                  if (head.x === segment.x && head.y === segment.y) {
-                    player.alive = false;
-                  }
-                });
-              }
-            });
-    
-            // If the player is still alive, update their snake.
-            if (player.alive) {
-              snake.unshift(head);
-              // If the head is on the food, update score and flag food for respawn.
-              if (food && head.x === food.x && head.y === food.y) {
-                player.score += food.points;
-                foodEaten = true;
-              } else {
-                snake.pop();
-              }
-              players[pid].snake = snake;
-            }
-          });
-    
-          // If any player ate the food, spawn new food.
-          if (foodEaten) {
-            food = spawnFood();
-          }
-    
-          // Update the game state with new player positions and food.
-          gameStateRef.update({
-            players: players,
-            food: food
-          });
-    
-        });
-      }, 100);
-    }
-    
-    // ------------------------------
-    // Spawn Food Function
-    // ------------------------------
-    function spawnFood() {
-      const pos = {
-        x: Math.floor(Math.random() * (canvas.width / grid)) * grid,
-        y: Math.floor(Math.random() * (canvas.height / grid)) * grid
-      };
-      let type = "normal";
-      let points = 1;
-      if (Math.random() < 0.05) {
-        type = "special";
-        points = 5;
-      }
-      return {
-        x: pos.x,
-        y: pos.y,
-        type: type,
-        points: points,
-        createdAt: Date.now()
-      };
-    }
-    
-    // ------------------------------
-    // Respawn Function
-    // ------------------------------
-    function respawnPlayer() {
-      const startX = Math.floor(Math.random() * (canvas.width / grid)) * grid;
-      const startY = Math.floor(Math.random() * (canvas.height / grid)) * grid;
-      const playerRef = gameStateRef.child('players').child(playerId);
-      // Reset player's state: new snake position, reset score (or keep it if preferred)
-      playerRef.set({
-        snake: [{ x: startX, y: startY }],
-        dx: grid,
-        dy: 0,
-        score: 0,
-        alive: true,
-        email: firebase.auth().currentUser.email
-      });
-      hasDied = false;  // Reset the death flag so future deaths can trigger respawn
-    }
-    
-    // ------------------------------
-    // Leaderboard Integration
-    // ------------------------------
-    function saveScore(score) {
-      const user = firebase.auth().currentUser;
-      if (user) {
-        let firstName = user.email.split('@')[0];
-        const leaderboardRef = firebase.database().ref('leaderboard');
-        leaderboardRef.push({
-          username: firstName,
-          score: score,
-          timestamp: Date.now()
-        });
-      }
-    }
-    
-    function loadLeaderboard() {
-      const leaderboardRef = firebase.database().ref('leaderboard')
-                                  .orderByChild('score')
-                                  .limitToLast(3);
-      leaderboardRef.on('value', snapshot => {
-        const scores = [];
-        snapshot.forEach(childSnapshot => {
-          scores.push(childSnapshot.val());
-        });
-        scores.sort((a, b) => b.score - a.score);
-        const leaderboardBody = document.getElementById('leaderboard-body');
-        leaderboardBody.innerHTML = "";
-        scores.forEach(entry => {
-          const row = document.createElement('tr');
-          const userCell = document.createElement('td');
-          const scoreCell = document.createElement('td');
-          userCell.textContent = entry.username;
-          scoreCell.textContent = entry.score;
-          row.appendChild(userCell);
-          row.appendChild(scoreCell);
-          leaderboardBody.appendChild(row);
-        });
-      });
-    }
-  </script>
-</body>
-</html>
+    }, 100);
+  }
+</script>
