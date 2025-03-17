@@ -317,15 +317,38 @@
     // Firebase Leaderboard Integration
     // ------------------------------
     // Save the score to the "leaderboard" node using the player's first name (extracted from the email)
+    // Updated to record the score only if it beats one of the top three scores.
     function saveScore(score) {
       const user = firebase.auth().currentUser;
       if (user) {
         let firstName = user.email.split('@')[0];
         const leaderboardRef = firebase.database().ref('leaderboard');
-        leaderboardRef.push({
-          username: firstName,
-          score: score,
-          timestamp: Date.now()
+        
+        // Query the top three scores currently in the leaderboard.
+        leaderboardRef.orderByChild('score').limitToLast(3).once('value', snapshot => {
+          let topScores = [];
+          snapshot.forEach(childSnapshot => {
+            topScores.push(childSnapshot.val().score);
+          });
+          // If there are less than three scores, record the new score.
+          if (topScores.length < 3) {
+            leaderboardRef.push({
+              username: firstName,
+              score: score,
+              timestamp: Date.now()
+            });
+          } else {
+            // Get the minimum score among the top three.
+            const minTopScore = Math.min(...topScores);
+            // Only record the score if it beats one of the top three scores.
+            if (score > minTopScore) {
+              leaderboardRef.push({
+                username: firstName,
+                score: score,
+                timestamp: Date.now()
+              });
+            }
+          }
         });
       }
     }
