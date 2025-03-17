@@ -49,21 +49,6 @@
       padding: 5px 8px;
       text-align: center;
     }
-    /* Kill Feed styling */
-    #kill-feed {
-      max-height: 150px;
-      overflow-y: auto;
-      margin-top: 10px;
-    }
-    #kill-feed ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #kill-feed li {
-      font-size: 14px;
-      padding: 2px 0;
-    }
     /* Respawn Timer styling */
     #respawn-timer {
       position: absolute;
@@ -107,7 +92,7 @@
     <p>Your Score: <span id="score">0</span></p>
     <!-- Respawn Timer Overlay -->
     <div id="respawn-timer"></div>
-    <!-- Sidebar for Leaderboard, Current Players, and Kill Feed -->
+    <!-- Sidebar for Leaderboard and Current Players -->
     <div id="sidebar">
       <!-- Global Leaderboard -->
       <div id="leaderboard">
@@ -134,11 +119,6 @@
           </thead>
           <tbody id="players-body"></tbody>
         </table>
-      </div>
-      <!-- Kill Feed -->
-      <div id="kill-feed">
-        <h2>Kill Feed</h2>
-        <ul id="kill-feed-list"></ul>
       </div>
     </div>
   </div>
@@ -188,38 +168,6 @@
     const gameStateRef = multiplayerRef.child('gameState');
 
     // ------------------------------
-    // Kill Feed Functions
-    // ------------------------------
-    function recordKillFeed(message) {
-      const killFeedRef = multiplayerRef.child('killFeed');
-      killFeedRef.push({
-        message: message,
-        timestamp: Date.now()
-      });
-    }
-
-    function loadKillFeed() {
-      const killFeedRef = multiplayerRef.child('killFeed');
-      killFeedRef.on('value', snapshot => {
-        const killFeedList = document.getElementById('kill-feed-list');
-        killFeedList.innerHTML = "";
-        const events = [];
-        snapshot.forEach(childSnapshot => {
-          events.push(childSnapshot.val());
-        });
-        // Sort by timestamp (oldest first)
-        events.sort((a, b) => a.timestamp - b.timestamp);
-        events.forEach(event => {
-          const li = document.createElement('li');
-          li.textContent = event.message;
-          killFeedList.appendChild(li);
-        });
-        // Scroll to bottom
-        killFeedList.scrollTop = killFeedList.scrollHeight;
-      });
-    }
-
-    // ------------------------------
     // Auth and Initialization
     // ------------------------------
     firebase.auth().onAuthStateChanged(user => {
@@ -230,7 +178,6 @@
         initMultiplayer();
         loadLeaderboard();
         loadCurrentPlayers();
-        loadKillFeed();
       } else {
         gameContainer.style.display = "none";
         loginContainer.style.display = "block";
@@ -290,7 +237,7 @@
         const state = snapshot.val();
         if (state) {
           renderGame(state);
-          // When your snake dies, start a 3 second respawn timer.
+          // When your snake dies, start a 3‑second respawn timer.
           if (state.players && state.players[playerId] && state.players[playerId].alive === false && !hasDied) {
             hasDied = true;
             saveScore(state.players[playerId].score);
@@ -316,7 +263,7 @@
     }
 
     // ------------------------------
-    // Handle Keyboard Input (no reversal prevention)
+    // Handle Keyboard Input (180° turn prevention re‑added)
     // ------------------------------
     function handleKeyDown(e) {
       const now = Date.now();
@@ -329,13 +276,14 @@
         if (playerData && playerData.alive) {
           let newDx = playerData.dx;
           let newDy = playerData.dy;
-          if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+          // Prevent 180° turns: allow change only if not already moving in that axis.
+          if ((e.key === "ArrowLeft" || e.key.toLowerCase() === "a") && playerData.dx === 0) {
             newDx = -grid; newDy = 0;
-          } else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+          } else if ((e.key === "ArrowRight" || e.key.toLowerCase() === "d") && playerData.dx === 0) {
             newDx = grid; newDy = 0;
-          } else if (e.key === "ArrowUp" || e.key.toLowerCase() === "w") {
+          } else if ((e.key === "ArrowUp" || e.key.toLowerCase() === "w") && playerData.dy === 0) {
             newDx = 0; newDy = -grid;
-          } else if (e.key === "ArrowDown" || e.key.toLowerCase() === "s") {
+          } else if ((e.key === "ArrowDown" || e.key.toLowerCase() === "s") && playerData.dy === 0) {
             newDx = 0; newDy = grid;
           }
           playerRef.update({ dx: newDx, dy: newDy });
@@ -423,18 +371,12 @@
 
             // If not invincible, check for collisions with any snake segment.
             if (!(player.invincibleUntil && Date.now() < player.invincibleUntil)) {
-              let collisionDetected = false;
               Object.keys(players).forEach(otherPid => {
                 const otherPlayer = players[otherPid];
                 if (otherPlayer.snake) {
                   for (let segment of otherPlayer.snake) {
                     if (head.x === segment.x && head.y === segment.y) {
                       player.alive = false;
-                      if (!collisionDetected) {
-                        const playerName = player.email ? player.email.split('@')[0] : pid;
-                        recordKillFeed(playerName + " died.");
-                        collisionDetected = true;
-                      }
                       break;
                     }
                   }
