@@ -348,4 +348,162 @@
       document.getElementById("transpositionKey").value = p.transpositionKey;
       document.getElementById("beaufortKey").value = p.beaufortKey;
       document.getElementById("shuffleKey").value = p.shuffleKey;
-      cus
+      customCipherOrder = p.order ? p.order.slice() : [];
+      document.getElementById("orderLabel").innerText = "Cipher Order: " + (customCipherOrder.length ? customCipherOrder.join(", ") : "(default)");
+    }
+
+    // Event Listeners
+    document.getElementById("trimButton").addEventListener("click", trimInput);
+
+    document.getElementById("encryptButton").addEventListener("click", function() {
+      try {
+        let input = document.getElementById("inputText").value;
+        let output = processCiphers(input, false);
+        document.getElementById("outputText").value = output;
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    document.getElementById("decryptButton").addEventListener("click", function() {
+      try {
+        let input = document.getElementById("inputText").value;
+        let output = processCiphers(input, true);
+        document.getElementById("outputText").value = output;
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    document.getElementById("copyButton").addEventListener("click", function() {
+      let output = document.getElementById("outputText");
+      output.select();
+      document.execCommand("copy");
+      alert("Output copied to clipboard!");
+    });
+
+    document.getElementById("clearButton").addEventListener("click", function() {
+      document.getElementById("inputText").value = "";
+      document.getElementById("outputText").value = "";
+    });
+
+    // Profile handling
+    document.getElementById("saveProfileButton").addEventListener("click", saveProfile);
+    document.getElementById("deleteProfileButton").addEventListener("click", deleteProfile);
+    document.getElementById("profileSelect").addEventListener("change", loadProfile);
+
+    // Export/Import Profiles
+    document.getElementById("exportProfilesButton").addEventListener("click", function() {
+      let dataStr = JSON.stringify(profiles, null, 2);
+      let blob = new Blob([dataStr], {type: "application/json"});
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "profiles.json";
+      a.click();
+    });
+    document.getElementById("importProfilesButton").addEventListener("click", function() {
+      document.getElementById("importProfilesInput").click();
+    });
+    document.getElementById("importProfilesInput").addEventListener("change", function(event) {
+      let file = event.target.files[0];
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let importedProfiles = JSON.parse(e.target.result);
+        Object.assign(profiles, importedProfiles);
+        let sel = document.getElementById("profileSelect");
+        sel.innerHTML = '<option value="">-- Select Profile --</option>';
+        for (let name in profiles) {
+          let opt = document.createElement("option");
+          opt.value = name;
+          opt.text = name;
+          sel.add(opt);
+        }
+        alert("Profiles imported successfully.");
+      };
+      reader.readAsText(file);
+    });
+
+    // Export/Import Settings
+    document.getElementById("exportButton").addEventListener("click", function() {
+      let settings = { profiles: profiles, customCipherOrder: customCipherOrder };
+      let dataStr = JSON.stringify(settings, null, 2);
+      let blob = new Blob([dataStr], {type: "application/json"});
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "settings.json";
+      a.click();
+    });
+    document.getElementById("importButton").addEventListener("click", function() {
+      document.getElementById("importSettingsInput").click();
+    });
+    document.getElementById("importSettingsInput").addEventListener("change", function(event) {
+      let file = event.target.files[0];
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let settings = JSON.parse(e.target.result);
+        if (settings.profiles) {
+          profiles = settings.profiles;
+          let sel = document.getElementById("profileSelect");
+          sel.innerHTML = '<option value="">-- Select Profile --</option>';
+          for (let name in profiles) {
+            let opt = document.createElement("option");
+            opt.value = name;
+            opt.text = name;
+            sel.add(opt);
+          }
+        }
+        if (settings.customCipherOrder) {
+          customCipherOrder = settings.customCipherOrder.slice();
+          document.getElementById("orderLabel").innerText = "Cipher Order: " + (customCipherOrder.length ? customCipherOrder.join(", ") : "(default)");
+        }
+        alert("Settings imported successfully.");
+      };
+      reader.readAsText(file);
+    });
+
+    // Reset settings
+    document.getElementById("resetSettingsButton").addEventListener("click", function() {
+      document.getElementById("checkbox_Caesar").checked = false;
+      document.getElementById("checkbox_Vigenere").checked = false;
+      document.getElementById("checkbox_Transposition").checked = false;
+      document.getElementById("checkbox_Atbash").checked = false;
+      document.getElementById("checkbox_Reverse").checked = false;
+      document.getElementById("checkbox_Beaufort").checked = false;
+      document.getElementById("checkbox_Shuffle").checked = false;
+      document.getElementById("caesarShift").value = 3;
+      document.getElementById("vigenereKey").value = "";
+      document.getElementById("transpositionKey").value = "";
+      document.getElementById("beaufortKey").value = "";
+      document.getElementById("shuffleKey").value = "";
+      customCipherOrder = [];
+      document.getElementById("orderLabel").innerText = "Cipher Order: (default)";
+      alert("Settings reset to default.");
+    });
+
+    // Reorder and restore cipher order
+    document.getElementById("reorderButton").addEventListener("click", function() {
+      let order = prompt("Enter cipher order as comma-separated values (e.g., Caesar,Vigenere,Transposition,Atbash,Reverse,Beaufort,Shuffle):");
+      if (order) {
+        let arr = order.split(",").map(s => s.trim());
+        let validCiphers = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
+        for (let cipher of arr) {
+          if (!validCiphers.includes(cipher)) {
+            alert("Invalid cipher: " + cipher);
+            return;
+          }
+        }
+        customCipherOrder = arr;
+        document.getElementById("orderLabel").innerText = "Cipher Order: " + customCipherOrder.join(", ");
+        alert("Custom cipher order set.");
+      }
+    });
+    document.getElementById("restoreOrderButton").addEventListener("click", function() {
+      customCipherOrder = [];
+      document.getElementById("orderLabel").innerText = "Cipher Order: (default)";
+      alert("Cipher order restored to default.");
+    });
+  </script>
+</body>
+</html>
