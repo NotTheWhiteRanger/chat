@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Encrypted Chat System</title>
+  <style>
+    /* Basic styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #chat {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+      background: #f9f9f9;
+      margin-bottom: 10px;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 5px;
+    }
+    #sendButton {
+      width: 25%;
+      padding: 5px;
+    }
+    #profileSelect {
+      margin-bottom: 10px;
+    }
+  </style>
+  <!-- Include Firebase libraries (using version 8 for simplicity) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+  <h1>Encrypted Chat System</h1>
+  <!-- Profile Selection -->
+  <label for="profileSelect">Select Profile:</label>
+  <select id="profileSelect">
+    <!-- Options will be populated dynamically -->
+  </select>
+
+  <!-- Chat Display Area -->
+  <div id="chat"></div>
+
+  <!-- Message Input -->
+  <input type="text" id="messageInput" placeholder="Enter your message">
+  <button id="sendButton">Send</button>
+
+  <script>
+    // ================= Firebase Initialization =================
+    // Replace these values with your Firebase project configuration.
+    var firebaseConfig = {
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    var database = firebase.database().ref('encryptchat');
+
+    // ================= Encryption Functions =================
+
+    // -- Caesar Cipher --
+    function caesarCipherEncrypt(text, shift) {
+      shift = shift % 26;
+      let result = "";
+      for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (c.match(/[A-Z]/)) {
+          let code = text.charCodeAt(i) - 65;
+          code = (code + shift + 26) % 26;
+          result += String.fromCharCode(code + 65);
+        } else if (c.match(/[a-z]/)) {
+          let code = text.charCodeAt(i) - 97;
+          code = (code + shift + 26) % 26;
+          result += String.fromCharCode(code + 97);
+        } else {
+          result += c;
+        }
+      }
+      return result;
+    }
+    function caesarCipherDecrypt(text, shift) {
+      return caesarCipherEncrypt(text, -shift);
+    }
+
+    // -- Vigenère Cipher --
+    function vigenereEncrypt(text, key) {
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      text = text.toUpperCase();
+      let result = "";
+      let j = 0;
+      for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (c.match(/[A-Z]/)) {
+          let shift = key.charCodeAt(j % key.length) - 65;
+          let code = (c.charCodeAt(0) - 65 + shift) % 26;
+          result += String.fromCharCode(code + 65);
+          j++;
+        } else {
+          result += c;
+        }
+      }
+      return result;
+    }
+    function vigenereDecrypt(text, key) {
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      text = text.toUpperCase();
+      let result = "";
+      let j = 0;
+      for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (c.match(/[A-Z]/)) {
+          let shift = key.charCodeAt(j % key.length) - 65;
+          let code = (c.charCodeAt(0) - 65 - shift + 26) % 26;
+          result += String.fromCharCode(code + 65);
+          j++;
+        } else {
+          result += c;
+        }
+      }
+      return result;
+    }
+
+    // ================= Profile Management =================
+    // Each profile is defined as an array of encryption steps.
+    // For example, the "Default (Caesar 3)" profile applies a Caesar cipher with a shift of 3.
+    const profiles = {
+      "Default (Caesar 3)": [
+         { cipher: "caesar", shift: 3 }
+      ],
+      "Secret (Vigenère)": [
+         { cipher: "vigenere", key: "SECRET" }
+      ]
+      // To chain multiple ciphers, add more steps here:
+      // "Double Encrypt": [
+      //    { cipher: "caesar", shift: 3 },
+      //    { cipher: "vigenere", key: "KEY" }
+      // ]
+    };
+
+    // Populate the profile dropdown
+    function populateProfiles() {
+      const profileSelect = document.getElementById("profileSelect");
+      profileSelect.innerHTML = "";
+      for (let profileName in profiles) {
+        let option = document.createElement("option");
+        option.value = profileName;
+        option.text = profileName;
+        profileSelect.appendChild(option);
+      }
+    }
+    populateProfiles();
+
+    // Get the current profile steps
+    function getCurrentProfileSteps() {
+      const profileSelect = document.getElementById("profileSelect");
+      const profileName = profileSelect.value;
+      return profiles[profileName];
+    }
+
+    // Encrypt the message by applying each cipher step in order
+    function encryptMessage(message) {
+      let steps = getCurrentProfileSteps();
+      let encrypted = message;
+      for (let step of steps) {
+        switch(step.cipher) {
+          case "caesar":
+            encrypted = caesarCipherEncrypt(encrypted, step.shift);
+            break;
+          case "vigenere":
+            encrypted = vigenereEncrypt(encrypted, step.key);
+            break;
+          default:
+            break;
+        }
+      }
+      return encrypted;
+    }
+
+    // Decrypt the message by applying each cipher step in reverse order
+    function decryptMessage(message) {
+      let steps = getCurrentProfileSteps();
+      let decrypted = message;
+      for (let i = steps.length - 1; i >= 0; i--) {
+        let step = steps[i];
+        switch(step.cipher) {
+          case "caesar":
+            decrypted = caesarCipherDecrypt(decrypted, step.shift);
+            break;
+          case "vigenere":
+            decrypted = vigenereDecrypt(decrypted, step.key);
+            break;
+          default:
+            break;
+        }
+      }
+      return decrypted;
+    }
+
+    // ================= Chat Functions =================
+    // When the "Send" button is clicked, encrypt the message and push it to Firebase.
+    document.getElementById("sendButton").addEventListener("click", function() {
+      const messageInput = document.getElementById("messageInput");
+      let message = messageInput.value;
+      if (message.trim() === "") return;
+      let encryptedMessage = encryptMessage(message);
+      database.ref("messages").push({
+        message: encryptedMessage,
+        timestamp: Date.now()
+      });
+      messageInput.value = "";
+    });
+
+    // Listen for new messages from Firebase, decrypt them, and display in the chat window.
+    database.ref("messages").on("child_added", function(snapshot) {
+      let data = snapshot.val();
+      let decryptedMessage = decryptMessage(data.message);
+      const chatDiv = document.getElementById("chat");
+      let p = document.createElement("p");
+      p.textContent = decryptedMessage;
+      chatDiv.appendChild(p);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    });
+  </script>
+</body>
+</html>
