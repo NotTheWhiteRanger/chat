@@ -66,18 +66,33 @@
   <div class="container">
     <button id="catButton">Show Cat Magic!</button>
     <div id="catContent">
-      <img class="cat-image" src="https://placekitten.com/400/300" alt="Cute Cat">
+      <img id="magicCat" class="cat-image" src="" alt="Mystery Cat">
       <p class="cat-fact">Did you know? Cats have over 20 muscles in their ears, giving them incredible control—and a dash of attitude!</p>
     </div>
   </div>
   
   <script>
-    // JavaScript to toggle the cat content when the button is clicked
+    // List of cat image filenames from cat7.jpg through cat14.jpg
+    const catImages = [
+      "images/cat7.jpg",
+      "images/cat8.jpg",
+      "images/cat9.jpg",
+      "images/cat10.jpg",
+      "images/cat11.jpg",
+      "images/cat12.jpg",
+      "images/cat13.jpg",
+      "images/cat14.jpg"
+    ];
+    
     const catButton = document.getElementById('catButton');
     const catContent = document.getElementById('catContent');
-    
+    const magicCat = document.getElementById('magicCat');
+
     catButton.addEventListener('click', () => {
       if (catContent.style.display === 'none' || catContent.style.display === '') {
+        // Choose a random cat image from the array
+        const randomIndex = Math.floor(Math.random() * catImages.length);
+        magicCat.src = catImages[randomIndex];
         catContent.style.display = 'block';
         catButton.textContent = 'Hide Cat Magic!';
       } else {
@@ -88,3 +103,4 @@
   </script>
 </body>
 </html>
+
