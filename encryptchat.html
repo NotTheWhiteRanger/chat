@@ -28,25 +28,43 @@
     #profileSelect {
       margin-bottom: 10px;
     }
+    /* Containers for sign in and chat */
+    #signInDiv, #chatContainer {
+      margin-bottom: 20px;
+    }
   </style>
-  <!-- Include Firebase libraries (using version 8 for simplicity) -->
+  <!-- Include Firebase libraries -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
   <h1>Encrypted Chat System</h1>
-  <!-- Profile Selection -->
-  <label for="profileSelect">Select Profile:</label>
-  <select id="profileSelect">
-    <!-- Options will be populated dynamically -->
-  </select>
+  
+  <!-- Sign In Form -->
+  <div id="signInDiv">
+    <h2>Sign In</h2>
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="signInButton">Sign In</button>
+  </div>
+  
+  <!-- Chat Container (initially hidden) -->
+  <div id="chatContainer" style="display:none;">
+    <button id="signOutButton">Sign Out</button>
+    <!-- Profile Selection -->
+    <label for="profileSelect">Select Profile:</label>
+    <select id="profileSelect">
+      <!-- Options will be populated dynamically -->
+    </select>
 
-  <!-- Chat Display Area -->
-  <div id="chat"></div>
+    <!-- Chat Display Area -->
+    <div id="chat"></div>
 
-  <!-- Message Input -->
-  <input type="text" id="messageInput" placeholder="Enter your message">
-  <button id="sendButton">Send</button>
+    <!-- Message Input -->
+    <input type="text" id="messageInput" placeholder="Enter your message">
+    <button id="sendButton">Send</button>
+  </div>
 
   <script>
     // ================= Firebase Initialization =================
@@ -61,6 +79,44 @@
       appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
+
+    // ================= Authentication =================
+    // Listen for auth state changes to toggle UI visibility.
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // User is signed in – show the chat container.
+        document.getElementById("chatContainer").style.display = "block";
+        document.getElementById("signInDiv").style.display = "none";
+      } else {
+        // No user is signed in – show the sign in form.
+        document.getElementById("chatContainer").style.display = "none";
+        document.getElementById("signInDiv").style.display = "block";
+      }
+    });
+
+    // Sign In button event
+    document.getElementById("signInButton").addEventListener("click", function() {
+      var email = document.getElementById("email").value;
+      var password = document.getElementById("password").value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(function(userCredential) {
+          console.log("Signed in as:", userCredential.user.email);
+        })
+        .catch(function(error) {
+          alert("Sign In Error: " + error.message);
+        });
+    });
+
+    // Sign Out button event
+    document.getElementById("signOutButton").addEventListener("click", function() {
+      firebase.auth().signOut()
+        .then(function() {
+          console.log("Signed out successfully.");
+        })
+        .catch(function(error) {
+          alert("Sign Out Error: " + error.message);
+        });
+    });
 
     // ================= Encryption Functions =================
 
@@ -136,7 +192,6 @@
       "Secret (Vigenère)": [
          { cipher: "vigenere", key: "SECRET" }
       ]
-      // To chain multiple ciphers, add additional steps here.
     };
 
     // Populate the profile dropdown
@@ -222,3 +277,4 @@
   </script>
 </body>
 </html>
+
