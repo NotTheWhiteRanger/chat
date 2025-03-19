@@ -2,125 +2,46 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Encrypted Chat System</title>
+  <title>Expanded Encrypted Chat System</title>
   <style>
     /* Basic styles */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    #chat {
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 300px;
-      overflow-y: scroll;
-      background: #f9f9f9;
-      margin-bottom: 10px;
-    }
-    #messageInput {
-      width: 70%;
-      padding: 5px;
-    }
-    #sendButton {
-      width: 25%;
-      padding: 5px;
-    }
-    #profileSelect {
-      margin-bottom: 10px;
-    }
-    /* Containers for sign in and chat */
-    #signInDiv, #chatContainer {
-      margin-bottom: 20px;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; background: #f9f9f9; margin-bottom: 10px; }
+    #messageInput { width: 70%; padding: 5px; }
+    #sendButton { width: 25%; padding: 5px; }
+    #profileSelect { margin-bottom: 10px; }
   </style>
-  <!-- Include Firebase libraries -->
+  <!-- Include Firebase libraries (using version 8 for simplicity) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
-  <h1>Encrypted Chat System</h1>
-  
-  <!-- Sign In Form -->
-  <div id="signInDiv">
-    <h2>Sign In</h2>
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button id="signInButton">Sign In</button>
-  </div>
-  
-  <!-- Chat Container (initially hidden) -->
-  <div id="chatContainer" style="display:none;">
-    <button id="signOutButton">Sign Out</button>
-    <!-- Profile Selection -->
-    <label for="profileSelect">Select Profile:</label>
-    <select id="profileSelect">
-      <!-- Options will be populated dynamically -->
-    </select>
-
-    <!-- Chat Display Area -->
-    <div id="chat"></div>
-
-    <!-- Message Input -->
-    <input type="text" id="messageInput" placeholder="Enter your message">
-    <button id="sendButton">Send</button>
-  </div>
+  <h1>Expanded Encrypted Chat System</h1>
+  <!-- Profile Selection -->
+  <label for="profileSelect">Select Profile:</label>
+  <select id="profileSelect"></select>
+  <!-- Chat Display Area -->
+  <div id="chat"></div>
+  <!-- Message Input -->
+  <input type="text" id="messageInput" placeholder="Enter your message">
+  <button id="sendButton">Send</button>
 
   <script>
-    // ================= Firebase Initialization =================
-    // Replace these values with your Firebase project configuration.
+    // Firebase initialization (update these values with your Firebase config)
     var firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
-      projectId: "new-chat-8d4f4",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
       storageBucket: "YOUR_PROJECT_ID.appspot.com",
       messagingSenderId: "YOUR_SENDER_ID",
       appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
 
-    // ================= Authentication =================
-    // Listen for auth state changes to toggle UI visibility.
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        // User is signed in – show the chat container.
-        document.getElementById("chatContainer").style.display = "block";
-        document.getElementById("signInDiv").style.display = "none";
-      } else {
-        // No user is signed in – show the sign in form.
-        document.getElementById("chatContainer").style.display = "none";
-        document.getElementById("signInDiv").style.display = "block";
-      }
-    });
+    // ---------------- Expanded Encryption Functions ----------------
 
-    // Sign In button event
-    document.getElementById("signInButton").addEventListener("click", function() {
-      var email = document.getElementById("email").value;
-      var password = document.getElementById("password").value;
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(function(userCredential) {
-          console.log("Signed in as:", userCredential.user.email);
-        })
-        .catch(function(error) {
-          alert("Sign In Error: " + error.message);
-        });
-    });
-
-    // Sign Out button event
-    document.getElementById("signOutButton").addEventListener("click", function() {
-      firebase.auth().signOut()
-        .then(function() {
-          console.log("Signed out successfully.");
-        })
-        .catch(function(error) {
-          alert("Sign Out Error: " + error.message);
-        });
-    });
-
-    // ================= Encryption Functions =================
-
-    // -- Caesar Cipher --
+    // Caesar Cipher
     function caesarCipherEncrypt(text, shift) {
       shift = shift % 26;
       let result = "";
@@ -144,18 +65,18 @@
       return caesarCipherEncrypt(text, -shift);
     }
 
-    // -- Vigenère Cipher --
+    // Vigenère Cipher
     function vigenereEncrypt(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      text = text.toUpperCase();
       let result = "";
       let j = 0;
       for (let i = 0; i < text.length; i++) {
         let c = text[i];
-        if (c.match(/[A-Z]/)) {
+        if (c.match(/[A-Z]/i)) {
+          let base = c === c.toUpperCase() ? 65 : 97;
           let shift = key.charCodeAt(j % key.length) - 65;
-          let code = (c.charCodeAt(0) - 65 + shift) % 26;
-          result += String.fromCharCode(code + 65);
+          let code = (text.charCodeAt(i) - base + shift) % 26;
+          result += String.fromCharCode(code + base);
           j++;
         } else {
           result += c;
@@ -165,15 +86,15 @@
     }
     function vigenereDecrypt(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      text = text.toUpperCase();
       let result = "";
       let j = 0;
       for (let i = 0; i < text.length; i++) {
         let c = text[i];
-        if (c.match(/[A-Z]/)) {
+        if (c.match(/[A-Z]/i)) {
+          let base = c === c.toUpperCase() ? 65 : 97;
           let shift = key.charCodeAt(j % key.length) - 65;
-          let code = (c.charCodeAt(0) - 65 - shift + 26) % 26;
-          result += String.fromCharCode(code + 65);
+          let code = (text.charCodeAt(i) - base - shift + 26) % 26;
+          result += String.fromCharCode(code + base);
           j++;
         } else {
           result += c;
@@ -182,19 +103,159 @@
       return result;
     }
 
-    // ================= Profile Management =================
-    // Each profile defines an array of encryption steps.
-    // Note: Changing the selected profile after messages have been sent may lead to decryption issues.
+    // Transposition Cipher (Columnar Transposition)
+    function transpositionEncrypt(text, key) {
+      // For simplicity, remove spaces
+      text = text.replace(/\s+/g, '');
+      let numCols = key.length;
+      let numRows = Math.ceil(text.length / numCols);
+      let grid = [];
+      for (let r = 0; r < numRows; r++) {
+        grid[r] = [];
+        for (let c = 0; c < numCols; c++) {
+          grid[r][c] = text[r * numCols + c] || '';
+        }
+      }
+      // Determine order based on alphabetical order of key letters
+      let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
+                   .sort((a, b) => a.char.localeCompare(b.char))
+                   .map(obj => obj.index);
+      let cipherText = "";
+      for (let i = 0; i < order.length; i++) {
+        let col = order[i];
+        for (let r = 0; r < numRows; r++) {
+          cipherText += grid[r][col] || '';
+        }
+      }
+      return cipherText;
+    }
+    function transpositionDecrypt(text, key) {
+      let numCols = key.length;
+      let numRows = Math.ceil(text.length / numCols);
+      let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
+                   .sort((a, b) => a.char.localeCompare(b.char))
+                   .map(obj => obj.index);
+      let grid = [];
+      for (let r = 0; r < numRows; r++) { grid[r] = new Array(numCols); }
+      let pos = 0;
+      for (let i = 0; i < order.length; i++) {
+        let col = order[i];
+        for (let r = 0; r < numRows; r++) {
+          if (pos < text.length) {
+            grid[r][col] = text[pos++];
+          }
+        }
+      }
+      let plainText = "";
+      for (let r = 0; r < numRows; r++) {
+        for (let c = 0; c < numCols; c++) {
+          plainText += grid[r][c] || '';
+        }
+      }
+      return plainText;
+    }
+
+    // Atbash Cipher
+    function atbash(text) {
+      let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let reversed = alphabet.split('').reverse().join('');
+      let result = "";
+      for (let char of text) {
+        let upperChar = char.toUpperCase();
+        let idx = alphabet.indexOf(upperChar);
+        if (idx !== -1) {
+          let transChar = reversed[idx];
+          result += (char === char.toUpperCase()) ? transChar : transChar.toLowerCase();
+        } else {
+          result += char;
+        }
+      }
+      return result;
+    }
+
+    // Reverse Cipher
+    function reverseText(text) {
+      return text.split('').reverse().join('');
+    }
+
+    // Beaufort Cipher (Encryption and decryption are identical)
+    function beaufortCipher(text, key) {
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let result = "";
+      let j = 0;
+      for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        if (char.match(/[A-Z]/i)) {
+          let base = char === char.toUpperCase() ? 65 : 97;
+          let p = text.charCodeAt(i) - base;
+          let k = key.charCodeAt(j % key.length) - 65;
+          // Beaufort cipher formula: C = (k - p + 26) mod 26
+          let code = (k - p + 26) % 26;
+          result += String.fromCharCode(code + base);
+          j++;
+        } else {
+          result += char;
+        }
+      }
+      return result;
+    }
+    // Decryption for Beaufort is the same as encryption.
+    function beaufortDecrypt(text, key) {
+      return beaufortCipher(text, key);
+    }
+
+    // Shuffle Cipher
+    function shuffleCipher(text, key, decrypt = false) {
+      if (!key) return text;
+      // Create a permutation based on key:
+      let indices = [...Array(text.length).keys()];
+      let permutation = indices.slice().sort((a, b) => {
+        let valA = key.charCodeAt(a % key.length) + a;
+        let valB = key.charCodeAt(b % key.length) + b;
+        return valA - valB;
+      });
+      if (decrypt) {
+        // Compute inverse permutation
+        let inverse = [];
+        for (let i = 0; i < permutation.length; i++) {
+          inverse[permutation[i]] = i;
+        }
+        permutation = inverse;
+      }
+      let resultArray = [];
+      for (let i = 0; i < text.length; i++) {
+        resultArray[i] = text[permutation[i]];
+      }
+      return resultArray.join('');
+    }
+    function shuffleEncrypt(text, key) {
+      return shuffleCipher(text, key, false);
+    }
+    function shuffleDecrypt(text, key) {
+      return shuffleCipher(text, key, true);
+    }
+
+    // ---------------- Profile Management ----------------
+    // Each profile is defined as an array of encryption steps.
     const profiles = {
       "Default (Caesar 3)": [
          { cipher: "caesar", shift: 3 }
       ],
-      "Secret (Vigenère)": [
+      "Secret (Vigenere)": [
          { cipher: "vigenere", key: "SECRET" }
+      ],
+      "Advanced": [
+         { cipher: "caesar", shift: 3 },
+         { cipher: "vigenere", key: "KEY" },
+         { cipher: "transposition", key: "TRANS" },
+         { cipher: "atbash" },
+         { cipher: "reverse" },
+         { cipher: "beaufort", key: "BEAU" },
+         { cipher: "shuffle", key: "SHUFFLE" }
       ]
     };
 
-    // Populate the profile dropdown
     function populateProfiles() {
       const profileSelect = document.getElementById("profileSelect");
       profileSelect.innerHTML = "";
@@ -207,43 +268,79 @@
     }
     populateProfiles();
 
-    // Get the current profile steps
     function getCurrentProfileSteps() {
       const profileSelect = document.getElementById("profileSelect");
       const profileName = profileSelect.value;
       return profiles[profileName];
     }
 
-    // Encrypt the message by applying each cipher step in order
+    // ---------------- Message Encryption/Decryption ----------------
     function encryptMessage(message) {
       let steps = getCurrentProfileSteps();
       let encrypted = message;
       for (let step of steps) {
-        if (step.cipher === "caesar") {
-          encrypted = caesarCipherEncrypt(encrypted, step.shift);
-        } else if (step.cipher === "vigenere") {
-          encrypted = vigenereEncrypt(encrypted, step.key);
+        switch(step.cipher) {
+          case "caesar":
+            encrypted = caesarCipherEncrypt(encrypted, step.shift);
+            break;
+          case "vigenere":
+            encrypted = vigenereEncrypt(encrypted, step.key);
+            break;
+          case "transposition":
+            encrypted = transpositionEncrypt(encrypted, step.key);
+            break;
+          case "atbash":
+            encrypted = atbash(encrypted);
+            break;
+          case "reverse":
+            encrypted = reverseText(encrypted);
+            break;
+          case "beaufort":
+            encrypted = beaufortCipher(encrypted, step.key);
+            break;
+          case "shuffle":
+            encrypted = shuffleEncrypt(encrypted, step.key);
+            break;
+          default:
+            break;
         }
       }
       return encrypted;
     }
-
-    // Decrypt the message by applying each cipher step in reverse order
     function decryptMessage(message) {
-      let steps = getCurrentProfileSteps();
+      let steps = getCurrentProfileSteps().slice().reverse();
       let decrypted = message;
-      for (let i = steps.length - 1; i >= 0; i--) {
-        let step = steps[i];
-        if (step.cipher === "caesar") {
-          decrypted = caesarCipherDecrypt(decrypted, step.shift);
-        } else if (step.cipher === "vigenere") {
-          decrypted = vigenereDecrypt(decrypted, step.key);
+      for (let step of steps) {
+        switch(step.cipher) {
+          case "caesar":
+            decrypted = caesarCipherDecrypt(decrypted, step.shift);
+            break;
+          case "vigenere":
+            decrypted = vigenereDecrypt(decrypted, step.key);
+            break;
+          case "transposition":
+            decrypted = transpositionDecrypt(decrypted, step.key);
+            break;
+          case "atbash":
+            decrypted = atbash(decrypted);
+            break;
+          case "reverse":
+            decrypted = reverseText(decrypted);
+            break;
+          case "beaufort":
+            decrypted = beaufortDecrypt(decrypted, step.key);
+            break;
+          case "shuffle":
+            decrypted = shuffleDecrypt(decrypted, step.key);
+            break;
+          default:
+            break;
         }
       }
       return decrypted;
     }
 
-    // ================= Chat Functions =================
+    // ---------------- Chat Functions ----------------
     // When the "Send" button is clicked, encrypt the message and push it to Firebase.
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
@@ -255,13 +352,6 @@
         timestamp: Date.now()
       });
       messageInput.value = "";
-    });
-
-    // Allow sending messages with the Enter key
-    document.getElementById("messageInput").addEventListener("keyup", function(event) {
-      if (event.key === "Enter") {
-        document.getElementById("sendButton").click();
-      }
     });
 
     // Listen for new messages from Firebase, decrypt them, and display in the chat window.
@@ -277,4 +367,3 @@
   </script>
 </body>
 </html>
-
