@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cats & Guns - Cats Section</title>
+  <style>
+    /* Basic reset and typography */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      color: #333;
+    }
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 1em;
+    }
+    .container {
+      margin: 20px auto;
+      max-width: 600px;
+    }
+    /* Styling the button */
+    #catButton {
+      background-color: #ffcc00;
+      border: none;
+      padding: 15px 25px;
+      font-size: 1.2em;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+    }
+    #catButton:hover {
+      background-color: #e6b800;
+    }
+    /* Content section styling */
+    #catContent {
+      margin-top: 20px;
+      display: none;
+      animation: fadeIn 0.8s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .cat-image {
+      width: 100%;
+      max-width: 400px;
+      border: 5px solid #ffcc00;
+      border-radius: 15px;
+    }
+    .cat-fact {
+      margin-top: 20px;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cats & Guns</h1>
+    <p>Where cats meet creativity and fun!</p>
+  </header>
+  
+  <div class="container">
+    <button id="catButton">Show Cat Magic!</button>
+    <div id="catContent">
+      <img class="cat-image" src="https://placekitten.com/400/300" alt="Cute Cat">
+      <p class="cat-fact">Did you know? Cats have over 20 muscles in their ears, giving them incredible control—and a dash of attitude!</p>
+    </div>
+  </div>
+  
+  <script>
+    // JavaScript to toggle the cat content when the button is clicked
+    const catButton = document.getElementById('catButton');
+    const catContent = document.getElementById('catContent');
+    
+    catButton.addEventListener('click', () => {
+      if (catContent.style.display === 'none' || catContent.style.display === '') {
+        catContent.style.display = 'block';
+        catButton.textContent = 'Hide Cat Magic!';
+      } else {
+        catContent.style.display = 'none';
+        catButton.textContent = 'Show Cat Magic!';
+      }
+    });
+  </script>
+</body>
+</html>
