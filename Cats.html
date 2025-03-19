@@ -12,6 +12,7 @@
       padding: 0;
       text-align: center;
       color: #333;
+      transition: background-color 0.5s ease;
     }
     header {
       background-color: #333;
@@ -55,6 +56,17 @@
       margin-top: 20px;
       font-size: 1.1em;
     }
+    /* Rave background animation */
+    @keyframes raveBackground {
+      0% { background-color: #ff007f; }
+      25% { background-color: #00ff7f; }
+      50% { background-color: #007fff; }
+      75% { background-color: #ff7f00; }
+      100% { background-color: #ff007f; }
+    }
+    .rave {
+      animation: raveBackground 1s infinite;
+    }
   </style>
 </head>
 <body>
@@ -67,12 +79,14 @@
     <button id="catButton">Show Cat Magic!</button>
     <div id="catContent">
       <img id="magicCat" class="cat-image" src="" alt="Mystery Cat">
-      <p class="cat-fact">Did you know? Cats have over 20 muscles in their ears, giving them incredible control—and a dash of attitude!</p>
+      <p class="cat-fact">
+        Did you know? Cats have over 20 muscles in their ears, giving them incredible control—and a dash of attitude!
+      </p>
     </div>
   </div>
   
   <script>
-    // List of cat image filenames from cat7.jpg through cat14.jpg
+    // Array of cat images from cat7.jpg through cat14.jpg
     const catImages = [
       "images/cat7.jpg",
       "images/cat8.jpg",
@@ -95,12 +109,15 @@
         magicCat.src = catImages[randomIndex];
         catContent.style.display = 'block';
         catButton.textContent = 'Hide Cat Magic!';
+        // Activate rave background effect
+        document.body.classList.add("rave");
       } else {
         catContent.style.display = 'none';
         catButton.textContent = 'Show Cat Magic!';
+        // Deactivate rave background effect
+        document.body.classList.remove("rave");
       }
     });
   </script>
 </body>
 </html>
-
