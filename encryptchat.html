@@ -61,7 +61,6 @@
       appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
-    var database = firebase.database().ref('encryptchat');
 
     // ================= Encryption Functions =================
 
@@ -128,8 +127,8 @@
     }
 
     // ================= Profile Management =================
-    // Each profile is defined as an array of encryption steps.
-    // For example, the "Default (Caesar 3)" profile applies a Caesar cipher with a shift of 3.
+    // Each profile defines an array of encryption steps.
+    // Note: Changing the selected profile after messages have been sent may lead to decryption issues.
     const profiles = {
       "Default (Caesar 3)": [
          { cipher: "caesar", shift: 3 }
@@ -137,11 +136,7 @@
       "Secret (Vigenère)": [
          { cipher: "vigenere", key: "SECRET" }
       ]
-      // To chain multiple ciphers, add more steps here:
-      // "Double Encrypt": [
-      //    { cipher: "caesar", shift: 3 },
-      //    { cipher: "vigenere", key: "KEY" }
-      // ]
+      // To chain multiple ciphers, add additional steps here.
     };
 
     // Populate the profile dropdown
@@ -169,15 +164,10 @@
       let steps = getCurrentProfileSteps();
       let encrypted = message;
       for (let step of steps) {
-        switch(step.cipher) {
-          case "caesar":
-            encrypted = caesarCipherEncrypt(encrypted, step.shift);
-            break;
-          case "vigenere":
-            encrypted = vigenereEncrypt(encrypted, step.key);
-            break;
-          default:
-            break;
+        if (step.cipher === "caesar") {
+          encrypted = caesarCipherEncrypt(encrypted, step.shift);
+        } else if (step.cipher === "vigenere") {
+          encrypted = vigenereEncrypt(encrypted, step.key);
         }
       }
       return encrypted;
@@ -189,15 +179,10 @@
       let decrypted = message;
       for (let i = steps.length - 1; i >= 0; i--) {
         let step = steps[i];
-        switch(step.cipher) {
-          case "caesar":
-            decrypted = caesarCipherDecrypt(decrypted, step.shift);
-            break;
-          case "vigenere":
-            decrypted = vigenereDecrypt(decrypted, step.key);
-            break;
-          default:
-            break;
+        if (step.cipher === "caesar") {
+          decrypted = caesarCipherDecrypt(decrypted, step.shift);
+        } else if (step.cipher === "vigenere") {
+          decrypted = vigenereDecrypt(decrypted, step.key);
         }
       }
       return decrypted;
@@ -210,15 +195,22 @@
       let message = messageInput.value;
       if (message.trim() === "") return;
       let encryptedMessage = encryptMessage(message);
-      database.ref("messages").push({
+      firebase.database().ref("encryptchat/messages").push({
         message: encryptedMessage,
         timestamp: Date.now()
       });
       messageInput.value = "";
     });
 
+    // Allow sending messages with the Enter key
+    document.getElementById("messageInput").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        document.getElementById("sendButton").click();
+      }
+    });
+
     // Listen for new messages from Firebase, decrypt them, and display in the chat window.
-    database.ref("messages").on("child_added", function(snapshot) {
+    firebase.database().ref("encryptchat/messages").on("child_added", function(snapshot) {
       let data = snapshot.val();
       let decryptedMessage = decryptMessage(data.message);
       const chatDiv = document.getElementById("chat");
