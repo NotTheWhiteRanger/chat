@@ -25,34 +25,50 @@
     #profileSelect {
       margin-bottom: 10px;
     }
+    /* Login form styling */
+    #loginDiv {
+      margin-bottom: 20px;
+    }
   </style>
   <!-- Include Firebase libraries (using version 8 for simplicity) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
   <h1>Expanded Encrypted Chat System</h1>
 
-  <!-- Profile Selection -->
-  <label for="profileSelect">Select Profile:</label>
-  <select id="profileSelect"></select>
+  <!-- Login Form -->
+  <div id="loginDiv">
+    <h2>Login</h2>
+    <input type="email" id="emailInput" placeholder="Enter email" required>
+    <input type="password" id="passwordInput" placeholder="Enter password" required>
+    <button id="loginButton">Login</button>
+  </div>
 
-  <!-- NEW: Buttons for Import/Export Profiles -->
-  <button id="exportProfilesButton">Export Profiles</button>
-  <button id="importProfilesButton">Import Profiles</button>
-  <!-- Hidden file input for importing profiles -->
-  <input type="file" id="importProfilesInput" style="display:none" />
+  <!-- Chat Container -->
+  <div id="chatContainer" style="display: none;">
+    <!-- Profile Selection -->
+    <label for="profileSelect">Select Profile:</label>
+    <select id="profileSelect"></select>
 
-  <!-- Chat Display Area -->
-  <div id="chat"></div>
+    <!-- NEW: Buttons for Import/Export Profiles -->
+    <button id="exportProfilesButton">Export Profiles</button>
+    <button id="importProfilesButton">Import Profiles</button>
+    <!-- Hidden file input for importing profiles -->
+    <input type="file" id="importProfilesInput" style="display:none" />
 
-  <!-- Message Input -->
-  <input type="text" id="messageInput" placeholder="Enter your message">
-  <button id="sendButton">Send</button>
+    <!-- Chat Display Area -->
+    <div id="chat"></div>
+
+    <!-- Message Input -->
+    <input type="text" id="messageInput" placeholder="Enter your message">
+    <button id="sendButton">Send</button>
+  </div>
 
   <script>
     // ---------------------- Firebase Initialization ----------------------
-    // (Update these values with your Firebase config)
+    // Update these values with your Firebase config.
     var firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -64,8 +80,37 @@
     };
     firebase.initializeApp(firebaseConfig);
 
-    // ---------------------- Encryption Functions ----------------------
+    // ---------------------- Firebase Authentication ----------------------
+    // Listen for authentication state changes.
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        // User is signed in.
+        document.getElementById("loginDiv").style.display = "none";
+        document.getElementById("chatContainer").style.display = "block";
+        console.log("User signed in: ", user.email);
+      } else {
+        // No user is signed in.
+        document.getElementById("loginDiv").style.display = "block";
+        document.getElementById("chatContainer").style.display = "none";
+      }
+    });
 
+    // Login button event listener.
+    document.getElementById("loginButton").addEventListener("click", function() {
+      var email = document.getElementById("emailInput").value;
+      var password = document.getElementById("passwordInput").value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(function(userCredential) {
+          // Signed in.
+          console.log("Logged in as: ", userCredential.user.email);
+        })
+        .catch(function(error) {
+          console.error("Error during sign in:", error.message);
+          alert("Login failed: " + error.message);
+        });
+    });
+
+    // ---------------------- Encryption Functions ----------------------
     // 1) Caesar Cipher
     function caesarCipherEncrypt(text, shift) {
       shift = shift % 26;
@@ -130,7 +175,7 @@
 
     // 3) Transposition (Columnar)
     function transpositionEncrypt(text, key) {
-      text = text.replace(/\s+/g, ''); // remove spaces for simplicity
+      text = text.replace(/\s+/g, '');
       let numCols = key.length;
       let numRows = Math.ceil(text.length / numCols);
       let grid = [];
@@ -223,7 +268,7 @@
       return result;
     }
     function beaufortDecrypt(text, key) {
-      return beaufortCipher(text, key); // same for Beaufort
+      return beaufortCipher(text, key);
     }
 
     // 7) Shuffle
@@ -256,10 +301,7 @@
     }
 
     // ---------------------- Profile Management ----------------------
-    // We can have both old-format (boolean flags + keys) and new-format (array of steps).
-
     const profiles = {
-      // Old format example
       "Legacy Default": {
         Caesar: true,
         Vigenere: false,
@@ -275,7 +317,6 @@
         shuffleKey: "",
         order: ["Caesar"]
       },
-      // New format examples
       "Default (Caesar 3)": [
         { cipher: "caesar", shift: 3 }
       ],
@@ -359,12 +400,10 @@
       const profileName = profileSelect.value;
       const profile = profiles[profileName];
       if (!profile) return [];
-
-      // If it has "Caesar" property, it's old format.
       if (profile.hasOwnProperty("Caesar")) {
         return convertOldProfileToSteps(profile);
       } else {
-        return profile; // new-format is already an array of steps
+        return profile;
       }
     }
 
@@ -401,7 +440,6 @@
       }
       return encrypted;
     }
-
     function decryptMessage(message) {
       let steps = getCurrentProfileSteps().slice().reverse();
       let decrypted = message;
@@ -441,8 +479,6 @@
       let message = messageInput.value;
       if (message.trim() === "") return;
       let encryptedMessage = encryptMessage(message);
-
-      // Send to Firebase
       firebase.database().ref("encryptchat/messages").push({
         message: encryptedMessage,
         timestamp: Date.now()
@@ -450,7 +486,6 @@
       messageInput.value = "";
     });
 
-    // Listen for new messages
     firebase.database().ref("encryptchat/messages").on("child_added", function(snapshot) {
       let data = snapshot.val();
       let decryptedMessage = decryptMessage(data.message);
@@ -461,8 +496,7 @@
       chatDiv.scrollTop = chatDiv.scrollHeight;
     });
 
-    // ---------------------- NEW: Import/Export Profiles ----------------------
-    // Export the profiles object as JSON
+    // ---------------------- Import/Export Profiles ----------------------
     document.getElementById("exportProfilesButton").addEventListener("click", function() {
       let dataStr = JSON.stringify(profiles, null, 2);
       let blob = new Blob([dataStr], { type: "application/json" });
@@ -473,19 +507,16 @@
       a.click();
     });
 
-    // Trigger hidden file input on click
     document.getElementById("importProfilesButton").addEventListener("click", function() {
       document.getElementById("importProfilesInput").click();
     });
 
-    // Read the selected file, parse JSON, merge with existing profiles, and repopulate
     document.getElementById("importProfilesInput").addEventListener("change", function(event) {
       let file = event.target.files[0];
       if (!file) return;
       let reader = new FileReader();
       reader.onload = function(e) {
         let importedProfiles = JSON.parse(e.target.result);
-        // Merge them into the existing `profiles` object
         for (let name in importedProfiles) {
           profiles[name] = importedProfiles[name];
         }
