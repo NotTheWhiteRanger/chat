@@ -7,41 +7,46 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding-top: 50px;
+      padding-top: 30px;
     }
     /* Container for canvas and pointer */
     #wheelContainer {
       position: relative;
       width: 300px;
       height: 300px;
-      margin: auto;
+      margin: auto; /* centers horizontally */
     }
     canvas {
       border: 5px solid #333;
       border-radius: 50%;
+      display: block;
     }
-    /* Pointer positioned at the top center */
+    /* Pointer in the center, pointing to the right */
     #pointer {
       position: absolute;
-      top: -30px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
+      z-index: 10; /* ensure pointer is on top of the canvas */
     }
-    /* Create a triangle pointer */
-    #pointer:after {
+    /* Red arrow pointing right */
+    #pointer::after {
       content: "";
       display: block;
       width: 0;
       height: 0;
-      border-left: 15px solid transparent;
-      border-right: 15px solid transparent;
-      border-bottom: 30px solid red;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+      border-left: 30px solid red;
     }
     #spinButton {
       margin-top: 20px;
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
+    }
+    #result {
+      margin-top: 15px;
     }
   </style>
 </head>
@@ -50,7 +55,6 @@
     <canvas id="wheelCanvas" width="300" height="300"></canvas>
     <div id="pointer"></div>
   </div>
-  <br>
   <button id="spinButton">Spin</button>
   <h2 id="result"></h2>
 
@@ -58,29 +62,38 @@
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
     const names = ['Ashton', 'Damian', 'Bobby'];
-    // Unique color for each segment:
+    // Assign each segment a unique color
     const colors = ['#ffcc00', '#ff9900', '#66ccff'];
+
     const segments = names.length;
-    const arc = Math.PI * 2 / segments;
+    const arc = (Math.PI * 2) / segments;
     let angle = 0;
 
     function drawWheel() {
       for (let i = 0; i < segments; i++) {
         const startAngle = i * arc;
         const endAngle = startAngle + arc;
+
+        // Draw segment
         ctx.beginPath();
         ctx.moveTo(canvas.width / 2, canvas.height / 2);
-        ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, endAngle);
-        ctx.fillStyle = colors[i]; // Unique color from the array
+        ctx.arc(
+          canvas.width / 2,
+          canvas.height / 2,
+          canvas.width / 2,
+          startAngle,
+          endAngle
+        );
+        ctx.fillStyle = colors[i];
         ctx.fill();
 
-        // Draw the text for each segment
+        // Label the segment
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate(startAngle + arc / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "#000";
-        ctx.font = "16px Arial";
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#000';
+        ctx.font = '16px Arial';
         ctx.fillText(names[i], canvas.width / 2 - 10, 10);
         ctx.restore();
       }
@@ -88,15 +101,20 @@
 
     function spin() {
       const spinTime = 3000; // duration in ms
+      // Random initial spin speed
       const spinAngleStart = Math.random() * 10 + 10;
       let start = null;
+
       function animate(timestamp) {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const progress = elapsed / spinTime;
+        // "Ease out" effect
         const easing = Math.pow(1 - progress, 3);
+
         angle += spinAngleStart * easing;
         drawWheelRotated();
+
         if (elapsed < spinTime) {
           requestAnimationFrame(animate);
         } else {
@@ -117,10 +135,16 @@
     }
 
     function determineResult() {
-      const degrees = angle * 180 / Math.PI;
+      // By default, 0 degrees is at 3 o'clock. 
+      // Our pointer is at the wheel's center, pointing right (which is also 3 o'clock).
+      // So we actually don't need an extra offset here.
+      const degrees = angle * (180 / Math.PI);
       const segmentDegree = 360 / segments;
-      const winningIndex = Math.floor(((360 - (degrees % 360)) % 360) / segmentDegree);
-      document.getElementById('result').textContent = "Result: " + names[winningIndex];
+      // Convert final angle into a 0-360 range
+      const normalized = ((360 - (degrees % 360)) % 360);
+      // Determine which segment the pointer "hits"
+      const winningIndex = Math.floor(normalized / segmentDegree);
+      document.getElementById('result').textContent = 'Result: ' + names[winningIndex];
     }
 
     document.getElementById('spinButton').addEventListener('click', spin);
