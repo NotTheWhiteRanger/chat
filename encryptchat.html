@@ -30,7 +30,7 @@
       margin-bottom: 20px;
     }
   </style>
-  <!-- Include Firebase libraries (using version 8 for simplicity) -->
+  <!-- Include Firebase libraries (version 8 for simplicity) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -52,7 +52,7 @@
     <label for="profileSelect">Select Profile:</label>
     <select id="profileSelect"></select>
 
-    <!-- NEW: Buttons for Import/Export Profiles -->
+    <!-- Buttons for Import/Export Profiles -->
     <button id="exportProfilesButton">Export Profiles</button>
     <button id="importProfilesButton">Import Profiles</button>
     <!-- Hidden file input for importing profiles -->
@@ -68,7 +68,7 @@
 
   <script>
     // ---------------------- Firebase Initialization ----------------------
-    // Update these values with your Firebase config.
+    // Firebase configuration (using the same placeholders from your original script)
     var firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -81,7 +81,6 @@
     firebase.initializeApp(firebaseConfig);
 
     // ---------------------- Firebase Authentication ----------------------
-    // Listen for authentication state changes.
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
         // User is signed in.
@@ -95,13 +94,11 @@
       }
     });
 
-    // Login button event listener.
     document.getElementById("loginButton").addEventListener("click", function() {
       var email = document.getElementById("emailInput").value;
       var password = document.getElementById("passwordInput").value;
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(function(userCredential) {
-          // Signed in.
           console.log("Logged in as: ", userCredential.user.email);
         })
         .catch(function(error) {
