@@ -9,9 +9,33 @@
       text-align: center;
       padding-top: 50px;
     }
+    /* Container for canvas and pointer */
+    #wheelContainer {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin: auto;
+    }
     canvas {
       border: 5px solid #333;
       border-radius: 50%;
+    }
+    /* Pointer positioned at the top center */
+    #pointer {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    /* Create a triangle pointer */
+    #pointer:after {
+      content: "";
+      display: block;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-bottom: 30px solid red;
     }
     #spinButton {
       margin-top: 20px;
@@ -22,7 +46,10 @@
   </style>
 </head>
 <body>
-  <canvas id="wheelCanvas" width="300" height="300"></canvas>
+  <div id="wheelContainer">
+    <canvas id="wheelCanvas" width="300" height="300"></canvas>
+    <div id="pointer"></div>
+  </div>
   <br>
   <button id="spinButton">Spin</button>
   <h2 id="result"></h2>
@@ -31,6 +58,8 @@
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
     const names = ['Ashton', 'Damian', 'Bobby'];
+    // Unique color for each segment:
+    const colors = ['#ffcc00', '#ff9900', '#66ccff'];
     const segments = names.length;
     const arc = Math.PI * 2 / segments;
     let angle = 0;
@@ -40,17 +69,19 @@
         const startAngle = i * arc;
         const endAngle = startAngle + arc;
         ctx.beginPath();
-        ctx.moveTo(canvas.width/2, canvas.height/2);
-        ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, startAngle, endAngle);
-        ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#ff9900';
+        ctx.moveTo(canvas.width / 2, canvas.height / 2);
+        ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, startAngle, endAngle);
+        ctx.fillStyle = colors[i]; // Unique color from the array
         ctx.fill();
+
+        // Draw the text for each segment
         ctx.save();
-        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate(startAngle + arc / 2);
         ctx.textAlign = "right";
         ctx.fillStyle = "#000";
         ctx.font = "16px Arial";
-        ctx.fillText(names[i], canvas.width/2 - 10, 10);
+        ctx.fillText(names[i], canvas.width / 2 - 10, 10);
         ctx.restore();
       }
     }
@@ -78,9 +109,9 @@
     function drawWheelRotated() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
-      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(angle);
-      ctx.translate(-canvas.width/2, -canvas.height/2);
+      ctx.translate(-canvas.width / 2, -canvas.height / 2);
       drawWheel();
       ctx.restore();
     }
