@@ -29,13 +29,13 @@
   <script>
     // Firebase initialization (update these values with your Firebase config)
     var firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
     };
     firebase.initializeApp(firebaseConfig);
 
@@ -105,8 +105,7 @@
 
     // Transposition Cipher (Columnar Transposition)
     function transpositionEncrypt(text, key) {
-      // For simplicity, remove spaces
-      text = text.replace(/\s+/g, '');
+      text = text.replace(/\s+/g, ''); // remove spaces for simplicity
       let numCols = key.length;
       let numRows = Math.ceil(text.length / numCols);
       let grid = [];
@@ -116,7 +115,6 @@
           grid[r][c] = text[r * numCols + c] || '';
         }
       }
-      // Determine order based on alphabetical order of key letters
       let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
                    .sort((a, b) => a.char.localeCompare(b.char))
                    .map(obj => obj.index);
@@ -190,7 +188,6 @@
           let base = char === char.toUpperCase() ? 65 : 97;
           let p = text.charCodeAt(i) - base;
           let k = key.charCodeAt(j % key.length) - 65;
-          // Beaufort cipher formula: C = (k - p + 26) mod 26
           let code = (k - p + 26) % 26;
           result += String.fromCharCode(code + base);
           j++;
@@ -200,7 +197,7 @@
       }
       return result;
     }
-    // Decryption for Beaufort is the same as encryption.
+    // For Beaufort, decryption is the same as encryption.
     function beaufortDecrypt(text, key) {
       return beaufortCipher(text, key);
     }
@@ -208,7 +205,6 @@
     // Shuffle Cipher
     function shuffleCipher(text, key, decrypt = false) {
       if (!key) return text;
-      // Create a permutation based on key:
       let indices = [...Array(text.length).keys()];
       let permutation = indices.slice().sort((a, b) => {
         let valA = key.charCodeAt(a % key.length) + a;
@@ -216,7 +212,6 @@
         return valA - valB;
       });
       if (decrypt) {
-        // Compute inverse permutation
         let inverse = [];
         for (let i = 0; i < permutation.length; i++) {
           inverse[permutation[i]] = i;
@@ -237,8 +232,28 @@
     }
 
     // ---------------- Profile Management ----------------
-    // Each profile is defined as an array of encryption steps.
+    // Profiles can come in two formats:
+    // 1. The "old" format (from your first script) with Boolean flags and keys.
+    // 2. The "new" format which is simply an array of encryption steps.
+    // Below is a sample set of profiles that demonstrates both formats.
     const profiles = {
+      // Old format profile (from the first script)
+      "Legacy Default": {
+        Caesar: true,
+        Vigenere: false,
+        Transposition: false,
+        Atbash: false,
+        Reverse: false,
+        Beaufort: false,
+        Shuffle: false,
+        caesarShift: 3,
+        vigenereKey: "",
+        transpositionKey: "",
+        beaufortKey: "",
+        shuffleKey: "",
+        order: ["Caesar"]
+      },
+      // New format profiles (steps array)
       "Default (Caesar 3)": [
          { cipher: "caesar", shift: 3 }
       ],
@@ -256,6 +271,7 @@
       ]
     };
 
+    // Populate the profile select dropdown
     function populateProfiles() {
       const profileSelect = document.getElementById("profileSelect");
       profileSelect.innerHTML = "";
@@ -268,10 +284,55 @@
     }
     populateProfiles();
 
+    // Conversion function: if a profile is in the old format (has "Caesar" property),
+    // convert it into an array of steps.
+    function convertOldProfileToSteps(oldProfile) {
+      let defaultOrder = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
+      let order = (oldProfile.order && oldProfile.order.length) ? oldProfile.order : defaultOrder;
+      let steps = [];
+      order.forEach(cipher => {
+        switch(cipher) {
+          case "Caesar":
+            if(oldProfile.Caesar) steps.push({ cipher: "caesar", shift: parseInt(oldProfile.caesarShift) });
+            break;
+          case "Vigenere":
+            if(oldProfile.Vigenere) steps.push({ cipher: "vigenere", key: oldProfile.vigenereKey });
+            break;
+          case "Transposition":
+            if(oldProfile.Transposition) steps.push({ cipher: "transposition", key: oldProfile.transpositionKey });
+            break;
+          case "Atbash":
+            if(oldProfile.Atbash) steps.push({ cipher: "atbash" });
+            break;
+          case "Reverse":
+            if(oldProfile.Reverse) steps.push({ cipher: "reverse" });
+            break;
+          case "Beaufort":
+            if(oldProfile.Beaufort) steps.push({ cipher: "beaufort", key: oldProfile.beaufortKey });
+            break;
+          case "Shuffle":
+            if(oldProfile.Shuffle) steps.push({ cipher: "shuffle", key: oldProfile.shuffleKey });
+            break;
+        }
+      });
+      return steps;
+    }
+
+    // Returns the steps for the currently selected profile.
     function getCurrentProfileSteps() {
       const profileSelect = document.getElementById("profileSelect");
       const profileName = profileSelect.value;
-      return profiles[profileName];
+      const profile = profiles[profileName];
+      if (!profile) {
+        // If no profile is selected, return an empty array.
+        return [];
+      }
+      // Check if the profile is in the old format (from first script)
+      if (profile.hasOwnProperty("Caesar")) {
+        return convertOldProfileToSteps(profile);
+      } else {
+        return profile;
+      }
     }
 
     // ---------------- Message Encryption/Decryption ----------------
@@ -341,7 +402,7 @@
     }
 
     // ---------------- Chat Functions ----------------
-    // When the "Send" button is clicked, encrypt the message and push it to Firebase.
+    // Encrypt and send the message to Firebase when "Send" is clicked.
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
