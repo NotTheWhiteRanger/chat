@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spin the Wheel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+    canvas {
+      border: 5px solid #333;
+      border-radius: 50%;
+    }
+    #spinButton {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="wheelCanvas" width="300" height="300"></canvas>
+  <br>
+  <button id="spinButton">Spin</button>
+  <h2 id="result"></h2>
+
+  <script>
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const names = ['Ashton', 'Damian', 'Bobby'];
+    const segments = names.length;
+    const arc = Math.PI * 2 / segments;
+    let angle = 0;
+
+    function drawWheel() {
+      for (let i = 0; i < segments; i++) {
+        const startAngle = i * arc;
+        const endAngle = startAngle + arc;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2, canvas.height/2);
+        ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, startAngle, endAngle);
+        ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#ff9900';
+        ctx.fill();
+        ctx.save();
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.rotate(startAngle + arc / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "16px Arial";
+        ctx.fillText(names[i], canvas.width/2 - 10, 10);
+        ctx.restore();
+      }
+    }
+
+    function spin() {
+      const spinTime = 3000; // duration in ms
+      const spinAngleStart = Math.random() * 10 + 10;
+      let start = null;
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = elapsed / spinTime;
+        const easing = Math.pow(1 - progress, 3);
+        angle += spinAngleStart * easing;
+        drawWheelRotated();
+        if (elapsed < spinTime) {
+          requestAnimationFrame(animate);
+        } else {
+          determineResult();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function drawWheelRotated() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.translate(canvas.width/2, canvas.height/2);
+      ctx.rotate(angle);
+      ctx.translate(-canvas.width/2, -canvas.height/2);
+      drawWheel();
+      ctx.restore();
+    }
+
+    function determineResult() {
+      const degrees = angle * 180 / Math.PI;
+      const segmentDegree = 360 / segments;
+      const winningIndex = Math.floor(((360 - (degrees % 360)) % 360) / segmentDegree);
+      document.getElementById('result').textContent = "Result: " + names[winningIndex];
+    }
+
+    document.getElementById('spinButton').addEventListener('click', spin);
+    drawWheel();
+  </script>
+</body>
+</html>
