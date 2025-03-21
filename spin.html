@@ -2,42 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Spin the Wheel</title>
+  <title>Spin the Arrow</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      padding-top: 30px;
+      margin-top: 30px;
     }
-    /* Container for canvas and pointer */
-    #wheelContainer {
-      position: relative;
-      width: 300px;
-      height: 300px;
-      margin: auto; /* centers horizontally */
-    }
-    canvas {
-      border: 5px solid #333;
+    #wheelCanvas {
+      border: 3px solid #333;
       border-radius: 50%;
       display: block;
-    }
-    /* Pointer in the center, pointing to the right */
-    #pointer {
-      position: absolute;
-      top: 50%;
-      left: 48%;
-      transform: translate(-50%, -50%);
-      z-index: 10; /* ensure pointer is on top of the canvas */
-    }
-    /* Red arrow pointing right */
-    #pointer::after {
-      content: "";
-      display: block;
-      width: 0;
-      height: 0;
-      border-top: 15px solid transparent;
-      border-bottom: 15px solid transparent;
-      border-left: 30px solid red;
+      margin: 0 auto;
     }
     #spinButton {
       margin-top: 20px;
@@ -47,73 +23,104 @@
     }
     #result {
       margin-top: 15px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div id="wheelContainer">
-    <canvas id="wheelCanvas" width="300" height="300"></canvas>
-    <div id="pointer"></div>
-  </div>
+  <canvas id="wheelCanvas" width="300" height="300"></canvas>
   <button id="spinButton">Spin</button>
-  <h2 id="result"></h2>
+  <div id="result"></div>
 
   <script>
     const canvas = document.getElementById('wheelCanvas');
     const ctx = canvas.getContext('2d');
+
+    // Wheel data
     const names = ['Ashton', 'Damian', 'Bobby'];
-    // Assign each segment a unique color
-    const colors = ['#ffcc00', '#ff9900', '#66ccff'];
-
+    const colors = ['#ffcc00', '#ff9900', '#66ccff']; // one color per segment
     const segments = names.length;
-    const arc = (Math.PI * 2) / segments;
-    let angle = 0;
+    const arc = (2 * Math.PI) / segments;
 
+    // Arrow angle (in radians). 0 means pointing right (3 o’clock).
+    let arrowAngle = 0;
+
+    // Draws the stationary wheel
     function drawWheel() {
+      const cx = canvas.width / 2; // center x
+      const cy = canvas.height / 2; // center y
+      const radius = canvas.width / 2;
+
       for (let i = 0; i < segments; i++) {
         const startAngle = i * arc;
         const endAngle = startAngle + arc;
-
-        // Draw segment
         ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, canvas.height / 2);
-        ctx.arc(
-          canvas.width / 2,
-          canvas.height / 2,
-          canvas.width / 2,
-          startAngle,
-          endAngle
-        );
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, startAngle, endAngle);
         ctx.fillStyle = colors[i];
         ctx.fill();
 
-        // Label the segment
+        // Add text label
         ctx.save();
-        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.translate(cx, cy);
         ctx.rotate(startAngle + arc / 2);
         ctx.textAlign = 'right';
         ctx.fillStyle = '#000';
         ctx.font = '16px Arial';
-        ctx.fillText(names[i], canvas.width / 2 - 10, 10);
+        ctx.fillText(names[i], radius - 10, 5);
         ctx.restore();
       }
     }
 
+    // Draws the rotating arrow
+    function drawArrow(angle) {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const radius = canvas.width / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // Simple arrow shape pointing to the right (tip at radius)
+      ctx.beginPath();
+      // Tip at the outer edge
+      ctx.moveTo(radius - 10, 0);
+      // Two lines back to form a triangular arrow
+      ctx.lineTo(radius - 30, -10);
+      ctx.lineTo(radius - 30, 10);
+      ctx.closePath();
+
+      ctx.fillStyle = 'red';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Master draw function: draws wheel (stationary), then arrow (rotating)
+    function drawAll() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawWheel();
+      drawArrow(arrowAngle);
+    }
+
+    // Spin logic
     function spin() {
-      const spinTime = 3000; // duration in ms
-      // Random initial spin speed
-      const spinAngleStart = Math.random() * 10 + 10;
       let start = null;
+      const spinTime = 3000; // total spin duration
+      const spinAngleStart = Math.random() * 10 + 10; // random initial speed
 
       function animate(timestamp) {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const progress = elapsed / spinTime;
-        // "Ease out" effect
+
+        // "ease out" effect
         const easing = Math.pow(1 - progress, 3);
 
-        angle += spinAngleStart * easing;
-        drawWheelRotated();
+        // Increase arrowAngle by some fraction of spinAngleStart
+        arrowAngle += spinAngleStart * easing;
+
+        drawAll();
 
         if (elapsed < spinTime) {
           requestAnimationFrame(animate);
@@ -124,31 +131,20 @@
       requestAnimationFrame(animate);
     }
 
-    function drawWheelRotated() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.save();
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(angle);
-      ctx.translate(-canvas.width / 2, -canvas.height / 2);
-      drawWheel();
-      ctx.restore();
-    }
-
+    // Figure out which segment the arrow is pointing at
     function determineResult() {
-      // By default, 0 degrees is at 3 o'clock. 
-      // Our pointer is at the wheel's center, pointing right (which is also 3 o'clock).
-      // So we actually don't need an extra offset here.
-      const degrees = angle * (180 / Math.PI);
-      const segmentDegree = 360 / segments;
-      // Convert final angle into a 0-360 range
-      const normalized = ((360 - (degrees % 360)) % 360);
-      // Determine which segment the pointer "hits"
-      const winningIndex = Math.floor(normalized / segmentDegree);
+      // Normalize angle into [0, 2π)
+      const normalized = arrowAngle % (2 * Math.PI);
+      // Each segment is arc radians wide
+      const winningIndex = Math.floor(normalized / arc);
       document.getElementById('result').textContent = 'Result: ' + names[winningIndex];
     }
 
+    // Initial draw
+    drawAll();
+
+    // Spin button
     document.getElementById('spinButton').addEventListener('click', spin);
-    drawWheel();
   </script>
 </body>
 </html>
