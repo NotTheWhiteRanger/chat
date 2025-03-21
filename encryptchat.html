@@ -6,10 +6,25 @@
   <style>
     /* Basic styles */
     body { font-family: Arial, sans-serif; margin: 20px; }
-    #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; background: #f9f9f9; margin-bottom: 10px; }
-    #messageInput { width: 70%; padding: 5px; }
-    #sendButton { width: 25%; padding: 5px; }
-    #profileSelect { margin-bottom: 10px; }
+    #chat {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: scroll;
+      background: #f9f9f9;
+      margin-bottom: 10px;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 5px;
+    }
+    #sendButton {
+      width: 25%;
+      padding: 5px;
+    }
+    #profileSelect {
+      margin-bottom: 10px;
+    }
   </style>
   <!-- Include Firebase libraries (using version 8 for simplicity) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -17,31 +32,41 @@
 </head>
 <body>
   <h1>Expanded Encrypted Chat System</h1>
+
   <!-- Profile Selection -->
   <label for="profileSelect">Select Profile:</label>
   <select id="profileSelect"></select>
+
+  <!-- NEW: Buttons for Import/Export Profiles -->
+  <button id="exportProfilesButton">Export Profiles</button>
+  <button id="importProfilesButton">Import Profiles</button>
+  <!-- Hidden file input for importing profiles -->
+  <input type="file" id="importProfilesInput" style="display:none" />
+
   <!-- Chat Display Area -->
   <div id="chat"></div>
+
   <!-- Message Input -->
   <input type="text" id="messageInput" placeholder="Enter your message">
   <button id="sendButton">Send</button>
 
   <script>
-    // Firebase initialization (update these values with your Firebase config)
+    // ---------------------- Firebase Initialization ----------------------
+    // (Update these values with your Firebase config)
     var firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com/",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
     firebase.initializeApp(firebaseConfig);
 
-    // ---------------- Expanded Encryption Functions ----------------
+    // ---------------------- Encryption Functions ----------------------
 
-    // Caesar Cipher
+    // 1) Caesar Cipher
     function caesarCipherEncrypt(text, shift) {
       shift = shift % 26;
       let result = "";
@@ -65,7 +90,7 @@
       return caesarCipherEncrypt(text, -shift);
     }
 
-    // Vigenère Cipher
+    // 2) Vigenère Cipher
     function vigenereEncrypt(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
       let result = "";
@@ -103,7 +128,7 @@
       return result;
     }
 
-    // Transposition Cipher (Columnar Transposition)
+    // 3) Transposition (Columnar)
     function transpositionEncrypt(text, key) {
       text = text.replace(/\s+/g, ''); // remove spaces for simplicity
       let numCols = key.length;
@@ -134,7 +159,9 @@
                    .sort((a, b) => a.char.localeCompare(b.char))
                    .map(obj => obj.index);
       let grid = [];
-      for (let r = 0; r < numRows; r++) { grid[r] = new Array(numCols); }
+      for (let r = 0; r < numRows; r++) {
+        grid[r] = new Array(numCols);
+      }
       let pos = 0;
       for (let i = 0; i < order.length; i++) {
         let col = order[i];
@@ -153,7 +180,7 @@
       return plainText;
     }
 
-    // Atbash Cipher
+    // 4) Atbash
     function atbash(text) {
       let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let reversed = alphabet.split('').reverse().join('');
@@ -171,18 +198,16 @@
       return result;
     }
 
-    // Reverse Cipher
+    // 5) Reverse
     function reverseText(text) {
       return text.split('').reverse().join('');
     }
 
-    // Beaufort Cipher (Encryption and decryption are identical)
+    // 6) Beaufort (Encrypt = Decrypt)
     function beaufortCipher(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let result = "";
-      let j = 0;
-      for (let i = 0; i < text.length; i++) {
+      for (let i = 0, j = 0; i < text.length; i++) {
         let char = text[i];
         if (char.match(/[A-Z]/i)) {
           let base = char === char.toUpperCase() ? 65 : 97;
@@ -197,12 +222,11 @@
       }
       return result;
     }
-    // For Beaufort, decryption is the same as encryption.
     function beaufortDecrypt(text, key) {
-      return beaufortCipher(text, key);
+      return beaufortCipher(text, key); // same for Beaufort
     }
 
-    // Shuffle Cipher
+    // 7) Shuffle
     function shuffleCipher(text, key, decrypt = false) {
       if (!key) return text;
       let indices = [...Array(text.length).keys()];
@@ -231,13 +255,11 @@
       return shuffleCipher(text, key, true);
     }
 
-    // ---------------- Profile Management ----------------
-    // Profiles can come in two formats:
-    // 1. The "old" format (from your first script) with Boolean flags and keys.
-    // 2. The "new" format which is simply an array of encryption steps.
-    // Below is a sample set of profiles that demonstrates both formats.
+    // ---------------------- Profile Management ----------------------
+    // We can have both old-format (boolean flags + keys) and new-format (array of steps).
+
     const profiles = {
-      // Old format profile (from the first script)
+      // Old format example
       "Legacy Default": {
         Caesar: true,
         Vigenere: false,
@@ -253,21 +275,21 @@
         shuffleKey: "",
         order: ["Caesar"]
       },
-      // New format profiles (steps array)
+      // New format examples
       "Default (Caesar 3)": [
-         { cipher: "caesar", shift: 3 }
+        { cipher: "caesar", shift: 3 }
       ],
       "Secret (Vigenere)": [
-         { cipher: "vigenere", key: "SECRET" }
+        { cipher: "vigenere", key: "SECRET" }
       ],
       "Advanced": [
-         { cipher: "caesar", shift: 3 },
-         { cipher: "vigenere", key: "KEY" },
-         { cipher: "transposition", key: "TRANS" },
-         { cipher: "atbash" },
-         { cipher: "reverse" },
-         { cipher: "beaufort", key: "BEAU" },
-         { cipher: "shuffle", key: "SHUFFLE" }
+        { cipher: "caesar", shift: 3 },
+        { cipher: "vigenere", key: "KEY" },
+        { cipher: "transposition", key: "TRANS" },
+        { cipher: "atbash" },
+        { cipher: "reverse" },
+        { cipher: "beaufort", key: "BEAU" },
+        { cipher: "shuffle", key: "SHUFFLE" }
       ]
     };
 
@@ -284,8 +306,7 @@
     }
     populateProfiles();
 
-    // Conversion function: if a profile is in the old format (has "Caesar" property),
-    // convert it into an array of steps.
+    // Convert an old-format profile to an array of encryption steps
     function convertOldProfileToSteps(oldProfile) {
       let defaultOrder = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
       let order = (oldProfile.order && oldProfile.order.length) ? oldProfile.order : defaultOrder;
@@ -293,54 +314,66 @@
       order.forEach(cipher => {
         switch(cipher) {
           case "Caesar":
-            if(oldProfile.Caesar) steps.push({ cipher: "caesar", shift: parseInt(oldProfile.caesarShift) });
+            if (oldProfile.Caesar) {
+              steps.push({ cipher: "caesar", shift: parseInt(oldProfile.caesarShift) });
+            }
             break;
           case "Vigenere":
-            if(oldProfile.Vigenere) steps.push({ cipher: "vigenere", key: oldProfile.vigenereKey });
+            if (oldProfile.Vigenere) {
+              steps.push({ cipher: "vigenere", key: oldProfile.vigenereKey });
+            }
             break;
           case "Transposition":
-            if(oldProfile.Transposition) steps.push({ cipher: "transposition", key: oldProfile.transpositionKey });
+            if (oldProfile.Transposition) {
+              steps.push({ cipher: "transposition", key: oldProfile.transpositionKey });
+            }
             break;
           case "Atbash":
-            if(oldProfile.Atbash) steps.push({ cipher: "atbash" });
+            if (oldProfile.Atbash) {
+              steps.push({ cipher: "atbash" });
+            }
             break;
           case "Reverse":
-            if(oldProfile.Reverse) steps.push({ cipher: "reverse" });
+            if (oldProfile.Reverse) {
+              steps.push({ cipher: "reverse" });
+            }
             break;
           case "Beaufort":
-            if(oldProfile.Beaufort) steps.push({ cipher: "beaufort", key: oldProfile.beaufortKey });
+            if (oldProfile.Beaufort) {
+              steps.push({ cipher: "beaufort", key: oldProfile.beaufortKey });
+            }
             break;
           case "Shuffle":
-            if(oldProfile.Shuffle) steps.push({ cipher: "shuffle", key: oldProfile.shuffleKey });
+            if (oldProfile.Shuffle) {
+              steps.push({ cipher: "shuffle", key: oldProfile.shuffleKey });
+            }
             break;
         }
       });
       return steps;
     }
 
-    // Returns the steps for the currently selected profile.
+    // Get the steps for the currently selected profile.
     function getCurrentProfileSteps() {
       const profileSelect = document.getElementById("profileSelect");
       const profileName = profileSelect.value;
       const profile = profiles[profileName];
-      if (!profile) {
-        // If no profile is selected, return an empty array.
-        return [];
-      }
-      // Check if the profile is in the old format (from first script)
+      if (!profile) return [];
+
+      // If it has "Caesar" property, it's old format.
       if (profile.hasOwnProperty("Caesar")) {
         return convertOldProfileToSteps(profile);
       } else {
-        return profile;
+        return profile; // new-format is already an array of steps
       }
     }
 
-    // ---------------- Message Encryption/Decryption ----------------
+    // ---------------------- Encryption/Decryption ----------------------
     function encryptMessage(message) {
       let steps = getCurrentProfileSteps();
       let encrypted = message;
       for (let step of steps) {
-        switch(step.cipher) {
+        switch (step.cipher) {
           case "caesar":
             encrypted = caesarCipherEncrypt(encrypted, step.shift);
             break;
@@ -368,11 +401,12 @@
       }
       return encrypted;
     }
+
     function decryptMessage(message) {
       let steps = getCurrentProfileSteps().slice().reverse();
       let decrypted = message;
       for (let step of steps) {
-        switch(step.cipher) {
+        switch (step.cipher) {
           case "caesar":
             decrypted = caesarCipherDecrypt(decrypted, step.shift);
             break;
@@ -401,13 +435,14 @@
       return decrypted;
     }
 
-    // ---------------- Chat Functions ----------------
-    // Encrypt and send the message to Firebase when "Send" is clicked.
+    // ---------------------- Chat Functions ----------------------
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
       if (message.trim() === "") return;
       let encryptedMessage = encryptMessage(message);
+
+      // Send to Firebase
       firebase.database().ref("encryptchat/messages").push({
         message: encryptedMessage,
         timestamp: Date.now()
@@ -415,7 +450,7 @@
       messageInput.value = "";
     });
 
-    // Listen for new messages from Firebase, decrypt them, and display in the chat window.
+    // Listen for new messages
     firebase.database().ref("encryptchat/messages").on("child_added", function(snapshot) {
       let data = snapshot.val();
       let decryptedMessage = decryptMessage(data.message);
@@ -424,6 +459,40 @@
       p.textContent = decryptedMessage;
       chatDiv.appendChild(p);
       chatDiv.scrollTop = chatDiv.scrollHeight;
+    });
+
+    // ---------------------- NEW: Import/Export Profiles ----------------------
+    // Export the profiles object as JSON
+    document.getElementById("exportProfilesButton").addEventListener("click", function() {
+      let dataStr = JSON.stringify(profiles, null, 2);
+      let blob = new Blob([dataStr], { type: "application/json" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "profiles.json";
+      a.click();
+    });
+
+    // Trigger hidden file input on click
+    document.getElementById("importProfilesButton").addEventListener("click", function() {
+      document.getElementById("importProfilesInput").click();
+    });
+
+    // Read the selected file, parse JSON, merge with existing profiles, and repopulate
+    document.getElementById("importProfilesInput").addEventListener("change", function(event) {
+      let file = event.target.files[0];
+      if (!file) return;
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let importedProfiles = JSON.parse(e.target.result);
+        // Merge them into the existing `profiles` object
+        for (let name in importedProfiles) {
+          profiles[name] = importedProfiles[name];
+        }
+        populateProfiles();
+        alert("Profiles imported successfully!");
+      };
+      reader.readAsText(file);
     });
   </script>
 </body>
