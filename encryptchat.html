@@ -11,206 +11,48 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <style>
     /* Reset and base styling */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      color: #333;
-      padding: 20px;
-      transition: background 0.3s, color 0.3s;
-    }
-    .dark-mode {
-      background: #222;
-      color: #ddd;
-    }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: background 0.3s, color 0.3s;
-    }
-    .dark-mode .container {
-      background: #333;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; padding: 20px; transition: background 0.3s, color 0.3s; }
+    .dark-mode { background: #222; color: #ddd; }
+    .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.3s, color 0.3s; }
+    .dark-mode .container { background: #333; }
+    h1 { text-align: center; margin-bottom: 20px; }
     /* Login Form */
-    #loginDiv {
-      margin-bottom: 20px;
-    }
-    #loginDiv h2 {
-      margin-bottom: 10px;
-    }
-    .form-group {
-      margin-bottom: 10px;
-    }
-    .form-group input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    #loginButton {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #28a745;
-      color: #fff;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    #loginButton:hover {
-      background: #218838;
-    }
+    #loginDiv { margin-bottom: 20px; }
+    #loginDiv h2 { margin-bottom: 10px; }
+    .form-group { margin-bottom: 10px; }
+    .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    #loginButton { width: 100%; padding: 10px; border: none; background: #28a745; color: #fff; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
+    #loginButton:hover { background: #218838; }
     /* Chat Container */
-    #chatContainer {
-      display: none;
-    }
-    .chat-header {
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .profile-actions, .chat-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .profile-actions label {
-      font-weight: bold;
-    }
-    .profile-actions select,
-    .chat-controls button {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #007bff;
-      color: #fff;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .chat-controls button:hover,
-    .profile-actions button:hover {
-      background: #0069d9;
-    }
+    #chatContainer { display: none; }
+    .chat-header { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; margin-bottom: 15px; }
+    .profile-actions, .chat-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .profile-actions label { font-weight: bold; }
+    .profile-actions select, .chat-controls button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: #007bff; color: #fff; cursor: pointer; transition: background 0.3s; }
+    .chat-controls button:hover, .profile-actions button:hover { background: #0069d9; }
     /* Chat display area */
-    #chat {
-      border: 1px solid #ccc;
-      padding: 15px;
-      height: 300px;
-      overflow-y: scroll;
-      background: #e9ecef;
-      border-radius: 4px;
-      margin-bottom: 15px;
-    }
-    .chat-message {
-      display: flex;
-      align-items: flex-start;
-      margin-bottom: 15px;
-    }
-    .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #007bff;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      margin-right: 10px;
-      flex-shrink: 0;
-    }
-    .message-details {
-      background: #fff;
-      border-radius: 4px;
-      padding: 8px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      max-width: 80%;
-    }
-    .message-header {
-      font-size: 0.9em;
-      margin-bottom: 4px;
-      color: #555;
-    }
-    .message-content {
-      font-size: 1em;
-    }
-    .message-content img {
-      max-width: 100%;
-      border-radius: 4px;
-    }
+    #chat { border: 1px solid #ccc; padding: 15px; height: 300px; overflow-y: scroll; background: #e9ecef; border-radius: 4px; margin-bottom: 15px; }
+    .chat-message { display: flex; align-items: flex-start; margin-bottom: 15px; }
+    .avatar { width: 40px; height: 40px; border-radius: 50%; background: #007bff; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; flex-shrink: 0; }
+    .message-details { background: #fff; border-radius: 4px; padding: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); max-width: 80%; }
+    .message-header { font-size: 0.9em; margin-bottom: 4px; color: #555; }
+    .message-content { font-size: 1em; }
+    .message-content img { max-width: 100%; border-radius: 4px; }
     /* Loading and Typing Indicator */
-    #loadingIndicator {
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    #typingIndicator {
-      font-style: italic;
-      margin-bottom: 10px;
-      color: #888;
-      display: none;
-    }
+    #loadingIndicator { text-align: center; margin-bottom: 10px; }
+    #typingIndicator { font-style: italic; margin-bottom: 10px; color: #888; display: none; }
     /* Message Input */
-    .message-input-group {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    #messageInput {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    #emojiButton, #attachButton, #sendButton {
-      padding: 10px 15px;
-      border: none;
-      background: #28a745;
-      color: #fff;
-      font-size: 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    #emojiButton:hover, #attachButton:hover, #sendButton:hover {
-      background: #218838;
-    }
+    .message-input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    #messageInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    #emojiButton, #attachButton, #sendButton { padding: 10px 15px; border: none; background: #28a745; color: #fff; font-size: 16px; border-radius: 4px; cursor: pointer; transition: background 0.3s; }
+    #emojiButton:hover, #attachButton:hover, #sendButton:hover { background: #218838; }
     /* Emoji Panel */
-    #emojiPanel {
-      display: none;
-      padding: 10px;
-      border: 1px solid #ccc;
-      background: #fff;
-      border-radius: 4px;
-      margin-top: 5px;
-    }
-    #emojiPanel span {
-      cursor: pointer;
-      font-size: 1.2em;
-      margin-right: 5px;
-    }
+    #emojiPanel { display: none; padding: 10px; border: 1px solid #ccc; background: #fff; border-radius: 4px; margin-top: 5px; }
+    #emojiPanel span { cursor: pointer; font-size: 1.2em; margin-right: 5px; }
     @media (max-width: 600px) {
-      .message-input-group {
-        flex-direction: column;
-      }
-      #emojiButton, #attachButton, #sendButton {
-        width: 100%;
-      }
+      .message-input-group { flex-direction: column; }
+      #emojiButton, #attachButton, #sendButton { width: 100%; }
     }
   </style>
 </head>
@@ -427,10 +269,8 @@
 
       detailsDiv.appendChild(headerDiv);
       detailsDiv.appendChild(contentDiv);
-
       msgDiv.appendChild(avatarDiv);
       msgDiv.appendChild(detailsDiv);
-
       chatDiv.appendChild(msgDiv);
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
@@ -483,7 +323,6 @@
     emojiButton.addEventListener("click", function() {
       emojiPanel.style.display = (emojiPanel.style.display === "none" || emojiPanel.style.display === "") ? "block" : "none";
     });
-    // When an emoji is clicked, append it to the message input.
     emojiPanel.addEventListener("click", function(event) {
       if (event.target.tagName === "SPAN") {
         const emoji = event.target.textContent;
@@ -496,7 +335,6 @@
     const typingIndicator = document.getElementById("typingIndicator");
     const userTypingRef = firebase.database().ref("typing");
 
-    // When the user types, update their typing status.
     document.getElementById("messageInput").addEventListener("input", function() {
       const user = firebase.auth().currentUser;
       if (!user) return;
@@ -504,14 +342,11 @@
         email: user.email,
         timestamp: Date.now()
       });
-      // Clear previous timeout and set new one to remove typing status after 3 seconds of inactivity.
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         userTypingRef.child(user.uid).remove();
       }, 3000);
     });
-
-    // Listen for typing statuses from other users.
     function setupTypingIndicator(currentUser) {
       userTypingRef.on("value", function(snapshot) {
         let typingUsers = [];
@@ -557,16 +392,14 @@
       };
       reader.readAsText(file);
     });
+
+    // ---------------------- Enter Key to Send Message ----------------------
+    document.getElementById("messageInput").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("sendButton").click();
+      }
+    });
   </script>
 </body>
 </html>
-
-
-
-document.getElementById("messageInput").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault(); // Prevents a newline in the input field
-    document.getElementById("sendButton").click();
-  }
-});
-
