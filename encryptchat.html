@@ -126,6 +126,9 @@
       "unencrypted": { type: "unencrypted" }
     };
 
+    // Global cache for all chat messages.
+    var allMessages = [];
+
     // Populate the profile selector dropdown
     function populateProfiles() {
       const profileSelect = document.getElementById("profileSelect");
@@ -144,7 +147,6 @@
       if (user) {
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("chatContainer").style.display = "block";
-        // Set up typing indicator listener once logged in
         setupTypingIndicator(user);
         listenForMessages();
         console.log("User signed in:", user.email);
@@ -178,9 +180,9 @@
       document.body.classList.toggle("dark-mode");
     });
 
-    // ---------------------- Basic Encryption Functions ----------------------
+    // ---------------------- Encryption / Decryption Functions ----------------------
     // For the "unencrypted" profile, messages pass unchanged.
-    // For other profiles (if imported), you could implement encryption.
+    // For any other profile (for demonstration, a basic Caesar cipher with shift 3 is used).
     function caesarCipherEncrypt(text, shift) {
       shift = shift % 26;
       let result = "";
@@ -203,21 +205,15 @@
     function caesarCipherDecrypt(text, shift) {
       return caesarCipherEncrypt(text, -shift);
     }
-    function encryptMessage(message) {
-      const profile = document.getElementById("profileSelect").value;
-      if (profile === "unencrypted") {
-        return message;
+
+    // Decrypt a message using its stored encryptionProfile and the currently selected profile.
+    function decryptMessageWithProfile(encryptedMessage, messageProfile, currentProfile) {
+      if (messageProfile === "unencrypted") {
+        return encryptedMessage;
+      } else if (messageProfile === currentProfile) {
+        return caesarCipherDecrypt(encryptedMessage, 3);
       } else {
-        // For demonstration, apply a basic Caesar cipher with shift 3.
-        return caesarCipherEncrypt(message, 3);
-      }
-    }
-    function decryptMessage(message) {
-      const profile = document.getElementById("profileSelect").value;
-      if (profile === "unencrypted") {
-        return message;
-      } else {
-        return caesarCipherDecrypt(message, 3);
+        return "Encrypted message (select '" + messageProfile + "')";
       }
     }
 
@@ -226,16 +222,29 @@
     const chatDiv = document.getElementById("chat");
     const loadingIndicator = document.getElementById("loadingIndicator");
 
+    // Re-render all messages from the global cache using the currently selected profile.
+    function renderMessages() {
+      chatDiv.innerHTML = "";
+      const currentProfile = document.getElementById("profileSelect").value;
+      allMessages.forEach(data => {
+        displayMessage(data, currentProfile);
+      });
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    // Listen for new messages from Firebase and store them in the global array.
     function listenForMessages() {
       chatRef.on("child_added", function(snapshot) {
         const data = snapshot.val();
-        displayMessage(data);
+        allMessages.push(data);
+        renderMessages();
         loadingIndicator.style.display = "none";
       });
     }
 
     // Display a message in the chat area.
-    function displayMessage(data) {
+    // For text messages, attempt decryption based on the message's encryptionProfile and current profile.
+    function displayMessage(data, currentProfile) {
       const msgDiv = document.createElement("div");
       msgDiv.classList.add("chat-message");
 
@@ -264,7 +273,8 @@
         img.alt = "Image attachment";
         contentDiv.appendChild(img);
       } else {
-        contentDiv.textContent = decryptMessage(data.message);
+        // Decrypt using the stored encryptionProfile and current profile.
+        contentDiv.textContent = decryptMessageWithProfile(data.message, data.encryptionProfile, currentProfile);
       }
 
       detailsDiv.appendChild(headerDiv);
@@ -272,21 +282,27 @@
       msgDiv.appendChild(avatarDiv);
       msgDiv.appendChild(detailsDiv);
       chatDiv.appendChild(msgDiv);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    // Send text message on button click
+    // Send a text message. Store the current profile in the message so that it can be used for decryption later.
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
       if (message.trim() === "") return;
       const user = firebase.auth().currentUser;
-      const encryptedMsg = encryptMessage(message);
+      const currentProfile = document.getElementById("profileSelect").value;
+      let encryptedMsg;
+      if (currentProfile === "unencrypted") {
+        encryptedMsg = message;
+      } else {
+        encryptedMsg = caesarCipherEncrypt(message, 3);
+      }
       chatRef.push({
         message: encryptedMsg,
         type: "text",
         timestamp: Date.now(),
-        sender: user.email
+        sender: user.email,
+        encryptionProfile: currentProfile
       });
       messageInput.value = "";
       updateTypingStatus(""); // Clear typing status
@@ -302,14 +318,14 @@
       const user = firebase.auth().currentUser;
       const storageRef = firebase.storage().ref();
       const fileRef = storageRef.child('chat_images/' + file.name + '_' + Date.now());
-      fileRef.put(file).then(snapshot => {
-        return snapshot.ref.getDownloadURL();
-      }).then(url => {
+      fileRef.put(file).then(snapshot => snapshot.ref.getDownloadURL())
+      .then(url => {
         chatRef.push({
           message: url,
           type: "image",
           timestamp: Date.now(),
-          sender: user.email
+          sender: user.email,
+          encryptionProfile: document.getElementById("profileSelect").value
         });
       }).catch(error => {
         console.error("File upload error:", error.message);
@@ -334,7 +350,6 @@
     let typingTimeout;
     const typingIndicator = document.getElementById("typingIndicator");
     const userTypingRef = firebase.database().ref("typing");
-
     document.getElementById("messageInput").addEventListener("input", function() {
       const user = firebase.auth().currentUser;
       if (!user) return;
@@ -400,6 +415,16 @@
         document.getElementById("sendButton").click();
       }
     });
+
+    // ---------------------- Re-render on Profile Change ----------------------
+    document.getElementById("profileSelect").addEventListener("change", function() {
+      renderMessages();
+    });
+
+    // Dummy function to clear typing status (if needed)
+    function updateTypingStatus(status) {
+      // Implementation for clearing typing status if required.
+    }
   </script>
 </body>
 </html>
