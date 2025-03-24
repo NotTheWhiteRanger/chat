@@ -2,10 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Unencrypted Chat System</title>
+  <title>Enhanced Chat System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Firebase Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <style>
-    /* Reset defaults */
+    /* Reset and base styling */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -15,22 +20,30 @@
       font-family: Arial, sans-serif;
       background: #f4f4f4;
       color: #333;
-      line-height: 1.6;
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode {
+      background: #222;
+      color: #ddd;
     }
     .container {
       max-width: 800px;
       margin: 0 auto;
       background: #fff;
-      padding: 20px;
       border-radius: 8px;
+      padding: 20px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.3s, color 0.3s;
+    }
+    .dark-mode .container {
+      background: #333;
     }
     h1 {
       text-align: center;
       margin-bottom: 20px;
     }
-    /* Login Form Styling */
+    /* Login Form */
     #loginDiv {
       margin-bottom: 20px;
     }
@@ -64,6 +77,36 @@
     #chatContainer {
       display: none;
     }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .profile-actions, .chat-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .profile-actions label {
+      font-weight: bold;
+    }
+    .profile-actions select,
+    .chat-controls button {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .chat-controls button:hover,
+    .profile-actions button:hover {
+      background: #0069d9;
+    }
     /* Chat display area */
     #chat {
       border: 1px solid #ccc;
@@ -74,18 +117,59 @@
       border-radius: 4px;
       margin-bottom: 15px;
     }
-    #chat p {
-      margin-bottom: 10px;
-      padding: 8px;
+    .chat-message {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #007bff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .message-details {
       background: #fff;
       border-radius: 4px;
+      padding: 8px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      animation: fadeIn 0.5s ease-in;
+      max-width: 80%;
+    }
+    .message-header {
+      font-size: 0.9em;
+      margin-bottom: 4px;
+      color: #555;
+    }
+    .message-content {
+      font-size: 1em;
+    }
+    .message-content img {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+    /* Loading and Typing Indicator */
+    #loadingIndicator {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #typingIndicator {
+      font-style: italic;
+      margin-bottom: 10px;
+      color: #888;
+      display: none;
     }
     /* Message Input */
     .message-input-group {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
     }
     #messageInput {
       flex: 1;
@@ -93,8 +177,8 @@
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    #sendButton {
-      padding: 10px 20px;
+    #emojiButton, #attachButton, #sendButton {
+      padding: 10px 15px;
       border: none;
       background: #28a745;
       color: #fff;
@@ -103,32 +187,36 @@
       cursor: pointer;
       transition: background 0.3s;
     }
-    #sendButton:hover {
+    #emojiButton:hover, #attachButton:hover, #sendButton:hover {
       background: #218838;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    /* Emoji Panel */
+    #emojiPanel {
+      display: none;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 4px;
+      margin-top: 5px;
     }
-    /* Responsive design */
+    #emojiPanel span {
+      cursor: pointer;
+      font-size: 1.2em;
+      margin-right: 5px;
+    }
     @media (max-width: 600px) {
       .message-input-group {
         flex-direction: column;
       }
-      #sendButton {
+      #emojiButton, #attachButton, #sendButton {
         width: 100%;
       }
     }
   </style>
-  <!-- Include Firebase libraries (version 8 for simplicity) -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
   <div class="container">
-    <h1>Unencrypted Chat System</h1>
-
+    <h1>Enhanced Chat System</h1>
     <!-- Login Form -->
     <div id="loginDiv">
       <h2>Login</h2>
@@ -140,16 +228,40 @@
       </div>
       <button id="loginButton">Login</button>
     </div>
-
     <!-- Chat Container -->
     <div id="chatContainer">
-      <!-- Chat Display Area -->
+      <div class="chat-header">
+        <div class="profile-actions">
+          <label for="profileSelect">Profile:</label>
+          <select id="profileSelect"></select>
+          <button id="exportProfilesButton">Export Profiles</button>
+          <button id="importProfilesButton">Import Profiles</button>
+          <input type="file" id="importProfilesInput" style="display:none">
+        </div>
+        <div class="chat-controls">
+          <button id="darkModeToggle">Dark Mode</button>
+          <button id="logoutButton">Logout</button>
+        </div>
+      </div>
+      <div id="loadingIndicator">Loading messages...</div>
       <div id="chat"></div>
-      <!-- Message Input -->
+      <div id="typingIndicator"></div>
       <div class="message-input-group">
         <input type="text" id="messageInput" placeholder="Type your message here">
+        <button id="emojiButton">😀</button>
+        <button id="attachButton">📎</button>
         <button id="sendButton">Send</button>
       </div>
+      <!-- Hidden Emoji Panel -->
+      <div id="emojiPanel">
+        <span>😀</span>
+        <span>😂</span>
+        <span>❤️</span>
+        <span>👍</span>
+        <span>🙌</span>
+      </div>
+      <!-- Hidden File Input for Attachments -->
+      <input type="file" id="fileInput" style="display:none">
     </div>
   </div>
 
@@ -166,61 +278,284 @@
     };
     firebase.initializeApp(firebaseConfig);
 
-    // ---------------------- Firebase Authentication ----------------------
+    // ---------------------- Global Variables ----------------------
+    // Default profiles object; default "unencrypted" profile is provided.
+    const profiles = {
+      "unencrypted": { type: "unencrypted" }
+    };
+
+    // Populate the profile selector dropdown
+    function populateProfiles() {
+      const profileSelect = document.getElementById("profileSelect");
+      profileSelect.innerHTML = "";
+      for (let profileName in profiles) {
+        let option = document.createElement("option");
+        option.value = profileName;
+        option.text = profileName;
+        profileSelect.appendChild(option);
+      }
+    }
+    populateProfiles();
+
+    // ---------------------- Authentication ----------------------
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("chatContainer").style.display = "block";
+        // Set up typing indicator listener once logged in
+        setupTypingIndicator(user);
+        listenForMessages();
         console.log("User signed in:", user.email);
       } else {
         document.getElementById("loginDiv").style.display = "block";
         document.getElementById("chatContainer").style.display = "none";
       }
     });
-
     document.getElementById("loginButton").addEventListener("click", function() {
-      var email = document.getElementById("emailInput").value;
-      var password = document.getElementById("passwordInput").value;
+      const email = document.getElementById("emailInput").value;
+      const password = document.getElementById("passwordInput").value;
       firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(function(userCredential) {
+        .then(userCredential => {
           console.log("Logged in as:", userCredential.user.email);
         })
-        .catch(function(error) {
+        .catch(error => {
           console.error("Error during sign in:", error.message);
           alert("Login failed: " + error.message);
         });
     });
+    document.getElementById("logoutButton").addEventListener("click", function() {
+      firebase.auth().signOut().then(() => {
+        console.log("User signed out.");
+      }).catch(error => {
+        console.error("Sign out error:", error.message);
+      });
+    });
 
-    // ---------------------- Message Processing Functions ----------------------
-    // For unencrypted chat, the message passes through unchanged.
+    // ---------------------- Dark Mode Toggle ----------------------
+    document.getElementById("darkModeToggle").addEventListener("click", function() {
+      document.body.classList.toggle("dark-mode");
+    });
+
+    // ---------------------- Basic Encryption Functions ----------------------
+    // For the "unencrypted" profile, messages pass unchanged.
+    // For other profiles (if imported), you could implement encryption.
+    function caesarCipherEncrypt(text, shift) {
+      shift = shift % 26;
+      let result = "";
+      for (let i = 0; i < text.length; i++) {
+        let c = text[i];
+        if (c.match(/[A-Z]/)) {
+          let code = text.charCodeAt(i) - 65;
+          code = (code + shift + 26) % 26;
+          result += String.fromCharCode(code + 65);
+        } else if (c.match(/[a-z]/)) {
+          let code = text.charCodeAt(i) - 97;
+          code = (code + shift + 26) % 26;
+          result += String.fromCharCode(code + 97);
+        } else {
+          result += c;
+        }
+      }
+      return result;
+    }
+    function caesarCipherDecrypt(text, shift) {
+      return caesarCipherEncrypt(text, -shift);
+    }
     function encryptMessage(message) {
-      return message;
+      const profile = document.getElementById("profileSelect").value;
+      if (profile === "unencrypted") {
+        return message;
+      } else {
+        // For demonstration, apply a basic Caesar cipher with shift 3.
+        return caesarCipherEncrypt(message, 3);
+      }
     }
     function decryptMessage(message) {
-      return message;
+      const profile = document.getElementById("profileSelect").value;
+      if (profile === "unencrypted") {
+        return message;
+      } else {
+        return caesarCipherDecrypt(message, 3);
+      }
     }
 
-    // ---------------------- Chat Functions ----------------------
+    // ---------------------- Chat Messaging ----------------------
+    const chatRef = firebase.database().ref("chat/messages");
+    const chatDiv = document.getElementById("chat");
+    const loadingIndicator = document.getElementById("loadingIndicator");
+
+    function listenForMessages() {
+      chatRef.on("child_added", function(snapshot) {
+        const data = snapshot.val();
+        displayMessage(data);
+        loadingIndicator.style.display = "none";
+      });
+    }
+
+    // Display a message in the chat area.
+    function displayMessage(data) {
+      const msgDiv = document.createElement("div");
+      msgDiv.classList.add("chat-message");
+
+      // Create avatar (first letter of sender's email)
+      const avatarDiv = document.createElement("div");
+      avatarDiv.classList.add("avatar");
+      const senderEmail = data.sender || "U";
+      avatarDiv.textContent = senderEmail[0].toUpperCase();
+
+      // Message details container
+      const detailsDiv = document.createElement("div");
+      detailsDiv.classList.add("message-details");
+
+      // Header with sender and timestamp
+      const headerDiv = document.createElement("div");
+      headerDiv.classList.add("message-header");
+      const timeString = new Date(data.timestamp).toLocaleTimeString();
+      headerDiv.textContent = `${senderEmail} • ${timeString}`;
+
+      // Message content
+      const contentDiv = document.createElement("div");
+      contentDiv.classList.add("message-content");
+      if (data.type === "image") {
+        const img = document.createElement("img");
+        img.src = data.message;
+        img.alt = "Image attachment";
+        contentDiv.appendChild(img);
+      } else {
+        contentDiv.textContent = decryptMessage(data.message);
+      }
+
+      detailsDiv.appendChild(headerDiv);
+      detailsDiv.appendChild(contentDiv);
+
+      msgDiv.appendChild(avatarDiv);
+      msgDiv.appendChild(detailsDiv);
+
+      chatDiv.appendChild(msgDiv);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    // Send text message on button click
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
       if (message.trim() === "") return;
-      let plainMessage = encryptMessage(message);
-      firebase.database().ref("chat/messages").push({
-        message: plainMessage,
-        timestamp: Date.now()
+      const user = firebase.auth().currentUser;
+      const encryptedMsg = encryptMessage(message);
+      chatRef.push({
+        message: encryptedMsg,
+        type: "text",
+        timestamp: Date.now(),
+        sender: user.email
       });
       messageInput.value = "";
+      updateTypingStatus(""); // Clear typing status
     });
 
-    firebase.database().ref("chat/messages").on("child_added", function(snapshot) {
-      let data = snapshot.val();
-      let displayMessage = decryptMessage(data.message);
-      const chatDiv = document.getElementById("chat");
-      let p = document.createElement("p");
-      p.textContent = displayMessage;
-      chatDiv.appendChild(p);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
+    // ---------------------- File Attachment (Image Upload) ----------------------
+    document.getElementById("attachButton").addEventListener("click", function() {
+      document.getElementById("fileInput").click();
+    });
+    document.getElementById("fileInput").addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const user = firebase.auth().currentUser;
+      const storageRef = firebase.storage().ref();
+      const fileRef = storageRef.child('chat_images/' + file.name + '_' + Date.now());
+      fileRef.put(file).then(snapshot => {
+        return snapshot.ref.getDownloadURL();
+      }).then(url => {
+        chatRef.push({
+          message: url,
+          type: "image",
+          timestamp: Date.now(),
+          sender: user.email
+        });
+      }).catch(error => {
+        console.error("File upload error:", error.message);
+        alert("File upload failed: " + error.message);
+      });
+    });
+
+    // ---------------------- Emoji Panel ----------------------
+    const emojiButton = document.getElementById("emojiButton");
+    const emojiPanel = document.getElementById("emojiPanel");
+    emojiButton.addEventListener("click", function() {
+      emojiPanel.style.display = (emojiPanel.style.display === "none" || emojiPanel.style.display === "") ? "block" : "none";
+    });
+    // When an emoji is clicked, append it to the message input.
+    emojiPanel.addEventListener("click", function(event) {
+      if (event.target.tagName === "SPAN") {
+        const emoji = event.target.textContent;
+        document.getElementById("messageInput").value += emoji;
+      }
+    });
+
+    // ---------------------- Typing Indicator ----------------------
+    let typingTimeout;
+    const typingIndicator = document.getElementById("typingIndicator");
+    const userTypingRef = firebase.database().ref("typing");
+
+    // When the user types, update their typing status.
+    document.getElementById("messageInput").addEventListener("input", function() {
+      const user = firebase.auth().currentUser;
+      if (!user) return;
+      userTypingRef.child(user.uid).set({
+        email: user.email,
+        timestamp: Date.now()
+      });
+      // Clear previous timeout and set new one to remove typing status after 3 seconds of inactivity.
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        userTypingRef.child(user.uid).remove();
+      }, 3000);
+    });
+
+    // Listen for typing statuses from other users.
+    function setupTypingIndicator(currentUser) {
+      userTypingRef.on("value", function(snapshot) {
+        let typingUsers = [];
+        snapshot.forEach(child => {
+          const data = child.val();
+          if (data.email !== currentUser.email && (Date.now() - data.timestamp) < 4000) {
+            typingUsers.push(data.email);
+          }
+        });
+        if (typingUsers.length > 0) {
+          typingIndicator.textContent = typingUsers.join(", ") + " is typing...";
+          typingIndicator.style.display = "block";
+        } else {
+          typingIndicator.style.display = "none";
+        }
+      });
+    }
+
+    // ---------------------- Import/Export Profiles ----------------------
+    document.getElementById("exportProfilesButton").addEventListener("click", function() {
+      let dataStr = JSON.stringify(profiles, null, 2);
+      let blob = new Blob([dataStr], { type: "application/json" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "profiles.json";
+      a.click();
+    });
+    document.getElementById("importProfilesButton").addEventListener("click", function() {
+      document.getElementById("importProfilesInput").click();
+    });
+    document.getElementById("importProfilesInput").addEventListener("change", function(event) {
+      let file = event.target.files[0];
+      if (!file) return;
+      let reader = new FileReader();
+      reader.onload = function(e) {
+        let importedProfiles = JSON.parse(e.target.result);
+        for (let name in importedProfiles) {
+          profiles[name] = importedProfiles[name];
+        }
+        populateProfiles();
+        alert("Profiles imported successfully!");
+      };
+      reader.readAsText(file);
     });
   </script>
 </body>
