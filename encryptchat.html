@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Encrypted Chat System</title>
+  <title>Unencrypted Chat System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Reset some defaults */
+    /* Reset defaults */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -63,38 +63,6 @@
     /* Chat Container */
     #chatContainer {
       display: none;
-    }
-    .profile-section {
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .profile-section select {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .profile-section button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    #exportProfilesButton {
-      background: #007bff;
-      color: #fff;
-    }
-    #exportProfilesButton:hover {
-      background: #0069d9;
-    }
-    #importProfilesButton {
-      background: #17a2b8;
-      color: #fff;
-    }
-    #importProfilesButton:hover {
-      background: #138496;
     }
     /* Chat display area */
     #chat {
@@ -159,7 +127,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Encrypted Chat System</h1>
+    <h1>Unencrypted Chat System</h1>
 
     <!-- Login Form -->
     <div id="loginDiv">
@@ -175,22 +143,8 @@
 
     <!-- Chat Container -->
     <div id="chatContainer">
-      <div class="profile-section">
-        <div>
-          <label for="profileSelect">Select Profile:</label>
-          <select id="profileSelect"></select>
-        </div>
-        <div>
-          <button id="exportProfilesButton">Export Profiles</button>
-          <button id="importProfilesButton">Import Profiles</button>
-          <!-- Hidden file input for importing profiles -->
-          <input type="file" id="importProfilesInput" style="display:none" />
-        </div>
-      </div>
-
       <!-- Chat Display Area -->
       <div id="chat"></div>
-
       <!-- Message Input -->
       <div class="message-input-group">
         <input type="text" id="messageInput" placeholder="Type your message here">
@@ -217,7 +171,7 @@
       if (user) {
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("chatContainer").style.display = "block";
-        console.log("User signed in: ", user.email);
+        console.log("User signed in:", user.email);
       } else {
         document.getElementById("loginDiv").style.display = "block";
         document.getElementById("chatContainer").style.display = "none";
@@ -229,7 +183,7 @@
       var password = document.getElementById("passwordInput").value;
       firebase.auth().signInWithEmailAndPassword(email, password)
         .then(function(userCredential) {
-          console.log("Logged in as: ", userCredential.user.email);
+          console.log("Logged in as:", userCredential.user.email);
         })
         .catch(function(error) {
           console.error("Error during sign in:", error.message);
@@ -237,358 +191,13 @@
         });
     });
 
-    // ---------------------- Encryption Functions ----------------------
-    // Caesar Cipher
-    function caesarCipherEncrypt(text, shift) {
-      shift = shift % 26;
-      let result = "";
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (c.match(/[A-Z]/)) {
-          let code = text.charCodeAt(i) - 65;
-          code = (code + shift + 26) % 26;
-          result += String.fromCharCode(code + 65);
-        } else if (c.match(/[a-z]/)) {
-          let code = text.charCodeAt(i) - 97;
-          code = (code + shift + 26) % 26;
-          result += String.fromCharCode(code + 97);
-        } else {
-          result += c;
-        }
-      }
-      return result;
-    }
-    function caesarCipherDecrypt(text, shift) {
-      return caesarCipherEncrypt(text, -shift);
-    }
-    // Vigenère Cipher
-    function vigenereEncrypt(text, key) {
-      key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      let result = "";
-      let j = 0;
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (c.match(/[A-Z]/i)) {
-          let base = c === c.toUpperCase() ? 65 : 97;
-          let shift = key.charCodeAt(j % key.length) - 65;
-          let code = (text.charCodeAt(i) - base + shift) % 26;
-          result += String.fromCharCode(code + base);
-          j++;
-        } else {
-          result += c;
-        }
-      }
-      return result;
-    }
-    function vigenereDecrypt(text, key) {
-      key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      let result = "";
-      let j = 0;
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (c.match(/[A-Z]/i)) {
-          let base = c === c.toUpperCase() ? 65 : 97;
-          let shift = key.charCodeAt(j % key.length) - 65;
-          let code = (text.charCodeAt(i) - base - shift + 26) % 26;
-          result += String.fromCharCode(code + base);
-          j++;
-        } else {
-          result += c;
-        }
-      }
-      return result;
-    }
-    // Transposition (Columnar)
-    function transpositionEncrypt(text, key) {
-      text = text.replace(/\s+/g, '');
-      let numCols = key.length;
-      let numRows = Math.ceil(text.length / numCols);
-      let grid = [];
-      for (let r = 0; r < numRows; r++) {
-        grid[r] = [];
-        for (let c = 0; c < numCols; c++) {
-          grid[r][c] = text[r * numCols + c] || '';
-        }
-      }
-      let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
-                   .sort((a, b) => a.char.localeCompare(b.char))
-                   .map(obj => obj.index);
-      let cipherText = "";
-      for (let i = 0; i < order.length; i++) {
-        let col = order[i];
-        for (let r = 0; r < numRows; r++) {
-          cipherText += grid[r][col] || '';
-        }
-      }
-      return cipherText;
-    }
-    function transpositionDecrypt(text, key) {
-      let numCols = key.length;
-      let numRows = Math.ceil(text.length / numCols);
-      let order = key.toUpperCase().split('').map((char, index) => ({ char, index }))
-                   .sort((a, b) => a.char.localeCompare(b.char))
-                   .map(obj => obj.index);
-      let grid = [];
-      for (let r = 0; r < numRows; r++) {
-        grid[r] = new Array(numCols);
-      }
-      let pos = 0;
-      for (let i = 0; i < order.length; i++) {
-        let col = order[i];
-        for (let r = 0; r < numRows; r++) {
-          if (pos < text.length) {
-            grid[r][col] = text[pos++];
-          }
-        }
-      }
-      let plainText = "";
-      for (let r = 0; r < numRows; r++) {
-        for (let c = 0; c < numCols; c++) {
-          plainText += grid[r][c] || '';
-        }
-      }
-      return plainText;
-    }
-    // Atbash
-    function atbash(text) {
-      let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      let reversed = alphabet.split('').reverse().join('');
-      let result = "";
-      for (let char of text) {
-        let upperChar = char.toUpperCase();
-        let idx = alphabet.indexOf(upperChar);
-        if (idx !== -1) {
-          let transChar = reversed[idx];
-          result += (char === char.toUpperCase()) ? transChar : transChar.toLowerCase();
-        } else {
-          result += char;
-        }
-      }
-      return result;
-    }
-    // Reverse
-    function reverseText(text) {
-      return text.split('').reverse().join('');
-    }
-    // Beaufort (Encrypt = Decrypt)
-    function beaufortCipher(text, key) {
-      key = key.toUpperCase().replace(/[^A-Z]/g, "");
-      let result = "";
-      for (let i = 0, j = 0; i < text.length; i++) {
-        let char = text[i];
-        if (char.match(/[A-Z]/i)) {
-          let base = char === char.toUpperCase() ? 65 : 97;
-          let p = text.charCodeAt(i) - base;
-          let k = key.charCodeAt(j % key.length) - 65;
-          let code = (k - p + 26) % 26;
-          result += String.fromCharCode(code + base);
-          j++;
-        } else {
-          result += char;
-        }
-      }
-      return result;
-    }
-    function beaufortDecrypt(text, key) {
-      return beaufortCipher(text, key);
-    }
-    // Shuffle
-    function shuffleCipher(text, key, decrypt = false) {
-      if (!key) return text;
-      let indices = [...Array(text.length).keys()];
-      let permutation = indices.slice().sort((a, b) => {
-        let valA = key.charCodeAt(a % key.length) + a;
-        let valB = key.charCodeAt(b % key.length) + b;
-        return valA - valB;
-      });
-      if (decrypt) {
-        let inverse = [];
-        for (let i = 0; i < permutation.length; i++) {
-          inverse[permutation[i]] = i;
-        }
-        permutation = inverse;
-      }
-      let resultArray = [];
-      for (let i = 0; i < text.length; i++) {
-        resultArray[i] = text[permutation[i]];
-      }
-      return resultArray.join('');
-    }
-    function shuffleEncrypt(text, key) {
-      return shuffleCipher(text, key, false);
-    }
-    function shuffleDecrypt(text, key) {
-      return shuffleCipher(text, key, true);
-    }
-
-    // ---------------------- Profile Management ----------------------
-    const profiles = {
-      "Legacy Default": {
-        Caesar: true,
-        Vigenere: false,
-        Transposition: false,
-        Atbash: false,
-        Reverse: false,
-        Beaufort: false,
-        Shuffle: false,
-        caesarShift: 3,
-        vigenereKey: "",
-        transpositionKey: "",
-        beaufortKey: "",
-        shuffleKey: "",
-        order: ["Caesar"]
-      },
-      "Default (Caesar 3)": [
-        { cipher: "caesar", shift: 3 }
-      ],
-      "Secret (Vigenere)": [
-        { cipher: "vigenere", key: "SECRET" }
-      ],
-      "Advanced": [
-        { cipher: "caesar", shift: 3 },
-        { cipher: "vigenere", key: "KEY" },
-        { cipher: "transposition", key: "TRANS" },
-        { cipher: "atbash" },
-        { cipher: "reverse" },
-        { cipher: "beaufort", key: "BEAU" },
-        { cipher: "shuffle", key: "SHUFFLE" }
-      ]
-    };
-
-    function populateProfiles() {
-      const profileSelect = document.getElementById("profileSelect");
-      profileSelect.innerHTML = "";
-      for (let profileName in profiles) {
-        let option = document.createElement("option");
-        option.value = profileName;
-        option.text = profileName;
-        profileSelect.appendChild(option);
-      }
-    }
-    populateProfiles();
-
-    function convertOldProfileToSteps(oldProfile) {
-      let defaultOrder = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
-      let order = (oldProfile.order && oldProfile.order.length) ? oldProfile.order : defaultOrder;
-      let steps = [];
-      order.forEach(cipher => {
-        switch(cipher) {
-          case "Caesar":
-            if (oldProfile.Caesar) {
-              steps.push({ cipher: "caesar", shift: parseInt(oldProfile.caesarShift) });
-            }
-            break;
-          case "Vigenere":
-            if (oldProfile.Vigenere) {
-              steps.push({ cipher: "vigenere", key: oldProfile.vigenereKey });
-            }
-            break;
-          case "Transposition":
-            if (oldProfile.Transposition) {
-              steps.push({ cipher: "transposition", key: oldProfile.transpositionKey });
-            }
-            break;
-          case "Atbash":
-            if (oldProfile.Atbash) {
-              steps.push({ cipher: "atbash" });
-            }
-            break;
-          case "Reverse":
-            if (oldProfile.Reverse) {
-              steps.push({ cipher: "reverse" });
-            }
-            break;
-          case "Beaufort":
-            if (oldProfile.Beaufort) {
-              steps.push({ cipher: "beaufort", key: oldProfile.beaufortKey });
-            }
-            break;
-          case "Shuffle":
-            if (oldProfile.Shuffle) {
-              steps.push({ cipher: "shuffle", key: oldProfile.shuffleKey });
-            }
-            break;
-        }
-      });
-      return steps;
-    }
-
-    function getCurrentProfileSteps() {
-      const profileSelect = document.getElementById("profileSelect");
-      const profileName = profileSelect.value;
-      const profile = profiles[profileName];
-      if (!profile) return [];
-      if (profile.hasOwnProperty("Caesar")) {
-        return convertOldProfileToSteps(profile);
-      } else {
-        return profile;
-      }
-    }
-
-    // ---------------------- Encryption/Decryption ----------------------
+    // ---------------------- Message Processing Functions ----------------------
+    // For unencrypted chat, the message passes through unchanged.
     function encryptMessage(message) {
-      let steps = getCurrentProfileSteps();
-      let encrypted = message;
-      for (let step of steps) {
-        switch (step.cipher) {
-          case "caesar":
-            encrypted = caesarCipherEncrypt(encrypted, step.shift);
-            break;
-          case "vigenere":
-            encrypted = vigenereEncrypt(encrypted, step.key);
-            break;
-          case "transposition":
-            encrypted = transpositionEncrypt(encrypted, step.key);
-            break;
-          case "atbash":
-            encrypted = atbash(encrypted);
-            break;
-          case "reverse":
-            encrypted = reverseText(encrypted);
-            break;
-          case "beaufort":
-            encrypted = beaufortCipher(encrypted, step.key);
-            break;
-          case "shuffle":
-            encrypted = shuffleEncrypt(encrypted, step.key);
-            break;
-          default:
-            break;
-        }
-      }
-      return encrypted;
+      return message;
     }
     function decryptMessage(message) {
-      let steps = getCurrentProfileSteps().slice().reverse();
-      let decrypted = message;
-      for (let step of steps) {
-        switch (step.cipher) {
-          case "caesar":
-            decrypted = caesarCipherDecrypt(decrypted, step.shift);
-            break;
-          case "vigenere":
-            decrypted = vigenereDecrypt(decrypted, step.key);
-            break;
-          case "transposition":
-            decrypted = transpositionDecrypt(decrypted, step.key);
-            break;
-          case "atbash":
-            decrypted = atbash(decrypted);
-            break;
-          case "reverse":
-            decrypted = reverseText(decrypted);
-            break;
-          case "beaufort":
-            decrypted = beaufortDecrypt(decrypted, step.key);
-            break;
-          case "shuffle":
-            decrypted = shuffleDecrypt(decrypted, step.key);
-            break;
-          default:
-            break;
-        }
-      }
-      return decrypted;
+      return message;
     }
 
     // ---------------------- Chat Functions ----------------------
@@ -596,52 +205,22 @@
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
       if (message.trim() === "") return;
-      let encryptedMessage = encryptMessage(message);
-      firebase.database().ref("encryptchat/messages").push({
-        message: encryptedMessage,
+      let plainMessage = encryptMessage(message);
+      firebase.database().ref("chat/messages").push({
+        message: plainMessage,
         timestamp: Date.now()
       });
       messageInput.value = "";
     });
 
-    firebase.database().ref("encryptchat/messages").on("child_added", function(snapshot) {
+    firebase.database().ref("chat/messages").on("child_added", function(snapshot) {
       let data = snapshot.val();
-      let decryptedMessage = decryptMessage(data.message);
+      let displayMessage = decryptMessage(data.message);
       const chatDiv = document.getElementById("chat");
       let p = document.createElement("p");
-      p.textContent = decryptedMessage;
+      p.textContent = displayMessage;
       chatDiv.appendChild(p);
       chatDiv.scrollTop = chatDiv.scrollHeight;
-    });
-
-    // ---------------------- Import/Export Profiles ----------------------
-    document.getElementById("exportProfilesButton").addEventListener("click", function() {
-      let dataStr = JSON.stringify(profiles, null, 2);
-      let blob = new Blob([dataStr], { type: "application/json" });
-      let url = URL.createObjectURL(blob);
-      let a = document.createElement("a");
-      a.href = url;
-      a.download = "profiles.json";
-      a.click();
-    });
-
-    document.getElementById("importProfilesButton").addEventListener("click", function() {
-      document.getElementById("importProfilesInput").click();
-    });
-
-    document.getElementById("importProfilesInput").addEventListener("change", function(event) {
-      let file = event.target.files[0];
-      if (!file) return;
-      let reader = new FileReader();
-      reader.onload = function(e) {
-        let importedProfiles = JSON.parse(e.target.result);
-        for (let name in importedProfiles) {
-          profiles[name] = importedProfiles[name];
-        }
-        populateProfiles();
-        alert("Profiles imported successfully!");
-      };
-      reader.readAsText(file);
     });
   </script>
 </body>
