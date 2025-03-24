@@ -1,33 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Expanded Encrypted Chat System</title>
+  <title>Encrypted Chat System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Basic styles */
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #chat {
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 300px;
-      overflow-y: scroll;
-      background: #f9f9f9;
-      margin-bottom: 10px;
+    /* Reset some defaults */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
-    #messageInput {
-      width: 70%;
-      padding: 5px;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
     }
-    #sendButton {
-      width: 25%;
-      padding: 5px;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    #profileSelect {
-      margin-bottom: 10px;
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
     }
-    /* Login form styling */
+    /* Login Form Styling */
     #loginDiv {
       margin-bottom: 20px;
+    }
+    #loginDiv h2 {
+      margin-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #loginButton {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: #28a745;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #loginButton:hover {
+      background: #218838;
+    }
+    /* Chat Container */
+    #chatContainer {
+      display: none;
+    }
+    .profile-section {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .profile-section select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .profile-section button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #exportProfilesButton {
+      background: #007bff;
+      color: #fff;
+    }
+    #exportProfilesButton:hover {
+      background: #0069d9;
+    }
+    #importProfilesButton {
+      background: #17a2b8;
+      color: #fff;
+    }
+    #importProfilesButton:hover {
+      background: #138496;
+    }
+    /* Chat display area */
+    #chat {
+      border: 1px solid #ccc;
+      padding: 15px;
+      height: 300px;
+      overflow-y: scroll;
+      background: #e9ecef;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    #chat p {
+      margin-bottom: 10px;
+      padding: 8px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      animation: fadeIn 0.5s ease-in;
+    }
+    /* Message Input */
+    .message-input-group {
+      display: flex;
+      gap: 10px;
+    }
+    #messageInput {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #sendButton {
+      padding: 10px 20px;
+      border: none;
+      background: #28a745;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #sendButton:hover {
+      background: #218838;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    /* Responsive design */
+    @media (max-width: 600px) {
+      .message-input-group {
+        flex-direction: column;
+      }
+      #sendButton {
+        width: 100%;
+      }
     }
   </style>
   <!-- Include Firebase libraries (version 8 for simplicity) -->
@@ -36,59 +158,67 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 </head>
 <body>
-  <h1>Expanded Encrypted Chat System</h1>
+  <div class="container">
+    <h1>Encrypted Chat System</h1>
 
-  <!-- Login Form -->
-  <div id="loginDiv">
-    <h2>Login</h2>
-    <input type="email" id="emailInput" placeholder="Enter email" required>
-    <input type="password" id="passwordInput" placeholder="Enter password" required>
-    <button id="loginButton">Login</button>
-  </div>
+    <!-- Login Form -->
+    <div id="loginDiv">
+      <h2>Login</h2>
+      <div class="form-group">
+        <input type="email" id="emailInput" placeholder="Enter email" required>
+      </div>
+      <div class="form-group">
+        <input type="password" id="passwordInput" placeholder="Enter password" required>
+      </div>
+      <button id="loginButton">Login</button>
+    </div>
 
-  <!-- Chat Container -->
-  <div id="chatContainer" style="display: none;">
-    <!-- Profile Selection -->
-    <label for="profileSelect">Select Profile:</label>
-    <select id="profileSelect"></select>
+    <!-- Chat Container -->
+    <div id="chatContainer">
+      <div class="profile-section">
+        <div>
+          <label for="profileSelect">Select Profile:</label>
+          <select id="profileSelect"></select>
+        </div>
+        <div>
+          <button id="exportProfilesButton">Export Profiles</button>
+          <button id="importProfilesButton">Import Profiles</button>
+          <!-- Hidden file input for importing profiles -->
+          <input type="file" id="importProfilesInput" style="display:none" />
+        </div>
+      </div>
 
-    <!-- Buttons for Import/Export Profiles -->
-    <button id="exportProfilesButton">Export Profiles</button>
-    <button id="importProfilesButton">Import Profiles</button>
-    <!-- Hidden file input for importing profiles -->
-    <input type="file" id="importProfilesInput" style="display:none" />
+      <!-- Chat Display Area -->
+      <div id="chat"></div>
 
-    <!-- Chat Display Area -->
-    <div id="chat"></div>
-
-    <!-- Message Input -->
-    <input type="text" id="messageInput" placeholder="Enter your message">
-    <button id="sendButton">Send</button>
+      <!-- Message Input -->
+      <div class="message-input-group">
+        <input type="text" id="messageInput" placeholder="Type your message here">
+        <button id="sendButton">Send</button>
+      </div>
+    </div>
   </div>
 
   <script>
     // ---------------------- Firebase Initialization ----------------------
-    // Firebase configuration (using the same placeholders from your original script)
     var firebaseConfig = {
-  apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-  authDomain: "new-chat-8d4f4.firebaseapp.com",
-  databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-  projectId: "new-chat-8d4f4",
-  storageBucket: "new-chat-8d4f4.firebasestorage.app",
-  messagingSenderId: "825077448854",
-  appId: "1:825077448854:web:3906174c00e1f6604782b7"
-};
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
+    };
     firebase.initializeApp(firebaseConfig);
 
     // ---------------------- Firebase Authentication ----------------------
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
-        // User is signed in.
         document.getElementById("loginDiv").style.display = "none";
         document.getElementById("chatContainer").style.display = "block";
         console.log("User signed in: ", user.email);
       } else {
-        // No user is signed in.
         document.getElementById("loginDiv").style.display = "block";
         document.getElementById("chatContainer").style.display = "none";
       }
@@ -108,7 +238,7 @@
     });
 
     // ---------------------- Encryption Functions ----------------------
-    // 1) Caesar Cipher
+    // Caesar Cipher
     function caesarCipherEncrypt(text, shift) {
       shift = shift % 26;
       let result = "";
@@ -131,8 +261,7 @@
     function caesarCipherDecrypt(text, shift) {
       return caesarCipherEncrypt(text, -shift);
     }
-
-    // 2) Vigenère Cipher
+    // Vigenère Cipher
     function vigenereEncrypt(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
       let result = "";
@@ -169,8 +298,7 @@
       }
       return result;
     }
-
-    // 3) Transposition (Columnar)
+    // Transposition (Columnar)
     function transpositionEncrypt(text, key) {
       text = text.replace(/\s+/g, '');
       let numCols = key.length;
@@ -221,8 +349,7 @@
       }
       return plainText;
     }
-
-    // 4) Atbash
+    // Atbash
     function atbash(text) {
       let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       let reversed = alphabet.split('').reverse().join('');
@@ -239,13 +366,11 @@
       }
       return result;
     }
-
-    // 5) Reverse
+    // Reverse
     function reverseText(text) {
       return text.split('').reverse().join('');
     }
-
-    // 6) Beaufort (Encrypt = Decrypt)
+    // Beaufort (Encrypt = Decrypt)
     function beaufortCipher(text, key) {
       key = key.toUpperCase().replace(/[^A-Z]/g, "");
       let result = "";
@@ -267,8 +392,7 @@
     function beaufortDecrypt(text, key) {
       return beaufortCipher(text, key);
     }
-
-    // 7) Shuffle
+    // Shuffle
     function shuffleCipher(text, key, decrypt = false) {
       if (!key) return text;
       let indices = [...Array(text.length).keys()];
@@ -331,7 +455,6 @@
       ]
     };
 
-    // Populate the profile select dropdown
     function populateProfiles() {
       const profileSelect = document.getElementById("profileSelect");
       profileSelect.innerHTML = "";
@@ -344,7 +467,6 @@
     }
     populateProfiles();
 
-    // Convert an old-format profile to an array of encryption steps
     function convertOldProfileToSteps(oldProfile) {
       let defaultOrder = ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
       let order = (oldProfile.order && oldProfile.order.length) ? oldProfile.order : defaultOrder;
@@ -391,7 +513,6 @@
       return steps;
     }
 
-    // Get the steps for the currently selected profile.
     function getCurrentProfileSteps() {
       const profileSelect = document.getElementById("profileSelect");
       const profileName = profileSelect.value;
