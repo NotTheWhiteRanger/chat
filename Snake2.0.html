@@ -267,7 +267,7 @@
     // ------------------------------
     function handleKeyDown(e) {
       const now = Date.now();
-      if (now - lastKeyPressTime < 100) return;
+      if (now - lastKeyPressTime < 15) return;  // 15ms delay for input throttling
       lastKeyPressTime = now;
 
       const playerRef = gameStateRef.child('players').child(playerId);
