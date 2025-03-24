@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enhanced Chat System</title>
+  <title>Enhanced Chat System with Multiple Encryption Methods</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Firebase Libraries -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -10,7 +10,7 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <style>
-    /* Reset and base styling */
+    /* Basic Reset and Styling */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; padding: 20px; transition: background 0.3s, color 0.3s; }
     .dark-mode { background: #222; color: #ddd; }
@@ -31,7 +31,7 @@
     .profile-actions label { font-weight: bold; }
     .profile-actions select, .chat-controls button { padding: 8px; border: 1px solid #ccc; border-radius: 4px; background: #007bff; color: #fff; cursor: pointer; transition: background 0.3s; }
     .chat-controls button:hover, .profile-actions button:hover { background: #0069d9; }
-    /* Chat display area */
+    /* Chat Display */
     #chat { border: 1px solid #ccc; padding: 15px; height: 300px; overflow-y: scroll; background: #e9ecef; border-radius: 4px; margin-bottom: 15px; }
     .chat-message { display: flex; align-items: flex-start; margin-bottom: 15px; }
     .avatar { width: 40px; height: 40px; border-radius: 50%; background: #007bff; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 10px; flex-shrink: 0; }
@@ -39,7 +39,7 @@
     .message-header { font-size: 0.9em; margin-bottom: 4px; color: #555; }
     .message-content { font-size: 1em; }
     .message-content img { max-width: 100%; border-radius: 4px; }
-    /* Loading and Typing Indicator */
+    /* Loading and Typing */
     #loadingIndicator { text-align: center; margin-bottom: 10px; }
     #typingIndicator { font-style: italic; margin-bottom: 10px; color: #888; display: none; }
     /* Message Input */
@@ -121,7 +121,7 @@
     firebase.initializeApp(firebaseConfig);
 
     // ---------------------- Global Variables ----------------------
-    // Default profiles object; default "unencrypted" profile is provided.
+    // Default profiles object; the default "unencrypted" profile sends plain text.
     const profiles = {
       "unencrypted": { type: "unencrypted" }
     };
@@ -142,101 +142,217 @@
     }
     populateProfiles();
 
-    // ---------------------- Authentication ----------------------
-    firebase.auth().onAuthStateChanged(function(user) {
-      if (user) {
-        document.getElementById("loginDiv").style.display = "none";
-        document.getElementById("chatContainer").style.display = "block";
-        setupTypingIndicator(user);
-        listenForMessages();
-        console.log("User signed in:", user.email);
-      } else {
-        document.getElementById("loginDiv").style.display = "block";
-        document.getElementById("chatContainer").style.display = "none";
-      }
-    });
-    document.getElementById("loginButton").addEventListener("click", function() {
-      const email = document.getElementById("emailInput").value;
-      const password = document.getElementById("passwordInput").value;
-      firebase.auth().signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          console.log("Logged in as:", userCredential.user.email);
-        })
-        .catch(error => {
-          console.error("Error during sign in:", error.message);
-          alert("Login failed: " + error.message);
-        });
-    });
-    document.getElementById("logoutButton").addEventListener("click", function() {
-      firebase.auth().signOut().then(() => {
-        console.log("User signed out.");
-      }).catch(error => {
-        console.error("Sign out error:", error.message);
-      });
-    });
-
-    // ---------------------- Dark Mode Toggle ----------------------
-    document.getElementById("darkModeToggle").addEventListener("click", function() {
-      document.body.classList.toggle("dark-mode");
-    });
-
-    // ---------------------- Encryption / Decryption Functions ----------------------
-    // For the "unencrypted" profile, messages pass unchanged.
-    // For any other profile (for demonstration, a basic Caesar cipher with shift 3 is used).
-    function caesarCipherEncrypt(text, shift) {
-      shift = shift % 26;
-      let result = "";
-      for (let i = 0; i < text.length; i++) {
-        let c = text[i];
-        if (c.match(/[A-Z]/)) {
-          let code = text.charCodeAt(i) - 65;
-          code = (code + shift + 26) % 26;
+    // ---------------------- Cipher Functions ----------------------
+    // Note: All functions work on uppercase text.
+    function caesar(text, shift, decrypt = false) {
+      text = text.toUpperCase();
+      if (decrypt) shift = -shift;
+      return text.split("").map(c => {
+        if (c >= "A" && c <= "Z") {
+          let code = (c.charCodeAt(0) - 65 + shift) % 26;
+          if (code < 0) code += 26;
+          return String.fromCharCode(code + 65);
+        }
+        return c;
+      }).join("");
+    }
+    function vigenere(text, key, decrypt = false) {
+      text = text.toUpperCase();
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (!key) return text;
+      let result = "", keyIndex = 0;
+      for (let c of text) {
+        if (c >= "A" && c <= "Z") {
+          let shift = key.charCodeAt(keyIndex % key.length) - 65;
+          if (decrypt) shift = -shift;
+          let code = (c.charCodeAt(0) - 65 + shift) % 26;
+          if (code < 0) code += 26;
           result += String.fromCharCode(code + 65);
-        } else if (c.match(/[a-z]/)) {
-          let code = text.charCodeAt(i) - 97;
-          code = (code + shift + 26) % 26;
-          result += String.fromCharCode(code + 97);
+          keyIndex++;
         } else {
           result += c;
         }
       }
       return result;
     }
-    function caesarCipherDecrypt(text, shift) {
-      return caesarCipherEncrypt(text, -shift);
-    }
-
-    // Decrypt a message using its stored encryptionProfile and the currently selected profile.
-    // If profiles don't match, simply display the encrypted message.
-    function decryptMessageWithProfile(encryptedMessage, messageProfile, currentProfile) {
-      if (!messageProfile) {
-        messageProfile = "unencrypted";
-      }
-      if (messageProfile === "unencrypted") {
-        return encryptedMessage;
-      } else if (messageProfile === currentProfile) {
-        return caesarCipherDecrypt(encryptedMessage, 3);
+    function transposition(text, key, decrypt = false) {
+      text = text.toUpperCase();
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (!key) return text;
+      let cols = key.length, rows = Math.ceil(text.length / cols);
+      if (!decrypt) {
+        let table = [];
+        for (let r = 0, pos = 0; r < rows; r++) {
+          table[r] = [];
+          for (let c = 0; c < cols; c++) {
+            table[r][c] = (pos < text.length) ? text[pos++] : "X";
+          }
+        }
+        let order = key.split("").map((l, i) => ({ l, i }))
+                         .sort((a, b) => a.l.localeCompare(b.l))
+                         .map(o => o.i);
+        let out = "";
+        order.forEach(c => {
+          for (let r = 0; r < rows; r++) {
+            out += table[r][c];
+          }
+        });
+        return out;
       } else {
-        return encryptedMessage;
+        let numFull = text.length % cols || cols;
+        let order = key.split("").map((l, i) => ({ l, i }))
+                         .sort((a, b) => a.l.localeCompare(b.l))
+                         .map(o => o.i);
+        let colsArr = [], pos = 0;
+        order.forEach(i => {
+          let len = (i < numFull ? rows : rows - 1);
+          colsArr[i] = text.substr(pos, len).split("");
+          pos += len;
+        });
+        let out = "";
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            out += (colsArr[c] && colsArr[c][r]) || "";
+          }
+        }
+        return out.replace(/X+$/, "");
       }
     }
+    function atbash(text) {
+      const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", rev = alpha.split("").reverse().join("");
+      return text.toUpperCase().split("").map(c => {
+        let i = alpha.indexOf(c);
+        return i >= 0 ? rev[i] : c;
+      }).join("");
+    }
+    function reverseCipher(text) {
+      return text.split("").reverse().join("");
+    }
+    function beaufort(text, key) {
+      text = text.toUpperCase();
+      key = key.toUpperCase().replace(/[^A-Z]/g, "");
+      if (!key) return text;
+      const alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let res = "", ki = 0;
+      for (let c of text) {
+        if (alpha.includes(c)) {
+          let pos = (alpha.indexOf(key[ki % key.length]) - alpha.indexOf(c)) % 26;
+          if (pos < 0) pos += 26;
+          res += alpha[pos];
+          ki++;
+        } else {
+          res += c;
+        }
+      }
+      return res;
+    }
+    function seededRandom(seed) {
+      const m = 2147483647, a = 16807;
+      let state = seed % m;
+      return () => { state = (a * state) % m; return state / m; }
+    }
+    function shuffle(text, key, decrypt = false) {
+      if (!key.trim()) throw "Shuffle requires a key.";
+      let n = text.length;
+      function permutation(n, key) {
+        let seed = 0;
+        for (let c of key) seed = (seed * 31 + c.charCodeAt(0)) % 2147483647;
+        let rand = seededRandom(seed), arr = [...Array(n).keys()];
+        for (let i = n - 1; i > 0; i--) {
+          let j = Math.floor(rand() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+      let perm = permutation(n, key);
+      if (decrypt) {
+        let inv = [];
+        perm.forEach((v, i) => { inv[v] = i; });
+        perm = inv;
+      }
+      return perm.map(i => text[i]).join("");
+    }
 
-    // ---------------------- Chat Messaging ----------------------
+    // ---------------------- Encryption with Profile ----------------------
+    function encryptWithProfile(text, profile) {
+      let order = (profile.order && profile.order.length) ? profile.order : 
+                  ["Caesar", "Vigenere", "Transposition", "Atbash", "Reverse", "Beaufort", "Shuffle"];
+      let out = text;
+      order.forEach(cipher => {
+        switch (cipher) {
+          case "Caesar":
+            if (profile.Caesar) out = caesar(out, parseInt(profile.caesarShift || "3"), false);
+            break;
+          case "Vigenere":
+            if (profile.Vigenere) out = vigenere(out, profile.vigenereKey || "", false);
+            break;
+          case "Transposition":
+            if (profile.Transposition) out = transposition(out, profile.transpositionKey || "", false);
+            break;
+          case "Atbash":
+            if (profile.Atbash) out = atbash(out);
+            break;
+          case "Reverse":
+            if (profile.Reverse) out = reverseCipher(out);
+            break;
+          case "Beaufort":
+            if (profile.Beaufort) out = beaufort(out, profile.beaufortKey || "");
+            break;
+          case "Shuffle":
+            if (profile.Shuffle) out = shuffle(out, profile.shuffleKey || "", false);
+            break;
+        }
+      });
+      return out;
+    }
+    function decryptWithProfile(text, profile) {
+      let order = (profile.order && profile.order.length) ? profile.order.slice().reverse() :
+                  ["Shuffle", "Beaufort", "Reverse", "Atbash", "Transposition", "Vigenere", "Caesar"];
+      let out = text;
+      order.forEach(cipher => {
+        switch (cipher) {
+          case "Caesar":
+            if (profile.Caesar) out = caesar(out, parseInt(profile.caesarShift || "3"), true);
+            break;
+          case "Vigenere":
+            if (profile.Vigenere) out = vigenere(out, profile.vigenereKey || "", true);
+            break;
+          case "Transposition":
+            if (profile.Transposition) out = transposition(out, profile.transpositionKey || "", true);
+            break;
+          case "Atbash":
+            if (profile.Atbash) out = atbash(out);
+            break;
+          case "Reverse":
+            if (profile.Reverse) out = reverseCipher(out);
+            break;
+          case "Beaufort":
+            if (profile.Beaufort) out = beaufort(out, profile.beaufortKey || "");
+            break;
+          case "Shuffle":
+            if (profile.Shuffle) out = shuffle(out, profile.shuffleKey || "", true);
+            break;
+        }
+      });
+      return out;
+    }
+
+    // ---------------------- Chat Messaging Functions ----------------------
     const chatRef = firebase.database().ref("chat/messages");
     const chatDiv = document.getElementById("chat");
     const loadingIndicator = document.getElementById("loadingIndicator");
 
-    // Re-render all messages from the global cache using the currently selected profile.
+    // Re-render messages using the currently selected profile.
     function renderMessages() {
       chatDiv.innerHTML = "";
-      const currentProfile = document.getElementById("profileSelect").value;
+      const currentProfileName = document.getElementById("profileSelect").value;
       allMessages.forEach(data => {
-        displayMessage(data, currentProfile);
+        displayMessage(data, currentProfileName);
       });
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    // Listen for new messages from Firebase and store them in the global array.
+    // Listen for new messages and cache them.
     function listenForMessages() {
       chatRef.on("child_added", function(snapshot) {
         const data = snapshot.val();
@@ -246,29 +362,28 @@
       });
     }
 
-    // Display a message in the chat area.
-    // For text messages, attempt decryption based on the message's encryptionProfile and current profile.
-    function displayMessage(data, currentProfile) {
+    // Display a single message.
+    function displayMessage(data, currentProfileName) {
       const msgDiv = document.createElement("div");
       msgDiv.classList.add("chat-message");
 
-      // Create avatar (first letter of sender's email)
+      // Avatar from sender's first letter.
       const avatarDiv = document.createElement("div");
       avatarDiv.classList.add("avatar");
       const senderEmail = data.sender || "U";
       avatarDiv.textContent = senderEmail[0].toUpperCase();
 
-      // Message details container
+      // Message details container.
       const detailsDiv = document.createElement("div");
       detailsDiv.classList.add("message-details");
 
-      // Header with sender and timestamp
+      // Header with sender and timestamp.
       const headerDiv = document.createElement("div");
       headerDiv.classList.add("message-header");
       const timeString = new Date(data.timestamp).toLocaleTimeString();
       headerDiv.textContent = `${senderEmail} • ${timeString}`;
 
-      // Message content
+      // Message content.
       const contentDiv = document.createElement("div");
       contentDiv.classList.add("message-content");
       if (data.type === "image") {
@@ -277,9 +392,14 @@
         img.alt = "Image attachment";
         contentDiv.appendChild(img);
       } else {
-        contentDiv.textContent = decryptMessageWithProfile(data.message, data.encryptionProfile, currentProfile);
+        // If the encryption profile of the message matches the currently selected profile, decrypt.
+        if (data.encryptionProfile && data.encryptionProfile === currentProfileName && profiles[data.encryptionProfile]) {
+          contentDiv.textContent = decryptWithProfile(data.message, profiles[data.encryptionProfile]);
+        } else {
+          // Otherwise, show the encrypted message.
+          contentDiv.textContent = data.message;
+        }
       }
-
       detailsDiv.appendChild(headerDiv);
       detailsDiv.appendChild(contentDiv);
       msgDiv.appendChild(avatarDiv);
@@ -287,31 +407,31 @@
       chatDiv.appendChild(msgDiv);
     }
 
-    // Send a text message. Store the current profile in the message so that it can be used for decryption later.
+    // Send a text message.
     document.getElementById("sendButton").addEventListener("click", function() {
       const messageInput = document.getElementById("messageInput");
       let message = messageInput.value;
       if (message.trim() === "") return;
       const user = firebase.auth().currentUser;
-      const currentProfile = document.getElementById("profileSelect").value;
+      const currentProfileName = document.getElementById("profileSelect").value;
       let encryptedMsg;
-      if (currentProfile === "unencrypted") {
+      if (!currentProfileName || currentProfileName === "unencrypted") {
         encryptedMsg = message;
       } else {
-        encryptedMsg = caesarCipherEncrypt(message, 3);
+        encryptedMsg = encryptWithProfile(message, profiles[currentProfileName]);
       }
       chatRef.push({
         message: encryptedMsg,
         type: "text",
         timestamp: Date.now(),
         sender: user.email,
-        encryptionProfile: currentProfile
+        encryptionProfile: currentProfileName || "unencrypted"
       });
       messageInput.value = "";
       updateTypingStatus("");
     });
 
-    // ---------------------- File Attachment (Image Upload) ----------------------
+    // ---------------------- File Attachment ----------------------
     document.getElementById("attachButton").addEventListener("click", function() {
       document.getElementById("fileInput").click();
     });
@@ -328,7 +448,7 @@
           type: "image",
           timestamp: Date.now(),
           sender: user.email,
-          encryptionProfile: document.getElementById("profileSelect").value
+          encryptionProfile: document.getElementById("profileSelect").value || "unencrypted"
         });
       }).catch(error => {
         console.error("File upload error:", error.message);
@@ -344,8 +464,7 @@
     });
     emojiPanel.addEventListener("click", function(event) {
       if (event.target.tagName === "SPAN") {
-        const emoji = event.target.textContent;
-        document.getElementById("messageInput").value += emoji;
+        document.getElementById("messageInput").value += event.target.textContent;
       }
     });
 
@@ -411,7 +530,7 @@
       reader.readAsText(file);
     });
 
-    // ---------------------- Enter Key to Send Message ----------------------
+    // ---------------------- Enter Key Sends Message ----------------------
     document.getElementById("messageInput").addEventListener("keydown", function(event) {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -424,7 +543,7 @@
       renderMessages();
     });
 
-    // ---------------------- Scroll Wheel to Change Profiles ----------------------
+    // ---------------------- Mouse Scroll to Change Profiles ----------------------
     document.getElementById("profileSelect").addEventListener("wheel", function(event) {
       event.preventDefault();
       let select = event.currentTarget;
@@ -437,10 +556,43 @@
       select.dispatchEvent(new Event("change"));
     });
 
-    // Dummy function to clear typing status (if needed)
+    // Dummy function for typing status clearance.
     function updateTypingStatus(status) {
-      // Implementation for clearing typing status if required.
+      // Optionally implement clearing of typing status.
     }
+
+    // ---------------------- Authentication Event Listeners ----------------------
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        document.getElementById("loginDiv").style.display = "none";
+        document.getElementById("chatContainer").style.display = "block";
+        setupTypingIndicator(user);
+        listenForMessages();
+        console.log("User signed in:", user.email);
+      } else {
+        document.getElementById("loginDiv").style.display = "block";
+        document.getElementById("chatContainer").style.display = "none";
+      }
+    });
+    document.getElementById("loginButton").addEventListener("click", function() {
+      const email = document.getElementById("emailInput").value;
+      const password = document.getElementById("passwordInput").value;
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          console.log("Logged in as:", userCredential.user.email);
+        })
+        .catch(error => {
+          console.error("Error during sign in:", error.message);
+          alert("Login failed: " + error.message);
+        });
+    });
+    document.getElementById("logoutButton").addEventListener("click", function() {
+      firebase.auth().signOut().then(() => {
+        console.log("User signed out.");
+      }).catch(error => {
+        console.error("Sign out error:", error.message);
+      });
+    });
   </script>
 </body>
 </html>
