@@ -309,7 +309,7 @@
         ctx.fillRect(state.food.x, state.food.y, grid - 1, grid - 1);
       }
 
-      // Draw each player's snake.
+      // Draw each alive player's snake.
       if (state.players) {
         Object.keys(state.players).forEach(pid => {
           const player = state.players[pid];
@@ -350,7 +350,12 @@
 
           Object.keys(players).forEach(pid => {
             const player = players[pid];
-            if (!player.alive) return;
+            // Skip processing for dead players.
+            if (!player.alive) {
+              // Remove dead player's snake body so it can't be run into.
+              players[pid].snake = [];
+              return;
+            }
             let snake = player.snake;
             let dx = player.dx;
             let dy = player.dy;
@@ -369,10 +374,12 @@
               head.y = 0;
             }
 
-            // If not invincible, check for collisions with any snake segment.
+            // If not invincible, check for collisions only with alive players.
             if (!(player.invincibleUntil && Date.now() < player.invincibleUntil)) {
               Object.keys(players).forEach(otherPid => {
                 const otherPlayer = players[otherPid];
+                // Only consider alive players for collision detection.
+                if (!otherPlayer.alive) return;
                 if (otherPlayer.snake) {
                   for (let segment of otherPlayer.snake) {
                     if (head.x === segment.x && head.y === segment.y) {
@@ -398,6 +405,9 @@
                 snake.pop();
               }
               players[pid].snake = snake;
+            } else {
+              // Clear the snake body for dead players.
+              players[pid].snake = [];
             }
           });
 
