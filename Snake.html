@@ -145,6 +145,22 @@
       setTimeout(() => oscillator.stop(), 1000); // Stop after 1 second
     }
 
+    // New Game Start Sound (Mario-death style)
+    function playNewGameSound() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = "sawtooth";
+      // Start at a higher frequency and descend quickly
+      oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.5);
+      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+      oscillator.start();
+      oscillator.stop(ctx.currentTime + 0.5);
+    }
+
     // ------------------------------
     // Pause Music: Pixel Elevator Music
     // ------------------------------
@@ -203,7 +219,6 @@
         if (!pauseMusicCtx) {
           pauseMusicCtx = new (window.AudioContext || window.webkitAudioContext)();
         } else {
-          // Resume the context if it was suspended
           pauseMusicCtx.resume();
         }
         playPauseMelody();
@@ -212,11 +227,9 @@
 
     function stopPauseMusic() {
       pauseMusicActive = false;
-      // Clear all scheduled timeouts
       pauseMusicTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
       pauseMusicTimeouts = [];
       if (pauseMusicCtx) {
-        // Suspend the context so it stops producing sound
         pauseMusicCtx.suspend();
       }
     }
@@ -292,9 +305,13 @@
       }
     });
 
-    // New Game event
+    // New Game event – play the new game sound then reset the game
     newGameBtn.addEventListener('click', () => {
-      resetGame();
+      playNewGameSound();
+      // Optionally delay resetGame() to let the sound play
+      setTimeout(() => {
+        resetGame();
+      }, 500);
     });
 
     // Listen for "P" key to toggle pause/resume
@@ -323,11 +340,10 @@
     let food = spawnFood();
     let score = 0;
     let normalScoreCount = 0; // Tracks points from normal food for speed increase
-    let changingDirection = false; // Prevents multiple direction changes in one frame
+    let changingDirection = false;
     let lastBackgroundChangeScore = 0;
     let lastMilestone = 0;
     
-    // Set initial game speed threshold (higher value means slower game speed)
     let speedThreshold = 6; // Base speed
 
     // Retrieve local high score from localStorage
@@ -401,11 +417,9 @@
       if (++count < speedThreshold) return;
       count = 0;
       
-      // Create new head based on the current direction
       const head = { x: snake[0].x + dx, y: snake[0].y + dy };
       snake.unshift(head);
 
-      // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
         playEatSound();
         if (food.type === "special") {
@@ -436,7 +450,6 @@
         snake.pop();
       }
 
-      // Check for collisions with walls or self
       if (
         head.x < 0 || head.x >= canvas.width ||
         head.y < 0 || head.y >= canvas.height ||
@@ -446,7 +459,6 @@
         return;
       }
 
-      // Draw food and snake
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = (food.type === "special") ? "yellow" : "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
