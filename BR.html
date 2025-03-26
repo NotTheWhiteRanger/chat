@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Target Practice Game</title>
+  <title>BR - Target Practice Shooter</title>
   <style>
     body {
       margin: 0;
@@ -21,6 +21,7 @@
       left: 10px;
       color: #fff;
       font-size: 24px;
+      z-index: 10;
     }
   </style>
 </head>
@@ -33,16 +34,66 @@
     let score = 0;
     document.getElementById("score").textContent = "Score: " + score;
 
-    // Player object: a blue circle controlled by the user.
+    // --- Player Setup ---
     const player = {
       x: canvas.width / 2,
       y: canvas.height / 2,
       radius: 20,
       speed: 4,
       color: "blue",
+      angle: 0 // facing angle (in radians)
     };
 
-    // Object to track keys currently pressed for movement.
+    // This line will indicate the direction the player is facing.
+    function drawFacingIndicator() {
+      const lineLength = player.radius + 15;
+      const endX = player.x + lineLength * Math.cos(player.angle);
+      const endY = player.y + lineLength * Math.sin(player.angle);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(player.x, player.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    }
+
+    // --- Bullet Setup ---
+    const bullets = [];
+    const bulletSpeed = 8;
+    const bulletRadius = 5;
+    let lastShotTime = 0;
+    const shotCooldown = 300; // milliseconds between shots
+
+    function shootBullet() {
+      const now = Date.now();
+      if (now - lastShotTime < shotCooldown) return;
+      lastShotTime = now;
+      // Create a bullet starting at player's center moving in the direction of player's angle.
+      const bullet = {
+        x: player.x,
+        y: player.y,
+        radius: bulletRadius,
+        speed: bulletSpeed,
+        angle: player.angle
+      };
+      bullets.push(bullet);
+    }
+
+    // --- Target Setup ---
+    const targets = [];
+    const targetRadius = 15;
+    const targetLifetime = 5000; // targets disappear after 5 seconds
+
+    function spawnTarget() {
+      const x = Math.random() * (canvas.width - 2 * targetRadius) + targetRadius;
+      const y = Math.random() * (canvas.height - 2 * targetRadius) + targetRadius;
+      const target = { x, y, radius: targetRadius, spawnTime: Date.now() };
+      targets.push(target);
+    }
+    // Spawn a target every 2 seconds.
+    setInterval(spawnTarget, 2000);
+
+    // --- Input Handling ---
     const keysPressed = {};
     document.addEventListener("keydown", (e) => {
       keysPressed[e.key] = true;
@@ -51,44 +102,22 @@
       keysPressed[e.key] = false;
     });
 
-    // Array to hold targets.
-    const targets = [];
-    const targetRadius = 15;
-    const targetLifetime = 5000; // targets disappear after 5000ms (5 seconds)
-
-    // Spawn a new target at a random location.
-    function spawnTarget() {
-      const x = Math.random() * (canvas.width - 2 * targetRadius) + targetRadius;
-      const y = Math.random() * (canvas.height - 2 * targetRadius) + targetRadius;
-      const target = { x, y, radius: targetRadius, spawnTime: Date.now() };
-      targets.push(target);
-    }
-
-    // Spawn a target every 2 seconds.
-    setInterval(spawnTarget, 2000);
-
-    // Handle mouse clicks to check for target hits.
-    canvas.addEventListener("click", (e) => {
+    // Update player facing angle based on mouse position relative to player.
+    canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      
-      // Check each target to see if it was clicked.
-      for (let i = targets.length - 1; i >= 0; i--) {
-        const target = targets[i];
-        const dist = Math.hypot(mouseX - target.x, mouseY - target.y);
-        if (dist < target.radius) {
-          // Target hit!
-          targets.splice(i, 1);
-          score++;
-          document.getElementById("score").textContent = "Score: " + score;
-        }
-      }
+      player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     });
 
-    // Update game logic: player movement and target lifetime.
+    // Fire bullet on canvas click.
+    canvas.addEventListener("click", (e) => {
+      shootBullet();
+    });
+
+    // --- Game Update & Draw ---
     function update() {
-      // Move player based on key inputs (arrow keys or WASD)
+      // Move player using arrow keys or WASD.
       if (keysPressed["ArrowUp"] || keysPressed["w"]) {
         player.y -= player.speed;
       }
@@ -101,14 +130,38 @@
       if (keysPressed["ArrowRight"] || keysPressed["d"]) {
         player.x += player.speed;
       }
-      
-      // Prevent player from moving outside canvas boundaries.
+      // Constrain player within canvas.
       if (player.x < player.radius) player.x = player.radius;
       if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
-      
-      // Remove targets that have exceeded their lifetime.
+
+      // Update bullets: move them and remove if off-canvas.
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.speed * Math.cos(b.angle);
+        b.y += b.speed * Math.sin(b.angle);
+        // Remove bullets that go off-screen.
+        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+          bullets.splice(i, 1);
+          continue;
+        }
+        // Check collision with targets.
+        for (let j = targets.length - 1; j >= 0; j--) {
+          const t = targets[j];
+          const dist = Math.hypot(b.x - t.x, b.y - t.y);
+          if (dist < b.radius + t.radius) {
+            // Hit detected.
+            targets.splice(j, 1);
+            bullets.splice(i, 1);
+            score++;
+            document.getElementById("score").textContent = "Score: " + score;
+            break;
+          }
+        }
+      }
+
+      // Remove expired targets.
       const currentTime = Date.now();
       for (let i = targets.length - 1; i >= 0; i--) {
         if (currentTime - targets[i].spawnTime > targetLifetime) {
@@ -117,26 +170,36 @@
       }
     }
 
-    // Draw the player and targets.
     function draw() {
+      // Clear the canvas.
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw player (blue circle)
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-      ctx.fill();
-      
-      // Draw targets (red circles)
+
+      // Draw targets.
       for (const target of targets) {
         ctx.fillStyle = "red";
         ctx.beginPath();
         ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
         ctx.fill();
       }
+
+      // Draw bullets.
+      for (const bullet of bullets) {
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw player.
+      ctx.fillStyle = player.color;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw the facing direction indicator.
+      drawFacingIndicator();
     }
 
-    // Main game loop.
     function gameLoop() {
       update();
       draw();
