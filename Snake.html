@@ -10,6 +10,7 @@
       padding: 0;
       background-color: #f0f0f0;
       text-align: center;
+      position: relative;
     }
     /* Containers */
     #login-container, #game-container {
@@ -36,12 +37,40 @@
       border: 1px solid #ccc;
       padding: 8px 12px;
     }
-    /* Logout button */
-    #logout-btn {
+    /* Button styling */
+    button {
+      background-color: #ffcc00;
+      border: none;
+      padding: 10px 15px;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+      margin: 5px;
+    }
+    button:hover {
+      background-color: #e6b800;
+    }
+    /* Logout, Pause and New Game buttons */
+    #logout-btn, #pause-btn, #newgame-btn {
       position: absolute;
       top: 10px;
       right: 10px;
-      padding: 5px 10px;
+    }
+    #pause-btn {
+      right: 120px;
+    }
+    #newgame-btn {
+      right: 230px;
+    }
+    /* High Score and Milestone Message */
+    #highScoreDisplay, #milestoneMessage {
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+    #milestoneMessage {
+      color: green;
+      display: none;
     }
   </style>
 </head>
@@ -59,9 +88,13 @@
   <!-- Game Container -->
   <div id="game-container">
     <button id="logout-btn">Logout</button>
+    <button id="pause-btn">Pause</button>
+    <button id="newgame-btn">New Game</button>
     <h1>Snake Game</h1>
     <canvas id="gameCanvas" width="600" height="400"></canvas>
     <p>Score: <span id="score">0</span></p>
+    <p id="highScoreDisplay">High Score: 0</p>
+    <p id="milestoneMessage"></p>
     <div id="leaderboard">
       <h2>Global Leaderboard</h2>
       <table>
@@ -99,11 +132,19 @@
     const gameContainer = document.getElementById('game-container');
     const loginBtn = document.getElementById('login-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const newGameBtn = document.getElementById('newgame-btn');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const loginError = document.getElementById('login-error');
     const scoreDisplay = document.getElementById('score');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+    const milestoneMessage = document.getElementById('milestoneMessage');
     const leaderboardBody = document.getElementById('leaderboard-body');
+
+    // Sound effects (provide your own sound files or URLs)
+    const eatSound = new Audio('sounds/eat.mp3');
+    const gameOverSound = new Audio('sounds/gameover.mp3');
 
     // Firebase Auth state listener
     firebase.auth().onAuthStateChanged(user => {
@@ -112,6 +153,7 @@
         gameContainer.style.display = "block";
         startGame();
         loadLeaderboard();
+        loadLocalHighScore();
       } else {
         gameContainer.style.display = "none";
         loginContainer.style.display = "block";
@@ -134,6 +176,26 @@
       });
     });
 
+    // Pause/Resume event
+    let isPaused = false;
+    pauseBtn.addEventListener('click', () => {
+      isPaused = !isPaused;
+      pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+    });
+
+    // New Game event
+    newGameBtn.addEventListener('click', () => {
+      resetGame();
+    });
+
+    // Listen for "P" key to toggle pause/resume
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === 'p') {
+        isPaused = !isPaused;
+        pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+      }
+    });
+
     // ------------------------------
     // Improved Snake Game Implementation
     // ------------------------------
@@ -144,17 +206,31 @@
     let snake = [{ x: 160, y: 160 }];
     let dx = grid; // initial movement to the right
     let dy = 0;
-    // Initialize food using the spawnFood() function.
     let food = spawnFood();
     let score = 0;
     let normalScoreCount = 0; // Tracks points from normal food for speed increase
-    // Flag to prevent multiple direction changes in one frame
-    let changingDirection = false;
-    // Tracks when to change background color
+    let changingDirection = false; // Flag to prevent multiple direction changes in one frame
     let lastBackgroundChangeScore = 0;
-
+    let lastMilestone = 0;
+    
     // Set initial game speed threshold (higher value means slower game speed)
     let speedThreshold = 6; // Base speed is slower than before
+
+    // Retrieve local high score from localStorage
+    let localHighScore = 0;
+    function loadLocalHighScore() {
+      localHighScore = localStorage.getItem('snakeHighScore') || 0;
+      highScoreDisplay.textContent = "High Score: " + localHighScore;
+    }
+
+    // Update local high score if current score is higher
+    function updateLocalHighScore() {
+      if (score > localHighScore) {
+        localHighScore = score;
+        localStorage.setItem('snakeHighScore', localHighScore);
+        highScoreDisplay.textContent = "High Score: " + localHighScore;
+      }
+    }
 
     // Return a random position for the food within the canvas grid
     function getRandomFoodPosition() {
@@ -165,7 +241,7 @@
     }
 
     // Function to spawn food with a 5% chance of being "special" (yellow, 5 points)
-    // Special food will now despawn after 5 seconds if not picked up.
+    // Special food will despawn after 5 seconds if not picked up.
     function spawnFood() {
       const pos = getRandomFoodPosition();
       let type = "normal";
@@ -178,7 +254,6 @@
       const newFood = { x: pos.x, y: pos.y, type: type, points: points, timeoutId: timeoutId };
       if (type === "special") {
         newFood.timeoutId = setTimeout(() => {
-          // Only remove if the current food is still this special food.
           if (food && food.type === "special" && food.x === newFood.x && food.y === newFood.y) {
             food = spawnFood();
           }
@@ -196,9 +271,19 @@
       canvas.style.backgroundColor = "#" + randomColor;
     }
 
+    // Function to display a milestone message
+    function displayMilestoneMessage(message) {
+      milestoneMessage.textContent = message;
+      milestoneMessage.style.display = "block";
+      setTimeout(() => {
+        milestoneMessage.style.display = "none";
+      }, 2000);
+    }
+
     // Main game loop using requestAnimationFrame for smooth animation
     function gameLoop() {
       requestAnimationFrame(gameLoop);
+      if (isPaused) return;
       if (++count < speedThreshold) return;
       count = 0;
       
@@ -208,13 +293,18 @@
 
       // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
+        // Play eating sound effect
+        eatSound.play();
         if (food.type === "special") {
           score += food.points; // Adds 5 points
           if (food.timeoutId) {
             clearTimeout(food.timeoutId);
           }
-          // Increase speed by 5 times the normal increment
+          // Increase speed by a larger amount for special food
           speedThreshold = Math.max(speedThreshold - 0.1, 2);
+          // Flash canvas border for a special effect
+          canvas.style.border = "5px solid yellow";
+          setTimeout(() => { canvas.style.border = "1px solid #ccc"; }, 200);
         } else { // Normal food
           score += food.points; // Adds 1 point
           normalScoreCount++;
@@ -224,10 +314,17 @@
           }
         }
         scoreDisplay.textContent = score;
+        // Update local high score
+        updateLocalHighScore();
         // Change background color every 25 points
         if (score >= lastBackgroundChangeScore + 25) {
           lastBackgroundChangeScore += 25;
           changeBackgroundColor();
+        }
+        // Display milestone message at every 10 points (if not repeated)
+        if (score % 10 === 0 && score !== lastMilestone) {
+          lastMilestone = score;
+          displayMilestoneMessage("Milestone reached: " + score + " points!");
         }
         food = spawnFood();
       } else {
@@ -241,10 +338,10 @@
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
       ) {
         gameOver();
-        return;  // Stop further drawing in this frame
+        return;
       }
 
-      // Draw food (yellow for special, red for normal) and snake
+      // Draw food (yellow for special, red for normal) and snake (green)
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = (food.type === "special") ? "yellow" : "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
@@ -270,30 +367,27 @@
       dy = 0;
       food = spawnFood();
       score = 0;
-      normalScoreCount = 0; // Reset normal food counter
+      normalScoreCount = 0;
       scoreDisplay.textContent = score;
-      speedThreshold = 6; // Reset speed to base speed
-      lastBackgroundChangeScore = 0; // Reset background change threshold
-      // Reset canvas background to default (optional)
+      speedThreshold = 6;
+      lastBackgroundChangeScore = 0;
+      lastMilestone = 0;
       canvas.style.backgroundColor = "#000";
     }
 
     // Handle game over: save score and reset game state
     function gameOver() {
+      gameOverSound.play();
       alert("Game Over! Your score: " + score);
       saveScore(score);
       resetGame();
     }
 
-    // Listen for arrow key presses and WASD keys to control the snake
+    // Listen for arrow keys and WASD keys to control the snake
     document.addEventListener("keydown", (e) => {
-      // Prevent multiple rapid changes in one frame
       if (changingDirection) return;
-      
-      // Store the new direction values temporarily
       let newDx = dx;
       let newDy = dy;
-      
       if ((e.key === "ArrowLeft" || e.key.toLowerCase() === "a") && dx === 0) {
         newDx = -grid; newDy = 0;
       } else if ((e.key === "ArrowRight" || e.key.toLowerCase() === "d") && dx === 0) {
@@ -303,11 +397,7 @@
       } else if ((e.key === "ArrowDown" || e.key.toLowerCase() === "s") && dy === 0) {
         newDx = 0; newDy = grid;
       }
-      
-      // Check to ensure that the new direction isn't directly opposite to the current one.
       if (newDx === -dx && newDy === -dy) return;
-      
-      // Update the direction and set the flag so that further changes won't register until the frame is done.
       dx = newDx;
       dy = newDy;
       changingDirection = true;
@@ -316,7 +406,6 @@
     // ------------------------------
     // Firebase Leaderboard Integration
     // ------------------------------
-    // Save the score to the "leaderboard" node using the player's first name (extracted from the email)
     function saveScore(score) {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -330,8 +419,6 @@
       }
     }
 
-    // Load and display the top three scores from the leaderboard.
-    // The scores are sorted in descending order and display only the player's first name.
     function loadLeaderboard() {
       const leaderboardRef = firebase.database().ref('leaderboard')
                               .orderByChild('score')
@@ -341,7 +428,6 @@
         snapshot.forEach(childSnapshot => {
           scores.push(childSnapshot.val());
         });
-        // Sort the scores in descending order
         scores.sort((a, b) => b.score - a.score);
         leaderboardBody.innerHTML = "";
         scores.forEach(entry => {
