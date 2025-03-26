@@ -31,6 +31,15 @@
       font-size: 24px;
       z-index: 10;
     }
+    /* Connection status styling */
+    #connectionStatus {
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      color: #fff;
+      font-size: 18px;
+      z-index: 10;
+    }
     /* Fullscreen menu styling */
     #menu {
       position: fixed;
@@ -69,6 +78,8 @@
 
   <div id="score">Score: 0</div>
   <div id="weaponDisplay">Weapon: Pistol</div>
+  <!-- Connection status element -->
+  <div id="connectionStatus">Status: Not Connected</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     // Global variables for game mode and multiplayer socket.
@@ -82,12 +93,13 @@
     const menu = document.getElementById("menu");
     const targetPracticeBtn = document.getElementById("targetPracticeBtn");
     const multiplayerBtn = document.getElementById("multiplayerBtn");
+    const connectionStatus = document.getElementById("connectionStatus");
 
     // When a mode is selected, hide the menu and set the game mode.
     targetPracticeBtn.addEventListener("click", () => {
       gameMode = "target";
       menu.style.display = "none";
-      // In target practice mode, no multiplayer connection is needed.
+      connectionStatus.textContent = "Status: (Target Practice Mode)";
       console.log("Starting in Target Practice mode.");
     });
     multiplayerBtn.addEventListener("click", () => {
@@ -99,9 +111,16 @@
 
     // Multiplayer initialization – only called if multiplayer mode is selected.
     function initMultiplayer() {
+      // Set connection status to "Connecting..."
+      connectionStatus.textContent = "Status: Connecting...";
       socket = io("http://3.19.234.169:3000");
       socket.on("connect", () => {
         console.log("Connected to server with id:", socket.id);
+        connectionStatus.textContent = "Status: Connected";
+      });
+      socket.on("disconnect", () => {
+        console.log("Disconnected from server");
+        connectionStatus.textContent = "Status: Disconnected";
       });
       socket.on("currentId", (id) => {
         localPlayerId = id;
