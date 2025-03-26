@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BR - Target Practice Shooter with Upgrades</title>
+  <title>BR - Multiplayer Target Practice Shooter with Upgrades</title>
   <style>
     body {
       margin: 0;
@@ -32,12 +32,84 @@
       z-index: 10;
     }
   </style>
+  <!-- Include Socket.IO client from CDN -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
   <div id="score">Score: 0</div>
   <div id="weaponDisplay">Weapon: Pistol</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
+    /***********************
+     * MULTIPLAYER SETUP
+     ***********************/
+    // Connect to your AWS server via Socket.IO
+    const socket = io("http://18.224.96.78:3000");
+
+    // Store the local player's ID and remote players' data
+    let localPlayerId = null;
+    const remotePlayers = {};
+    const remoteBullets = [];
+
+    // When connected, log our new socket id.
+    socket.on("connect", () => {
+      console.log("Connected to server with id:", socket.id);
+    });
+
+    // Server sends back the current ID for this client.
+    socket.on("currentId", (id) => {
+      localPlayerId = id;
+    });
+
+    // When first connecting, the server can provide the list of current players.
+    socket.on("currentPlayers", (players) => {
+      for (let id in players) {
+        if (id === localPlayerId) continue; // Skip our own entry.
+        remotePlayers[id] = players[id];
+      }
+    });
+
+    // Listen for a new player joining.
+    socket.on("newPlayer", (playerData) => {
+      if (playerData.id !== localPlayerId) {
+        remotePlayers[playerData.id] = playerData;
+        console.log("New player joined:", playerData.id);
+      }
+    });
+
+    // Listen for movement updates from other players.
+    socket.on("playerMoved", (data) => {
+      if (data.id !== localPlayerId) {
+        if (remotePlayers[data.id]) {
+          remotePlayers[data.id].x = data.x;
+          remotePlayers[data.id].y = data.y;
+          remotePlayers[data.id].angle = data.angle;
+          remotePlayers[data.id].weapon = data.weapon;
+          remotePlayers[data.id].score = data.score;
+        } else {
+          remotePlayers[data.id] = data;
+        }
+      }
+    });
+
+    // Listen for players disconnecting.
+    socket.on("playerDisconnected", (id) => {
+      delete remotePlayers[id];
+      console.log("Player disconnected:", id);
+    });
+
+    // Listen for shooting events from remote players.
+    socket.on("playerShot", (data) => {
+      // data contains the shooting player's id and bullet details.
+      if (data.id !== localPlayerId) {
+        remoteBullets.push({ ...data.bullet, owner: data.id });
+      }
+    });
+
+
+    /***********************
+     * GAME SETUP
+     ***********************/
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     let score = 0;
@@ -63,18 +135,20 @@
       radius: 20,
       speed: 4,
       color: "blue",
-      angle: 0 // facing angle (radians)
+      angle: 0,  // facing angle (radians)
+      weapon: currentWeapon,
+      score: score
     };
 
-    // Draw an indicator line showing the facing direction.
-    function drawFacingIndicator() {
-      const lineLength = player.radius + 15;
-      const endX = player.x + lineLength * Math.cos(player.angle);
-      const endY = player.y + lineLength * Math.sin(player.angle);
-      ctx.strokeStyle = "black";
+    // Function to draw a facing indicator (an arrow line) for any player.
+    function drawFacingIndicator(p, color="black") {
+      const lineLength = p.radius + 15;
+      const endX = p.x + lineLength * Math.cos(p.angle);
+      const endY = p.y + lineLength * Math.sin(p.angle);
+      ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(player.x, player.y);
+      ctx.moveTo(p.x, p.y);
       ctx.lineTo(endX, endY);
       ctx.stroke();
     }
@@ -91,9 +165,8 @@
       lastShotTime = now;
       
       const props = weaponProperties[currentWeapon];
-      // For multiple bullets (e.g., shotgun), spread them out.
+      // For multiple bullets (e.g., shotgun), create them with spread.
       if (props.bulletCount > 1) {
-        // Create linearly spaced angle offsets.
         for (let i = 0; i < props.bulletCount; i++) {
           const offset = -props.spread + (2 * props.spread * i) / (props.bulletCount - 1);
           const bullet = {
@@ -104,9 +177,10 @@
             angle: player.angle + offset
           };
           bullets.push(bullet);
+          // Emit each bullet shot to the server.
+          socket.emit("shoot", { bullet: bullet });
         }
       } else {
-        // Single bullet (pistol or assault rifle)
         const bullet = {
           x: player.x,
           y: player.y,
@@ -115,6 +189,7 @@
           angle: player.angle
         };
         bullets.push(bullet);
+        socket.emit("shoot", { bullet: bullet });
       }
     }
 
@@ -131,7 +206,6 @@
     setInterval(spawnTarget, 2000);
 
     // --- Upgrade Setup ---
-    // Two static upgrades on the map: one shotgun and one assault rifle.
     const upgrades = [
       { type: "shotgun", x: 150, y: 100, radius: 20 },
       { type: "assault", x: 650, y: 500, radius: 20 }
@@ -157,25 +231,27 @@
       shootBullet();
     });
 
-    // --- Game Update & Draw ---
+    /***********************
+     * GAME LOOP
+     ***********************/
     function update() {
-      // Player movement (arrow keys or WASD).
+      // --- Player Movement ---
       if (keysPressed["ArrowUp"] || keysPressed["w"]) player.y -= player.speed;
       if (keysPressed["ArrowDown"] || keysPressed["s"]) player.y += player.speed;
       if (keysPressed["ArrowLeft"] || keysPressed["a"]) player.x -= player.speed;
       if (keysPressed["ArrowRight"] || keysPressed["d"]) player.x += player.speed;
-      // Constrain player to canvas bounds.
+      // Constrain to canvas bounds.
       if (player.x < player.radius) player.x = player.radius;
       if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
 
-      // Update bullets.
+      // --- Update Local Bullets ---
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.x += b.speed * Math.cos(b.angle);
         b.y += b.speed * Math.sin(b.angle);
-        // Remove bullets off-screen.
+        // Remove bullets that go off-screen.
         if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
           bullets.splice(i, 1);
           continue;
@@ -188,13 +264,24 @@
             targets.splice(j, 1);
             bullets.splice(i, 1);
             score++;
+            player.score = score;
             document.getElementById("score").textContent = "Score: " + score;
             break;
           }
         }
       }
 
-      // Remove expired targets.
+      // --- Update Remote Bullets ---
+      for (let i = remoteBullets.length - 1; i >= 0; i--) {
+        const b = remoteBullets[i];
+        b.x += b.speed * Math.cos(b.angle);
+        b.y += b.speed * Math.sin(b.angle);
+        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+          remoteBullets.splice(i, 1);
+        }
+      }
+
+      // --- Remove Expired Targets ---
       const currentTime = Date.now();
       for (let i = targets.length - 1; i >= 0; i--) {
         if (currentTime - targets[i].spawnTime > targetLifetime) {
@@ -202,16 +289,26 @@
         }
       }
 
-      // Check for upgrade pickups.
+      // --- Check for Upgrade Pickups ---
       for (let i = upgrades.length - 1; i >= 0; i--) {
         const upg = upgrades[i];
         const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
         if (dist < player.radius + upg.radius) {
           currentWeapon = upg.type;
+          player.weapon = currentWeapon;
           updateWeaponDisplay();
           upgrades.splice(i, 1);
         }
       }
+
+      // --- Emit Movement Update ---
+      socket.emit("playerMovement", { 
+        x: player.x, 
+        y: player.y, 
+        angle: player.angle, 
+        weapon: currentWeapon, 
+        score: player.score 
+      });
     }
 
     function draw() {
@@ -225,9 +322,17 @@
         ctx.fill();
       }
       
-      // Draw bullets.
+      // Draw local bullets.
       for (const bullet of bullets) {
         ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw remote bullets.
+      for (const bullet of remoteBullets) {
+        ctx.fillStyle = "purple";
         ctx.beginPath();
         ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -245,7 +350,7 @@
         ctx.beginPath();
         ctx.arc(upg.x, upg.y, upg.radius, 0, Math.PI * 2);
         ctx.fill();
-        // Optionally add a text label.
+        // Add a text label.
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
@@ -256,13 +361,27 @@
         );
       });
       
-      // Draw player.
+      // Draw the local player.
       ctx.fillStyle = player.color;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
-      // Draw facing indicator.
-      drawFacingIndicator();
+      drawFacingIndicator(player);
+
+      // Draw remote players.
+      for (let id in remotePlayers) {
+        const p = remotePlayers[id];
+        ctx.fillStyle = "cyan";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        drawFacingIndicator(p, "gray");
+        // Display remote player's score.
+        ctx.fillStyle = "black";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Score: " + (p.score || 0), p.x, p.y - p.radius - 10);
+      }
     }
 
     function gameLoop() {
