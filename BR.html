@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BR - Target Practice Shooter</title>
+  <title>BR - Target Practice Shooter with Upgrades</title>
   <style>
     body {
       margin: 0;
@@ -23,16 +23,38 @@
       font-size: 24px;
       z-index: 10;
     }
+    #weaponDisplay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      color: #fff;
+      font-size: 24px;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
   <div id="score">Score: 0</div>
+  <div id="weaponDisplay">Weapon: Pistol</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     let score = 0;
     document.getElementById("score").textContent = "Score: " + score;
+
+    // --- Weapon Settings ---
+    let currentWeapon = "pistol"; // default weapon
+    const weaponProperties = {
+      pistol: { cooldown: 300, bulletCount: 1, spread: 0 },
+      shotgun: { cooldown: 800, bulletCount: 5, spread: 0.2 },
+      assault: { cooldown: 150, bulletCount: 1, spread: 0 }
+    };
+    function updateWeaponDisplay() {
+      document.getElementById("weaponDisplay").textContent =
+        "Weapon: " + currentWeapon.charAt(0).toUpperCase() + currentWeapon.slice(1);
+    }
+    updateWeaponDisplay();
 
     // --- Player Setup ---
     const player = {
@@ -41,10 +63,10 @@
       radius: 20,
       speed: 4,
       color: "blue",
-      angle: 0 // facing angle (in radians)
+      angle: 0 // facing angle (radians)
     };
 
-    // This line will indicate the direction the player is facing.
+    // Draw an indicator line showing the facing direction.
     function drawFacingIndicator() {
       const lineLength = player.radius + 15;
       const endX = player.x + lineLength * Math.cos(player.angle);
@@ -62,36 +84,58 @@
     const bulletSpeed = 8;
     const bulletRadius = 5;
     let lastShotTime = 0;
-    const shotCooldown = 300; // milliseconds between shots
-
     function shootBullet() {
       const now = Date.now();
-      if (now - lastShotTime < shotCooldown) return;
+      const cooldown = weaponProperties[currentWeapon].cooldown;
+      if (now - lastShotTime < cooldown) return;
       lastShotTime = now;
-      // Create a bullet starting at player's center moving in the direction of player's angle.
-      const bullet = {
-        x: player.x,
-        y: player.y,
-        radius: bulletRadius,
-        speed: bulletSpeed,
-        angle: player.angle
-      };
-      bullets.push(bullet);
+      
+      const props = weaponProperties[currentWeapon];
+      // For multiple bullets (e.g., shotgun), spread them out.
+      if (props.bulletCount > 1) {
+        // Create linearly spaced angle offsets.
+        for (let i = 0; i < props.bulletCount; i++) {
+          const offset = -props.spread + (2 * props.spread * i) / (props.bulletCount - 1);
+          const bullet = {
+            x: player.x,
+            y: player.y,
+            radius: bulletRadius,
+            speed: bulletSpeed,
+            angle: player.angle + offset
+          };
+          bullets.push(bullet);
+        }
+      } else {
+        // Single bullet (pistol or assault rifle)
+        const bullet = {
+          x: player.x,
+          y: player.y,
+          radius: bulletRadius,
+          speed: bulletSpeed,
+          angle: player.angle
+        };
+        bullets.push(bullet);
+      }
     }
 
     // --- Target Setup ---
     const targets = [];
     const targetRadius = 15;
-    const targetLifetime = 5000; // targets disappear after 5 seconds
-
+    const targetLifetime = 5000; // in milliseconds
     function spawnTarget() {
       const x = Math.random() * (canvas.width - 2 * targetRadius) + targetRadius;
       const y = Math.random() * (canvas.height - 2 * targetRadius) + targetRadius;
       const target = { x, y, radius: targetRadius, spawnTime: Date.now() };
       targets.push(target);
     }
-    // Spawn a target every 2 seconds.
     setInterval(spawnTarget, 2000);
+
+    // --- Upgrade Setup ---
+    // Two static upgrades on the map: one shotgun and one assault rifle.
+    const upgrades = [
+      { type: "shotgun", x: 150, y: 100, radius: 20 },
+      { type: "assault", x: 650, y: 500, radius: 20 }
+    ];
 
     // --- Input Handling ---
     const keysPressed = {};
@@ -101,47 +145,37 @@
     document.addEventListener("keyup", (e) => {
       keysPressed[e.key] = false;
     });
-
-    // Update player facing angle based on mouse position relative to player.
+    // Update player's facing angle based on mouse position.
     canvas.addEventListener("mousemove", (e) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     });
-
-    // Fire bullet on canvas click.
+    // Shoot bullet on click.
     canvas.addEventListener("click", (e) => {
       shootBullet();
     });
 
     // --- Game Update & Draw ---
     function update() {
-      // Move player using arrow keys or WASD.
-      if (keysPressed["ArrowUp"] || keysPressed["w"]) {
-        player.y -= player.speed;
-      }
-      if (keysPressed["ArrowDown"] || keysPressed["s"]) {
-        player.y += player.speed;
-      }
-      if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
-        player.x -= player.speed;
-      }
-      if (keysPressed["ArrowRight"] || keysPressed["d"]) {
-        player.x += player.speed;
-      }
-      // Constrain player within canvas.
+      // Player movement (arrow keys or WASD).
+      if (keysPressed["ArrowUp"] || keysPressed["w"]) player.y -= player.speed;
+      if (keysPressed["ArrowDown"] || keysPressed["s"]) player.y += player.speed;
+      if (keysPressed["ArrowLeft"] || keysPressed["a"]) player.x -= player.speed;
+      if (keysPressed["ArrowRight"] || keysPressed["d"]) player.x += player.speed;
+      // Constrain player to canvas bounds.
       if (player.x < player.radius) player.x = player.radius;
       if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
 
-      // Update bullets: move them and remove if off-canvas.
+      // Update bullets.
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.x += b.speed * Math.cos(b.angle);
         b.y += b.speed * Math.sin(b.angle);
-        // Remove bullets that go off-screen.
+        // Remove bullets off-screen.
         if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
           bullets.splice(i, 1);
           continue;
@@ -151,7 +185,6 @@
           const t = targets[j];
           const dist = Math.hypot(b.x - t.x, b.y - t.y);
           if (dist < b.radius + t.radius) {
-            // Hit detected.
             targets.splice(j, 1);
             bullets.splice(i, 1);
             score++;
@@ -168,12 +201,22 @@
           targets.splice(i, 1);
         }
       }
+
+      // Check for upgrade pickups.
+      for (let i = upgrades.length - 1; i >= 0; i--) {
+        const upg = upgrades[i];
+        const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
+        if (dist < player.radius + upg.radius) {
+          currentWeapon = upg.type;
+          updateWeaponDisplay();
+          upgrades.splice(i, 1);
+        }
+      }
     }
 
     function draw() {
-      // Clear the canvas.
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+      
       // Draw targets.
       for (const target of targets) {
         ctx.fillStyle = "red";
@@ -181,7 +224,7 @@
         ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
         ctx.fill();
       }
-
+      
       // Draw bullets.
       for (const bullet of bullets) {
         ctx.fillStyle = "black";
@@ -189,14 +232,36 @@
         ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
         ctx.fill();
       }
-
+      
+      // Draw upgrades.
+      upgrades.forEach(upg => {
+        if (upg.type === "shotgun") {
+          ctx.fillStyle = "orange";
+        } else if (upg.type === "assault") {
+          ctx.fillStyle = "green";
+        } else {
+          ctx.fillStyle = "gray";
+        }
+        ctx.beginPath();
+        ctx.arc(upg.x, upg.y, upg.radius, 0, Math.PI * 2);
+        ctx.fill();
+        // Optionally add a text label.
+        ctx.fillStyle = "white";
+        ctx.font = "12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          upg.type === "shotgun" ? "SG" : upg.type === "assault" ? "AR" : "",
+          upg.x,
+          upg.y + 4
+        );
+      });
+      
       // Draw player.
       ctx.fillStyle = player.color;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
-
-      // Draw the facing direction indicator.
+      // Draw facing indicator.
       drawFacingIndicator();
     }
 
