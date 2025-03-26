@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BR - Multiplayer Target Practice Shooter with Upgrades</title>
+  <title>BR - Multiplayer Battle Royale Shooter</title>
   <style>
     body {
       margin: 0;
@@ -15,61 +15,51 @@
       display: block;
       margin: 0 auto;
     }
-    #score {
+    #score, #healthDisplay, #weaponDisplay {
       position: absolute;
       top: 10px;
-      left: 10px;
       color: #fff;
       font-size: 24px;
       z-index: 10;
     }
-    #weaponDisplay {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: #fff;
-      font-size: 24px;
-      z-index: 10;
-    }
+    #score { left: 10px; }
+    #healthDisplay { left: 150px; }
+    #weaponDisplay { right: 10px; }
   </style>
   <!-- Include Socket.IO client from CDN -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
   <div id="score">Score: 0</div>
-  <div id="weaponDisplay">Weapon: Pistol</div>
+  <div id="healthDisplay">Health: 100</div>
+  <div id="weaponDisplay">Weapon: 🔫 Pistol</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <script>
     /***********************
      * MULTIPLAYER SETUP
      ***********************/
-    // Connect to your AWS server via Socket.IO
+    // Connect to the server via Socket.IO
     const socket = io("http://18.224.96.78:3000");
 
-    // Store the local player's ID and remote players' data
     let localPlayerId = null;
     const remotePlayers = {};
     const remoteBullets = [];
 
-    // When connected, log our new socket id.
     socket.on("connect", () => {
       console.log("Connected to server with id:", socket.id);
     });
 
-    // Server sends back the current ID for this client.
     socket.on("currentId", (id) => {
       localPlayerId = id;
     });
 
-    // When first connecting, the server can provide the list of current players.
     socket.on("currentPlayers", (players) => {
       for (let id in players) {
-        if (id === localPlayerId) continue; // Skip our own entry.
+        if (id === localPlayerId) continue;
         remotePlayers[id] = players[id];
       }
     });
 
-    // Listen for a new player joining.
     socket.on("newPlayer", (playerData) => {
       if (playerData.id !== localPlayerId) {
         remotePlayers[playerData.id] = playerData;
@@ -77,7 +67,6 @@
       }
     });
 
-    // Listen for movement updates from other players.
     socket.on("playerMoved", (data) => {
       if (data.id !== localPlayerId) {
         if (remotePlayers[data.id]) {
@@ -86,45 +75,53 @@
           remotePlayers[data.id].angle = data.angle;
           remotePlayers[data.id].weapon = data.weapon;
           remotePlayers[data.id].score = data.score;
+          remotePlayers[data.id].health = data.health;
         } else {
           remotePlayers[data.id] = data;
         }
       }
     });
 
-    // Listen for players disconnecting.
     socket.on("playerDisconnected", (id) => {
       delete remotePlayers[id];
       console.log("Player disconnected:", id);
     });
 
-    // Listen for shooting events from remote players.
     socket.on("playerShot", (data) => {
-      // data contains the shooting player's id and bullet details.
       if (data.id !== localPlayerId) {
         remoteBullets.push({ ...data.bullet, owner: data.id });
       }
     });
-
 
     /***********************
      * GAME SETUP
      ***********************/
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-    let score = 0;
-    document.getElementById("score").textContent = "Score: " + score;
 
-    // --- Weapon Settings ---
-    let currentWeapon = "pistol"; // default weapon
+    // --- HUD & Player Stats ---
+    let score = 0;
+    let health = 100;
+    document.getElementById("score").textContent = "Score: " + score;
+    document.getElementById("healthDisplay").textContent = "Health: " + health;
+
+    // --- Weapon & Inventory Setup ---
+    // Define weapon properties (cooldowns in ms, bullet count, spread angle in radians, bullet speed)
     const weaponProperties = {
-      pistol: { cooldown: 300, bulletCount: 1, spread: 0 },
-      shotgun: { cooldown: 800, bulletCount: 5, spread: 0.2 },
-      assault: { cooldown: 150, bulletCount: 1, spread: 0 }
+      pistol:   { cooldown: 300,  bulletCount: 1, spread: 0,         speed: 8,  icon: "🔫" },
+      shotgun:  { cooldown: 800,  bulletCount: 5, spread: 0.2,       speed: 7,  icon: "🧨" },
+      assault:  { cooldown: 150,  bulletCount: 1, spread: 0,         speed: 9,  icon: "💥" },
+      sniper:   { cooldown: 1000, bulletCount: 1, spread: 0,         speed: 12, icon: "🎯" },
+      rocket:   { cooldown: 1200, bulletCount: 1, spread: 0.1,       speed: 6,  icon: "🚀" }
     };
+    // Start with pistol in inventory.
+    let currentWeapon = "pistol";
+    let inventory = [currentWeapon];
+    
     function updateWeaponDisplay() {
-      document.getElementById("weaponDisplay").textContent =
-        "Weapon: " + currentWeapon.charAt(0).toUpperCase() + currentWeapon.slice(1);
+      const icon = weaponProperties[currentWeapon].icon;
+      const weaponName = currentWeapon.charAt(0).toUpperCase() + currentWeapon.slice(1);
+      document.getElementById("weaponDisplay").textContent = "Weapon: " + icon + " " + weaponName;
     }
     updateWeaponDisplay();
 
@@ -135,58 +132,53 @@
       radius: 20,
       speed: 4,
       color: "blue",
-      angle: 0,  // facing angle (radians)
+      angle: 0,
       weapon: currentWeapon,
-      score: score
+      score: score,
+      health: health
     };
 
-    // Function to draw a facing indicator (an arrow line) for any player.
-    function drawFacingIndicator(p, color="black") {
-      const lineLength = p.radius + 15;
-      const endX = p.x + lineLength * Math.cos(p.angle);
-      const endY = p.y + lineLength * Math.sin(p.angle);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
-    }
+    // --- Safe Zone Setup ---
+    const safeZone = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: Math.min(canvas.width, canvas.height) / 2
+    };
+    const safeZoneShrinkRate = 0.02; // pixels per frame
+    const damageOutside = 0.1; // damage per frame if outside safe zone
 
     // --- Bullet Setup ---
     const bullets = [];
-    const bulletSpeed = 8;
-    const bulletRadius = 5;
     let lastShotTime = 0;
     function shootBullet() {
       const now = Date.now();
-      const cooldown = weaponProperties[currentWeapon].cooldown;
-      if (now - lastShotTime < cooldown) return;
+      const props = weaponProperties[currentWeapon];
+      if (now - lastShotTime < props.cooldown) return;
       lastShotTime = now;
       
-      const props = weaponProperties[currentWeapon];
-      // For multiple bullets (e.g., shotgun), create them with spread.
+      // For multiple bullets (shotgun-like), create them with spread.
       if (props.bulletCount > 1) {
         for (let i = 0; i < props.bulletCount; i++) {
           const offset = -props.spread + (2 * props.spread * i) / (props.bulletCount - 1);
           const bullet = {
             x: player.x,
             y: player.y,
-            radius: bulletRadius,
-            speed: bulletSpeed,
-            angle: player.angle + offset
+            radius: 5,
+            speed: props.speed,
+            angle: player.angle + offset,
+            owner: localPlayerId
           };
           bullets.push(bullet);
-          // Emit each bullet shot to the server.
           socket.emit("shoot", { bullet: bullet });
         }
       } else {
         const bullet = {
           x: player.x,
           y: player.y,
-          radius: bulletRadius,
-          speed: bulletSpeed,
-          angle: player.angle
+          radius: 5,
+          speed: props.speed,
+          angle: player.angle,
+          owner: localPlayerId
         };
         bullets.push(bullet);
         socket.emit("shoot", { bullet: bullet });
@@ -196,7 +188,7 @@
     // --- Target Setup ---
     const targets = [];
     const targetRadius = 15;
-    const targetLifetime = 5000; // in milliseconds
+    const targetLifetime = 5000; // ms
     function spawnTarget() {
       const x = Math.random() * (canvas.width - 2 * targetRadius) + targetRadius;
       const y = Math.random() * (canvas.height - 2 * targetRadius) + targetRadius;
@@ -206,15 +198,40 @@
     setInterval(spawnTarget, 2000);
 
     // --- Upgrade Setup ---
+    // Upgrade types: shotgun, assault, sniper, rocket, health
     const upgrades = [
       { type: "shotgun", x: 150, y: 100, radius: 20 },
-      { type: "assault", x: 650, y: 500, radius: 20 }
+      { type: "assault", x: 650, y: 500, radius: 20 },
+      { type: "sniper",  x: 400, y: 150, radius: 20 },
+      { type: "rocket",  x: 200, y: 400, radius: 20 },
+      { type: "health",  x: 700, y: 200, radius: 20 }
     ];
+    // Function to randomly spawn upgrades over time.
+    function spawnUpgrade() {
+      const types = ["shotgun", "assault", "sniper", "rocket", "health"];
+      const type = types[Math.floor(Math.random() * types.length)];
+      const x = Math.random() * (canvas.width - 40) + 20;
+      const y = Math.random() * (canvas.height - 40) + 20;
+      upgrades.push({ type, x, y, radius: 20 });
+    }
+    setInterval(spawnUpgrade, 10000);
+
+    // --- Explosion Effects ---
+    const explosions = [];
+    function addExplosion(x, y) {
+      explosions.push({ x, y, radius: 0, maxRadius: 30, life: 0, maxLife: 30 });
+    }
 
     // --- Input Handling ---
     const keysPressed = {};
     document.addEventListener("keydown", (e) => {
       keysPressed[e.key] = true;
+      // Allow weapon switching via number keys (1-indexed based on inventory order)
+      if (e.key >= "1" && e.key <= String(inventory.length)) {
+        currentWeapon = inventory[parseInt(e.key) - 1];
+        player.weapon = currentWeapon;
+        updateWeaponDisplay();
+      }
     });
     document.addEventListener("keyup", (e) => {
       keysPressed[e.key] = false;
@@ -226,10 +243,21 @@
       const mouseY = e.clientY - rect.top;
       player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     });
-    // Shoot bullet on click.
-    canvas.addEventListener("click", (e) => {
-      shootBullet();
-    });
+    // Shoot on click.
+    canvas.addEventListener("click", shootBullet);
+
+    // --- Utility: Draw Facing Indicator ---
+    function drawFacingIndicator(p, color = "black") {
+      const lineLength = p.radius + 15;
+      const endX = p.x + lineLength * Math.cos(p.angle);
+      const endY = p.y + lineLength * Math.sin(p.angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    }
 
     /***********************
      * GAME LOOP
@@ -240,18 +268,18 @@
       if (keysPressed["ArrowDown"] || keysPressed["s"]) player.y += player.speed;
       if (keysPressed["ArrowLeft"] || keysPressed["a"]) player.x -= player.speed;
       if (keysPressed["ArrowRight"] || keysPressed["d"]) player.x += player.speed;
-      // Constrain to canvas bounds.
+      // Constrain player within canvas bounds.
       if (player.x < player.radius) player.x = player.radius;
       if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
 
-      // --- Update Local Bullets ---
+      // --- Update Bullets (Local) ---
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.x += b.speed * Math.cos(b.angle);
         b.y += b.speed * Math.sin(b.angle);
-        // Remove bullets that go off-screen.
+        // Remove bullets that leave the screen.
         if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
           bullets.splice(i, 1);
           continue;
@@ -266,6 +294,7 @@
             score++;
             player.score = score;
             document.getElementById("score").textContent = "Score: " + score;
+            addExplosion(t.x, t.y);
             break;
           }
         }
@@ -282,9 +311,9 @@
       }
 
       // --- Remove Expired Targets ---
-      const currentTime = Date.now();
+      const now = Date.now();
       for (let i = targets.length - 1; i >= 0; i--) {
-        if (currentTime - targets[i].spawnTime > targetLifetime) {
+        if (now - targets[i].spawnTime > targetLifetime) {
           targets.splice(i, 1);
         }
       }
@@ -294,11 +323,43 @@
         const upg = upgrades[i];
         const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
         if (dist < player.radius + upg.radius) {
-          currentWeapon = upg.type;
-          player.weapon = currentWeapon;
-          updateWeaponDisplay();
+          if (upg.type === "health") {
+            player.health = Math.min(player.health + 20, 100);
+          } else {
+            // Add new weapon to inventory if not already present.
+            if (!inventory.includes(upg.type)) {
+              inventory.push(upg.type);
+              // Auto-switch to the new weapon.
+              currentWeapon = upg.type;
+              player.weapon = currentWeapon;
+              updateWeaponDisplay();
+            }
+          }
           upgrades.splice(i, 1);
+          document.getElementById("healthDisplay").textContent = "Health: " + Math.floor(player.health);
         }
+      }
+
+      // --- Update Explosions ---
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const exp = explosions[i];
+        exp.life++;
+        exp.radius = (exp.life / exp.maxLife) * exp.maxRadius;
+        if (exp.life >= exp.maxLife) {
+          explosions.splice(i, 1);
+        }
+      }
+
+      // --- Update Safe Zone (Shrink over time) ---
+      if (safeZone.radius > 50) {  // minimum safe zone radius
+        safeZone.radius -= safeZoneShrinkRate;
+      }
+      // Damage player if outside safe zone.
+      const distToZone = Math.hypot(player.x - safeZone.x, player.y - safeZone.y);
+      if (distToZone > safeZone.radius) {
+        player.health -= damageOutside;
+        if (player.health < 0) player.health = 0;
+        document.getElementById("healthDisplay").textContent = "Health: " + Math.floor(player.health);
       }
 
       // --- Emit Movement Update ---
@@ -307,68 +368,97 @@
         y: player.y, 
         angle: player.angle, 
         weapon: currentWeapon, 
-        score: player.score 
+        score: player.score,
+        health: player.health
       });
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw targets.
-      for (const target of targets) {
+
+      // --- Draw Safe Zone ---
+      ctx.save();
+      ctx.strokeStyle = "rgba(0, 255, 0, 0.5)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 5]);
+      ctx.beginPath();
+      ctx.arc(safeZone.x, safeZone.y, safeZone.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // --- Draw Targets ---
+      targets.forEach(target => {
         ctx.fillStyle = "red";
         ctx.beginPath();
         ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
         ctx.fill();
-      }
-      
-      // Draw local bullets.
-      for (const bullet of bullets) {
-        ctx.fillStyle = "black";
-        ctx.beginPath();
-        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      });
 
-      // Draw remote bullets.
-      for (const bullet of remoteBullets) {
-        ctx.fillStyle = "purple";
-        ctx.beginPath();
-        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      // Draw upgrades.
+      // --- Draw Upgrades ---
       upgrades.forEach(upg => {
+        // Choose color based on type.
         if (upg.type === "shotgun") {
           ctx.fillStyle = "orange";
         } else if (upg.type === "assault") {
           ctx.fillStyle = "green";
+        } else if (upg.type === "sniper") {
+          ctx.fillStyle = "purple";
+        } else if (upg.type === "rocket") {
+          ctx.fillStyle = "brown";
+        } else if (upg.type === "health") {
+          ctx.fillStyle = "pink";
         } else {
           ctx.fillStyle = "gray";
         }
         ctx.beginPath();
         ctx.arc(upg.x, upg.y, upg.radius, 0, Math.PI * 2);
         ctx.fill();
-        // Add a text label.
+        // Add a label.
         ctx.fillStyle = "white";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(
-          upg.type === "shotgun" ? "SG" : upg.type === "assault" ? "AR" : "",
-          upg.x,
-          upg.y + 4
-        );
+        let label = "";
+        if (upg.type === "shotgun") label = "SG";
+        else if (upg.type === "assault") label = "AR";
+        else if (upg.type === "sniper") label = "SN";
+        else if (upg.type === "rocket") label = "RK";
+        else if (upg.type === "health") label = "HP";
+        ctx.fillText(label, upg.x, upg.y + 4);
       });
-      
-      // Draw the local player.
+
+      // --- Draw Explosions ---
+      explosions.forEach(exp => {
+        const opacity = 1 - exp.life / exp.maxLife;
+        ctx.fillStyle = `rgba(255, 165, 0, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // --- Draw Local Bullets ---
+      bullets.forEach(bullet => {
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // --- Draw Remote Bullets ---
+      remoteBullets.forEach(bullet => {
+        ctx.fillStyle = "purple";
+        ctx.beginPath();
+        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // --- Draw Local Player ---
       ctx.fillStyle = player.color;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
       drawFacingIndicator(player);
 
-      // Draw remote players.
+      // --- Draw Remote Players ---
       for (let id in remotePlayers) {
         const p = remotePlayers[id];
         ctx.fillStyle = "cyan";
@@ -376,11 +466,12 @@
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fill();
         drawFacingIndicator(p, "gray");
-        // Display remote player's score.
+        // Display remote player's score and health.
         ctx.fillStyle = "black";
         ctx.font = "12px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("Score: " + (p.score || 0), p.x, p.y - p.radius - 10);
+        ctx.fillText("Score: " + (p.score || 0), p.x, p.y - p.radius - 20);
+        ctx.fillText("HP: " + (p.health !== undefined ? Math.floor(p.health) : 100), p.x, p.y - p.radius - 8);
       }
     }
 
