@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cats & Guns - Cats Section</title>
   <style>
-    /* Basic reset and typography */
+    /* Basic reset, typography, and responsive styling */
     body {
       font-family: 'Arial', sans-serif;
       background: #f0f0f0;
@@ -23,8 +24,8 @@
       margin: 20px auto;
       max-width: 600px;
     }
-    /* Styling the button */
-    #catButton {
+    /* Buttons styling */
+    #catButton, #jokeButton, #bgButton {
       background-color: #ffcc00;
       border: none;
       padding: 15px 25px;
@@ -32,12 +33,13 @@
       cursor: pointer;
       border-radius: 8px;
       transition: background-color 0.3s;
+      margin: 10px;
     }
-    #catButton:hover {
+    #catButton:hover, #jokeButton:hover, #bgButton:hover {
       background-color: #e6b800;
     }
-    /* Content section styling */
-    #catContent {
+    /* Content display styling */
+    #catContent, #jokeContent {
       margin-top: 20px;
       display: none;
       animation: fadeIn 0.8s ease-in-out;
@@ -46,13 +48,20 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
+    /* Cat image styling and hover effect */
     .cat-image {
       width: 100%;
       max-width: 400px;
       border: 5px solid #ffcc00;
       border-radius: 15px;
+      cursor: pointer;
+      transition: transform 0.3s;
     }
-    .cat-fact {
+    .cat-image:hover {
+      transform: scale(1.05);
+    }
+    /* Styling for fact and joke texts */
+    .cat-fact, .cat-joke {
       margin-top: 20px;
       font-size: 1.1em;
     }
@@ -67,6 +76,35 @@
     .rave {
       animation: raveBackground 1s infinite;
     }
+    /* Bounce animation */
+    @keyframes bounce {
+      0%   { transform: translateY(0); }
+      30%  { transform: translateY(-15px); }
+      50%  { transform: translateY(0); }
+      70%  { transform: translateY(-7px); }
+      100% { transform: translateY(0); }
+    }
+    .bounce {
+      animation: bounce 0.5s;
+    }
+    /* Confetti effect styling */
+    #confetti {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2em;
+      color: purple;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    footer {
+      background-color: #333;
+      color: #fff;
+      padding: 1em;
+      margin-top: 40px;
+    }
   </style>
 </head>
 <body>
@@ -77,16 +115,32 @@
   
   <div class="container">
     <button id="catButton">Show Cat Magic!</button>
+    <button id="jokeButton">Show Cat Joke!</button>
+    <button id="bgButton">Random Background Color!</button>
+    
     <div id="catContent">
       <img id="magicCat" class="cat-image" src="" alt="Mystery Cat">
-      <p class="cat-fact">
-        Did you know? Cats have over 20 muscles in their ears, giving them incredible control—and a dash of attitude!
+      <p class="cat-fact" id="catFact">
+        <!-- Random cat fact will appear here -->
+      </p>
+    </div>
+    
+    <div id="jokeContent">
+      <p class="cat-joke" id="catJoke">
+        <!-- Random cat joke will appear here -->
       </p>
     </div>
   </div>
   
+  <!-- Hidden confetti element for the Easter egg -->
+  <div id="confetti">🎉 Confetti Time! 🎉</div>
+  
+  <footer>
+    <p>Thanks for visiting Cats & Guns. Stay curious and keep the cat magic alive!</p>
+  </footer>
+  
   <script>
-    // Array of cat images from cat7.jpg through cat14.jpg
+    // Arrays of cat images, facts, and jokes
     const catImages = [
       "images/cat7.jpg",
       "images/cat8.jpg",
@@ -98,15 +152,40 @@
       "images/cat14.jpg"
     ];
     
+    const catFacts = [
+      "Cats have over 20 muscles in their ears, giving them incredible control.",
+      "A group of cats is called a clowder.",
+      "Cats sleep for 70% of their lives.",
+      "The world's largest cat measured 48.5 inches long.",
+      "Cats have whiskers on the back of their front legs as well!"
+    ];
+    
+    const catJokes = [
+      "Why don't cats play poker in the jungle? Too many cheetahs!",
+      "What do you call a pile of kittens? A meowtain.",
+      "Why was the cat sitting on the computer? It wanted to keep an eye on the mouse!",
+      "What is a cat's favorite color? Purr-ple!",
+      "Why did the cat get a ticket? For littering!"
+    ];
+    
+    // Grab DOM elements
     const catButton = document.getElementById('catButton');
+    const jokeButton = document.getElementById('jokeButton');
+    const bgButton = document.getElementById('bgButton');
     const catContent = document.getElementById('catContent');
+    const jokeContent = document.getElementById('jokeContent');
     const magicCat = document.getElementById('magicCat');
-
+    const catFact = document.getElementById('catFact');
+    const catJoke = document.getElementById('catJoke');
+    const confetti = document.getElementById('confetti');
+    
+    // Toggle cat magic display with a random image and fact
     catButton.addEventListener('click', () => {
       if (catContent.style.display === 'none' || catContent.style.display === '') {
-        // Choose a random cat image from the array
-        const randomIndex = Math.floor(Math.random() * catImages.length);
-        magicCat.src = catImages[randomIndex];
+        const randomImageIndex = Math.floor(Math.random() * catImages.length);
+        magicCat.src = catImages[randomImageIndex];
+        const randomFactIndex = Math.floor(Math.random() * catFacts.length);
+        catFact.textContent = catFacts[randomFactIndex];
         catContent.style.display = 'block';
         catButton.textContent = 'Hide Cat Magic!';
         // Activate rave background effect
@@ -114,10 +193,46 @@
       } else {
         catContent.style.display = 'none';
         catButton.textContent = 'Show Cat Magic!';
-        // Deactivate rave background effect
         document.body.classList.remove("rave");
+      }
+    });
+    
+    // Display a random cat joke with a bounce effect
+    jokeButton.addEventListener('click', () => {
+      const randomJokeIndex = Math.floor(Math.random() * catJokes.length);
+      catJoke.textContent = catJokes[randomJokeIndex];
+      jokeContent.style.display = 'block';
+      catJoke.classList.add("bounce");
+      setTimeout(() => {
+        catJoke.classList.remove("bounce");
+      }, 500);
+    });
+    
+    // Change background to a random hex color (removes rave effect)
+    bgButton.addEventListener('click', () => {
+      document.body.classList.remove("rave");
+      const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+      document.body.style.backgroundColor = randomColor;
+    });
+    
+    // Bounce effect on cat image when clicked
+    magicCat.addEventListener('click', () => {
+      magicCat.classList.add("bounce");
+      setTimeout(() => {
+        magicCat.classList.remove("bounce");
+      }, 500);
+    });
+    
+    // Easter egg: Press "C" for a quick confetti effect
+    document.addEventListener('keydown', (event) => {
+      if (event.key.toLowerCase() === 'c') {
+        confetti.style.opacity = 1;
+        setTimeout(() => {
+          confetti.style.opacity = 0;
+        }, 1000);
       }
     });
   </script>
 </body>
 </html>
+
