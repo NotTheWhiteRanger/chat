@@ -146,6 +146,82 @@
     }
 
     // ------------------------------
+    // Pause Music: Pixel Elevator Music
+    // ------------------------------
+    let pauseMusicCtx = null;
+    let pauseMusicActive = false;
+    let pauseMusicTimeouts = [];
+
+    // Plays a single note using a square wave (chiptune-style)
+    function playNote(frequency, duration) {
+      const oscillator = pauseMusicCtx.createOscillator();
+      const gainNode = pauseMusicCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(pauseMusicCtx.destination);
+      oscillator.type = "square"; // gives that pixel chiptune vibe
+      oscillator.frequency.value = frequency;
+      gainNode.gain.setValueAtTime(0.2, pauseMusicCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(pauseMusicCtx.currentTime + duration);
+    }
+
+    // Plays a simple melody sequence and loops it while paused
+    function playPauseMelody() {
+      if (!pauseMusicActive) return;
+      const melody = [
+        { freq: 261.63, duration: 0.3 }, // C4
+        { freq: 293.66, duration: 0.3 }, // D4
+        { freq: 329.63, duration: 0.3 }, // E4
+        { freq: 349.23, duration: 0.3 }, // F4
+        { freq: 392.00, duration: 0.3 }, // G4
+        { freq: 440.00, duration: 0.3 }, // A4
+        { freq: 493.88, duration: 0.3 }, // B4
+        { freq: 523.25, duration: 0.3 }  // C5
+      ];
+      let timeOffset = 0;
+      melody.forEach(note => {
+        const timeoutId = setTimeout(() => {
+          if (pauseMusicActive) {
+            playNote(note.freq, note.duration);
+          }
+        }, timeOffset);
+        pauseMusicTimeouts.push(timeoutId);
+        timeOffset += note.duration * 1000;
+      });
+      // Loop the melody after it's finished
+      const loopTimeout = setTimeout(() => {
+        if (pauseMusicActive) {
+          playPauseMelody();
+        }
+      }, timeOffset);
+      pauseMusicTimeouts.push(loopTimeout);
+    }
+
+    function startPauseMusic() {
+      if (!pauseMusicActive) {
+        pauseMusicActive = true;
+        if (!pauseMusicCtx) {
+          pauseMusicCtx = new (window.AudioContext || window.webkitAudioContext)();
+        } else {
+          // Resume the context if it was suspended
+          pauseMusicCtx.resume();
+        }
+        playPauseMelody();
+      }
+    }
+
+    function stopPauseMusic() {
+      pauseMusicActive = false;
+      // Clear all scheduled timeouts
+      pauseMusicTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+      pauseMusicTimeouts = [];
+      if (pauseMusicCtx) {
+        // Suspend the context so it stops producing sound
+        pauseMusicCtx.suspend();
+      }
+    }
+
+    // ------------------------------
     // Firebase Configuration and Authentication
     // ------------------------------
     var firebaseConfig = {
@@ -209,6 +285,11 @@
     pauseBtn.addEventListener('click', () => {
       isPaused = !isPaused;
       pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+      if (isPaused) {
+        startPauseMusic();
+      } else {
+        stopPauseMusic();
+      }
     });
 
     // New Game event
@@ -221,6 +302,11 @@
       if (e.key.toLowerCase() === 'p') {
         isPaused = !isPaused;
         pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+        if (isPaused) {
+          startPauseMusic();
+        } else {
+          stopPauseMusic();
+        }
       }
     });
 
@@ -237,12 +323,12 @@
     let food = spawnFood();
     let score = 0;
     let normalScoreCount = 0; // Tracks points from normal food for speed increase
-    let changingDirection = false; // Flag to prevent multiple direction changes in one frame
+    let changingDirection = false; // Prevents multiple direction changes in one frame
     let lastBackgroundChangeScore = 0;
     let lastMilestone = 0;
     
     // Set initial game speed threshold (higher value means slower game speed)
-    let speedThreshold = 6; // Base speed is slower than before
+    let speedThreshold = 6; // Base speed
 
     // Retrieve local high score from localStorage
     let localHighScore = 0;
@@ -269,7 +355,7 @@
     }
 
     // Function to spawn food with a 5% chance of being "special" (yellow, 5 points)
-    // Special food will despawn after 5 seconds if not picked up.
+    // Special food despawns after 5 seconds if not picked up.
     function spawnFood() {
       const pos = getRandomFoodPosition();
       let type = "normal";
@@ -285,7 +371,7 @@
           if (food && food.type === "special" && food.x === newFood.x && food.y === newFood.y) {
             food = spawnFood();
           }
-        }, 5000); // Despawn after 5 seconds
+        }, 5000);
       }
       return newFood;
     }
@@ -321,35 +407,26 @@
 
       // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
-        // Play the eating sound effect
         playEatSound();
         if (food.type === "special") {
-          score += food.points; // Adds 5 points
-          if (food.timeoutId) {
-            clearTimeout(food.timeoutId);
-          }
-          // Increase speed by a larger amount for special food
+          score += food.points;
+          if (food.timeoutId) clearTimeout(food.timeoutId);
           speedThreshold = Math.max(speedThreshold - 0.1, 2);
-          // Flash canvas border for a special effect
           canvas.style.border = "5px solid yellow";
           setTimeout(() => { canvas.style.border = "1px solid #ccc"; }, 200);
-        } else { // Normal food
-          score += food.points; // Adds 1 point
+        } else {
+          score += food.points;
           normalScoreCount++;
-          // Every 10 normal points, increase speed slightly
           if (normalScoreCount % 10 === 0) {
             speedThreshold = Math.max(speedThreshold - 0.02, 2);
           }
         }
         scoreDisplay.textContent = score;
-        // Update local high score
         updateLocalHighScore();
-        // Change background color every 25 points
         if (score >= lastBackgroundChangeScore + 25) {
           lastBackgroundChangeScore += 25;
           changeBackgroundColor();
         }
-        // Display milestone message at every 10 points (if not repeated)
         if (score % 10 === 0 && score !== lastMilestone) {
           lastMilestone = score;
           displayMilestoneMessage("Milestone reached: " + score + " points!");
@@ -369,7 +446,7 @@
         return;
       }
 
-      // Draw food (yellow for special, red for normal) and snake (green)
+      // Draw food and snake
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = (food.type === "special") ? "yellow" : "red";
       ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
@@ -378,7 +455,6 @@
         ctx.fillRect(segment.x, segment.y, grid - 1, grid - 1);
       });
       
-      // Reset the direction-change flag at the end of the frame
       changingDirection = false;
     }
 
@@ -403,7 +479,7 @@
       canvas.style.backgroundColor = "#000";
     }
 
-    // Handle game over: play sound, save score and reset game state
+    // Handle game over: play sound, save score, and reset game state
     function gameOver() {
       playGameOverSound();
       alert("Game Over! Your score: " + score);
