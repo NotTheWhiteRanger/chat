@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Target Practice Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #333;
+      font-family: sans-serif;
+    }
+    canvas {
+      background: #eee;
+      display: block;
+      margin: 0 auto;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: #fff;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    let score = 0;
+    document.getElementById("score").textContent = "Score: " + score;
+
+    // Player object: a blue circle controlled by the user.
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 20,
+      speed: 4,
+      color: "blue",
+    };
+
+    // Object to track keys currently pressed for movement.
+    const keysPressed = {};
+    document.addEventListener("keydown", (e) => {
+      keysPressed[e.key] = true;
+    });
+    document.addEventListener("keyup", (e) => {
+      keysPressed[e.key] = false;
+    });
+
+    // Array to hold targets.
+    const targets = [];
+    const targetRadius = 15;
+    const targetLifetime = 5000; // targets disappear after 5000ms (5 seconds)
+
+    // Spawn a new target at a random location.
+    function spawnTarget() {
+      const x = Math.random() * (canvas.width - 2 * targetRadius) + targetRadius;
+      const y = Math.random() * (canvas.height - 2 * targetRadius) + targetRadius;
+      const target = { x, y, radius: targetRadius, spawnTime: Date.now() };
+      targets.push(target);
+    }
+
+    // Spawn a target every 2 seconds.
+    setInterval(spawnTarget, 2000);
+
+    // Handle mouse clicks to check for target hits.
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      // Check each target to see if it was clicked.
+      for (let i = targets.length - 1; i >= 0; i--) {
+        const target = targets[i];
+        const dist = Math.hypot(mouseX - target.x, mouseY - target.y);
+        if (dist < target.radius) {
+          // Target hit!
+          targets.splice(i, 1);
+          score++;
+          document.getElementById("score").textContent = "Score: " + score;
+        }
+      }
+    });
+
+    // Update game logic: player movement and target lifetime.
+    function update() {
+      // Move player based on key inputs (arrow keys or WASD)
+      if (keysPressed["ArrowUp"] || keysPressed["w"]) {
+        player.y -= player.speed;
+      }
+      if (keysPressed["ArrowDown"] || keysPressed["s"]) {
+        player.y += player.speed;
+      }
+      if (keysPressed["ArrowLeft"] || keysPressed["a"]) {
+        player.x -= player.speed;
+      }
+      if (keysPressed["ArrowRight"] || keysPressed["d"]) {
+        player.x += player.speed;
+      }
+      
+      // Prevent player from moving outside canvas boundaries.
+      if (player.x < player.radius) player.x = player.radius;
+      if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
+      if (player.y < player.radius) player.y = player.radius;
+      if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
+      
+      // Remove targets that have exceeded their lifetime.
+      const currentTime = Date.now();
+      for (let i = targets.length - 1; i >= 0; i--) {
+        if (currentTime - targets[i].spawnTime > targetLifetime) {
+          targets.splice(i, 1);
+        }
+      }
+    }
+
+    // Draw the player and targets.
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw player (blue circle)
+      ctx.fillStyle = player.color;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw targets (red circles)
+      for (const target of targets) {
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Main game loop.
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+  </script>
+</body>
+</html>
