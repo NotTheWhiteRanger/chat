@@ -115,7 +115,39 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
   
   <script>
-    // Firebase configuration – update messagingSenderId and appId as needed.
+    // ------------------------------
+    // Audio functions using Web Audio API
+    // ------------------------------
+    function playEatSound() {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+      oscillator.frequency.value = 880; // A higher tone for the eating sound
+      oscillator.type = "sine";
+      gainNode.gain.value = 0.5;
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 150); // Stop after 150ms
+    }
+
+    function playGameOverSound() {
+      const context = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = context.createOscillator();
+      const gainNode = context.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(context.destination);
+      oscillator.frequency.setValueAtTime(400, context.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(60, context.currentTime + 1);
+      oscillator.type = "sawtooth";
+      gainNode.gain.value = 0.5;
+      oscillator.start();
+      setTimeout(() => oscillator.stop(), 1000); // Stop after 1 second
+    }
+
+    // ------------------------------
+    // Firebase Configuration and Authentication
+    // ------------------------------
     var firebaseConfig = {
       apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
       authDomain: "new-chat-8d4f4-default-rtdb.firebaseio.com/",
@@ -141,10 +173,6 @@
     const highScoreDisplay = document.getElementById('highScoreDisplay');
     const milestoneMessage = document.getElementById('milestoneMessage');
     const leaderboardBody = document.getElementById('leaderboard-body');
-
-    // Sound effects (provide your own sound files or URLs)
-    const eatSound = new Audio('sounds/eat.mp3');
-    const gameOverSound = new Audio('sounds/gameover.mp3');
 
     // Firebase Auth state listener
     firebase.auth().onAuthStateChanged(user => {
@@ -293,8 +321,8 @@
 
       // Check if snake has eaten the food
       if (head.x === food.x && head.y === food.y) {
-        // Play eating sound effect
-        eatSound.play();
+        // Play the eating sound effect
+        playEatSound();
         if (food.type === "special") {
           score += food.points; // Adds 5 points
           if (food.timeoutId) {
@@ -375,9 +403,9 @@
       canvas.style.backgroundColor = "#000";
     }
 
-    // Handle game over: save score and reset game state
+    // Handle game over: play sound, save score and reset game state
     function gameOver() {
-      gameOverSound.play();
+      playGameOverSound();
       alert("Game Over! Your score: " + score);
       saveScore(score);
       resetGame();
