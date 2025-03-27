@@ -110,13 +110,16 @@
         for (let id in players) {
           if (id === localPlayerId) continue;
           remotePlayers[id] = players[id];
-          if (!remotePlayers[id].health) remotePlayers[id].health = 100;
+          // Set default health and radius if missing.
+          remotePlayers[id].health = remotePlayers[id].health || 100;
+          remotePlayers[id].radius = remotePlayers[id].radius || 20;
         }
       });
       socket.on("newPlayer", (playerData) => {
         if (playerData.id !== localPlayerId) {
           remotePlayers[playerData.id] = playerData;
-          if (!remotePlayers[playerData.id].health) remotePlayers[playerData.id].health = 100;
+          remotePlayers[playerData.id].health = remotePlayers[playerData.id].health || 100;
+          remotePlayers[playerData.id].radius = remotePlayers[playerData.id].radius || 20;
           console.log("New player joined:", playerData.id);
         }
       });
@@ -131,7 +134,7 @@
             remotePlayers[data.id].health = data.health;
           } else {
             remotePlayers[data.id] = data;
-            if (!remotePlayers[data.id].radius) remotePlayers[data.id].radius = 20;
+            remotePlayers[data.id].radius = remotePlayers[data.id].radius || 20;
           }
         }
       });
@@ -144,13 +147,15 @@
           remoteBullets.push({ ...data.bullet, owner: data.id });
         }
       });
-      // Updated damage handler: update health with the server's health value.
+      // Updated damage event listener.
       socket.on("playerDamaged", (data) => {
+        console.log("Received damage update from server:", data);
         if (data.id === localPlayerId) {
           player.health = data.health;
-          console.log("Local health updated from server. Health:", player.health);
+          console.log("Local health updated. New Health:", player.health);
         } else if (remotePlayers[data.id]) {
           remotePlayers[data.id].health = data.health;
+          console.log("Remote player", data.id, "health updated to", data.health);
         }
       });
     }
@@ -290,7 +295,7 @@
 
       // MULTIPLAYER: Handle remote bullet collisions.
       if (gameMode === "multiplayer") {
-        // Process remote bullets.
+        // Remote bullets hitting local player.
         for (let i = remoteBullets.length - 1; i >= 0; i--) {
           const b = remoteBullets[i];
           b.x += b.speed * Math.cos(b.angle);
@@ -310,15 +315,15 @@
           // Check collision with local player.
           const dist = Math.hypot(b.x - player.x, b.y - player.y);
           if (dist < b.radius + player.radius && b.owner !== localPlayerId) {
+            console.log("Remote bullet collided with local player:", b);
             remoteBullets.splice(i, 1);
-            // Emit damage to the server.
             if (socket) {
+              console.log("Emitting damage event for local player (20 damage).");
               socket.emit("playerDamaged", { id: localPlayerId, damage: 20 });
             }
-            console.log("Remote bullet hit! Damage event sent.");
           }
         }
-        // Process local bullets hitting remote players.
+        // Local bullets hitting remote players.
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           if (b.owner !== localPlayerId) continue;
@@ -326,9 +331,12 @@
             const rp = remotePlayers[id];
             const dist = Math.hypot(b.x - rp.x, b.y - rp.y);
             if (dist < b.radius + rp.radius) {
+              console.log("Local bullet collided with remote player", id, ":", b);
               bullets.splice(i, 1);
-              if (socket) socket.emit("playerDamaged", { id: id, damage: 20 });
-              console.log("Local bullet hit remote player " + id + ". Damage event sent.");
+              if (socket) {
+                console.log("Emitting damage event for remote player", id, "(20 damage).");
+                socket.emit("playerDamaged", { id: id, damage: 20 });
+              }
               break;
             }
           }
@@ -355,7 +363,7 @@
           player.health += pack.heal;
           if (player.health > 100) player.health = 100;
           healthPacks.splice(i, 1);
-          console.log("Picked up health! Health:", player.health);
+          console.log("Picked up health! New Health:", player.health);
         }
       }
 
