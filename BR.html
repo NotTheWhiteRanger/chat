@@ -17,13 +17,11 @@
     }
     #score, #health {
       position: absolute;
+      top: 10px;
       left: 10px;
       color: #fff;
       font-size: 24px;
       z-index: 10;
-    }
-    #score {
-      top: 10px;
     }
     #health {
       top: 50px;
@@ -94,7 +92,8 @@
     let localPlayerId = null;
     const remotePlayers = {};
     const remoteBullets = [];
-    const bulletDamage = 20; // Damage dealt per bullet
+    // Damage dealt per bullet
+    const bulletDamage = 20;
 
     const menu = document.getElementById("menu");
     const targetPracticeBtn = document.getElementById("targetPracticeBtn");
@@ -117,7 +116,7 @@
     // Multiplayer initialization: update the URL below with your AWS server's IP/domain and port.
     function initMultiplayer() {
       connectionStatus.textContent = "Status: Connecting...";
-      socket = io("https://kcschat.org:3000", {  // <-- Replace with your AWS server address.
+      socket = io("http://kcschat.org:3000", {  // <-- Replace with your AWS server address.
         transports: ["websocket"]
       });
       socket.on("connect", () => {
@@ -157,6 +156,7 @@
             remotePlayers[data.id].angle = data.angle;
             remotePlayers[data.id].weapon = data.weapon;
             remotePlayers[data.id].score = data.score;
+            // If health is not provided, keep the existing value
             if (data.health !== undefined) {
               remotePlayers[data.id].health = data.health;
             }
@@ -184,9 +184,20 @@
     let score = 0;
     document.getElementById("score").textContent = "Score: " + score;
 
-    // --------------------
-    // Obstacles & Collision
-    // --------------------
+    // The player object now uses "currentWeapon" from gunMechanics.js and includes health.
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      radius: 20,
+      speed: 4,
+      color: "blue",
+      angle: 0,
+      weapon: currentWeapon, // currentWeapon defined in gunMechanics.js
+      score: score,
+      health: 100
+    };
+
+    // Obstacles added to the map (as gray rectangles)
     const obstacles = [
       { x: 300, y: 300, width: 200, height: 20 },
       { x: 1000, y: 800, width: 20, height: 200 },
@@ -208,48 +219,6 @@
       return (dx * dx + dy * dy <= (circle.radius * circle.radius));
     }
 
-    // --------------------
-    // Randomized Spawn Point
-    // --------------------
-    const playerRadius = 20;
-    function getRandomSpawnPoint() {
-      let x, y;
-      let valid = false;
-      // Keep trying until a valid spawn (not inside an obstacle) is found.
-      while (!valid) {
-        x = Math.random() * (canvas.width - 2 * playerRadius) + playerRadius;
-        y = Math.random() * (canvas.height - 2 * playerRadius) + playerRadius;
-        valid = true;
-        for (const obs of obstacles) {
-          if (circleRectCollision({ x, y, radius: playerRadius }, obs)) {
-            valid = false;
-            break;
-          }
-        }
-      }
-      return { x, y };
-    }
-
-    const spawnPoint = getRandomSpawnPoint();
-
-    // --------------------
-    // Local Player Definition
-    // --------------------
-    const player = {
-      x: spawnPoint.x,
-      y: spawnPoint.y,
-      radius: playerRadius,
-      speed: 4,
-      color: "blue",
-      angle: 0,
-      weapon: currentWeapon, // currentWeapon defined in gunMechanics.js
-      score: score,
-      health: 100
-    };
-
-    // --------------------
-    // Remaining Game Logic
-    // --------------------
     function drawFacingIndicator(p, color = "black") {
       const lineLength = p.radius + 15;
       const endX = p.x + lineLength * Math.cos(p.angle);
@@ -341,7 +310,7 @@
         }
       }
 
-      // Multiplayer bullet collisions
+      // In multiplayer mode, handle bullet collisions with players.
       if (gameMode === "multiplayer") {
         // Local player's bullets hitting remote players
         for (let i = bullets.length - 1; i >= 0; i--) {
@@ -388,6 +357,7 @@
         const upg = upgrades[i];
         const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
         if (dist < player.radius + upg.radius) {
+          // Change weapon type and update display via the gun mechanics file
           currentWeapon = upg.type;
           player.weapon = currentWeapon;
           updateWeaponDisplay();
@@ -395,9 +365,11 @@
         }
       }
 
+      // Update local health display
       document.getElementById("health").textContent = "Health: " + player.health;
 
       if (gameMode === "multiplayer" && socket) {
+        // Optionally, you could send health updates as well.
         socket.emit("playerMovement", { 
           x: player.x, 
           y: player.y, 
@@ -445,7 +417,7 @@
           ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
           ctx.fill();
           drawFacingIndicator(rp, "gray");
-          // Health bar
+          // Health bar above remote player
           const barWidth = rp.radius * 2;
           const barHeight = 5;
           const healthPercent = rp.health / 100;
