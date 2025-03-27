@@ -131,6 +131,7 @@
             remotePlayers[data.id].health = data.health;
           } else {
             remotePlayers[data.id] = data;
+            if (!remotePlayers[data.id].radius) remotePlayers[data.id].radius = 20;
           }
         }
       });
@@ -143,8 +144,14 @@
           remoteBullets.push({ ...data.bullet, owner: data.id });
         }
       });
+      // Listen for damage events from the server.
       socket.on("playerDamaged", (data) => {
-        if (remotePlayers[data.id]) {
+        if (data.id === localPlayerId) {
+          // Update local player's health from server info.
+          player.health -= data.damage;
+          if (player.health < 0) player.health = 0;
+          console.log("Local damage updated from server. Health:", player.health);
+        } else if (remotePlayers[data.id]) {
           remotePlayers[data.id].health -= data.damage;
           if (remotePlayers[data.id].health < 0) remotePlayers[data.id].health = 0;
         }
@@ -160,7 +167,6 @@
     document.getElementById("score").textContent = "Score: " + score;
 
     // --- TARGET PRACTICE SETUP ---
-    // (Only used in Target Practice mode)
     const targets = [];
     const targetRadius = 15;
     const targetLifetime = 5000;
@@ -170,7 +176,6 @@
       const target = { x, y, radius: targetRadius, spawnTime: Date.now() };
       targets.push(target);
     }
-    // Only spawn targets if in target practice mode.
     setInterval(() => {
       if (gameMode === "target") spawnTarget();
     }, 2000);
@@ -260,7 +265,7 @@
       // Update local bullets (via external gunMechanics.js).
       updateBullets(canvas, obstacles);
 
-      // Only process target practice collisions if in that mode.
+      // TARGET PRACTICE: Check collisions between local bullets and targets.
       if (gameMode === "target") {
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
@@ -286,7 +291,7 @@
         }
       }
 
-      // Multiplayer collisions: remote bullets hit local player.
+      // MULTIPLAYER: Handle remote bullet collisions.
       if (gameMode === "multiplayer") {
         for (let i = remoteBullets.length - 1; i >= 0; i--) {
           const b = remoteBullets[i];
@@ -307,9 +312,12 @@
           // Check collision with local player.
           const dist = Math.hypot(b.x - player.x, b.y - player.y);
           if (dist < b.radius + player.radius && b.owner !== localPlayerId) {
+            remoteBullets.splice(i, 1);
+            if (socket) {
+              socket.emit("playerDamaged", { id: localPlayerId, damage: 20 });
+            }
             player.health -= 20;
             if (player.health < 0) player.health = 0;
-            remoteBullets.splice(i, 1);
             console.log("Ouch! Health:", player.health);
           }
         }
@@ -321,8 +329,6 @@
             const rp = remotePlayers[id];
             const dist = Math.hypot(b.x - rp.x, b.y - rp.y);
             if (dist < b.radius + rp.radius) {
-              rp.health = (rp.health || 100) - 20;
-              if (rp.health < 0) rp.health = 0;
               bullets.splice(i, 1);
               if (socket) socket.emit("playerDamaged", { id: id, damage: 20 });
               break;
@@ -355,7 +361,7 @@
         }
       }
 
-      // Emit player movement (including health) in multiplayer mode.
+      // Emit updated movement (including health) in multiplayer mode.
       if (gameMode === "multiplayer" && socket) {
         socket.emit("playerMovement", { 
           x: player.x, 
@@ -371,7 +377,7 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw targets (only for target practice).
+      // Draw targets (target practice only).
       if (gameMode === "target") {
         for (const target of targets) {
           ctx.fillStyle = "red";
