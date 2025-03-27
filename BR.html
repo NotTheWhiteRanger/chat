@@ -77,6 +77,10 @@
   <div id="weaponDisplay">Weapon: Pistol</div>
   <div id="connectionStatus">Status: Not Connected</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <!-- Include external gun mechanics code -->
+  <script src="gunMechanics.js"></script>
+
   <script>
     let gameMode = null; // "target" or "multiplayer"
     let socket = null;
@@ -159,18 +163,7 @@
     let score = 0;
     document.getElementById("score").textContent = "Score: " + score;
 
-    let currentWeapon = "pistol";
-    const weaponProperties = {
-      pistol: { cooldown: 300, bulletCount: 1, spread: 0 },
-      shotgun: { cooldown: 800, bulletCount: 5, spread: 0.2 },
-      assault: { cooldown: 150, bulletCount: 1, spread: 0 }
-    };
-    function updateWeaponDisplay() {
-      document.getElementById("weaponDisplay").textContent =
-        "Weapon: " + currentWeapon.charAt(0).toUpperCase() + currentWeapon.slice(1);
-    }
-    updateWeaponDisplay();
-
+    // The player object now uses "currentWeapon" from gunMechanics.js
     const player = {
       x: canvas.width / 2,
       y: canvas.height / 2,
@@ -178,7 +171,7 @@
       speed: 4,
       color: "blue",
       angle: 0,
-      weapon: currentWeapon,
+      weapon: currentWeapon, // currentWeapon defined in gunMechanics.js
       score: score
     };
 
@@ -192,47 +185,6 @@
       ctx.moveTo(p.x, p.y);
       ctx.lineTo(endX, endY);
       ctx.stroke();
-    }
-
-    const bullets = [];
-    const bulletSpeed = 8;
-    const bulletRadius = 5;
-    let lastShotTime = 0;
-    function shootBullet() {
-      const now = Date.now();
-      const cooldown = weaponProperties[currentWeapon].cooldown;
-      if (now - lastShotTime < cooldown) return;
-      lastShotTime = now;
-      
-      const props = weaponProperties[currentWeapon];
-      if (props.bulletCount > 1) {
-        for (let i = 0; i < props.bulletCount; i++) {
-          const offset = -props.spread + (2 * props.spread * i) / (props.bulletCount - 1);
-          const bullet = {
-            x: player.x,
-            y: player.y,
-            radius: bulletRadius,
-            speed: bulletSpeed,
-            angle: player.angle + offset
-          };
-          bullets.push(bullet);
-          if (gameMode === "multiplayer" && socket) {
-            socket.emit("shoot", { bullet: bullet });
-          }
-        }
-      } else {
-        const bullet = {
-          x: player.x,
-          y: player.y,
-          radius: bulletRadius,
-          speed: bulletSpeed,
-          angle: player.angle
-        };
-        bullets.push(bullet);
-        if (gameMode === "multiplayer" && socket) {
-          socket.emit("shoot", { bullet: bullet });
-        }
-      }
     }
 
     const targets = [];
@@ -265,7 +217,8 @@
       player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     });
     canvas.addEventListener("click", () => {
-      shootBullet();
+      // Call the shootBullet function from gunMechanics.js
+      shootBullet(player, gameMode, socket);
     });
 
     function update() {
@@ -278,14 +231,12 @@
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
 
+      // Update bullets via the external gun mechanics code
+      updateBullets(canvas);
+
+      // Check for collisions between bullets and targets
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
-        b.x += b.speed * Math.cos(b.angle);
-        b.y += b.speed * Math.sin(b.angle);
-        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
-          bullets.splice(i, 1);
-          continue;
-        }
         for (let j = targets.length - 1; j >= 0; j--) {
           const t = targets[j];
           const dist = Math.hypot(b.x - t.x, b.y - t.y);
@@ -322,6 +273,7 @@
         const upg = upgrades[i];
         const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
         if (dist < player.radius + upg.radius) {
+          // Change weapon type and update display via the gun mechanics file
           currentWeapon = upg.type;
           player.weapon = currentWeapon;
           updateWeaponDisplay();
@@ -350,12 +302,8 @@
         ctx.fill();
       }
       
-      for (const bullet of bullets) {
-        ctx.fillStyle = "black";
-        ctx.beginPath();
-        ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      // Draw bullets from gun mechanics
+      drawBullets(ctx);
 
       if (gameMode === "multiplayer") {
         for (const bullet of remoteBullets) {
