@@ -109,7 +109,7 @@
     // Multiplayer initialization: update the URL below with your AWS server's IP/domain and port.
     function initMultiplayer() {
       connectionStatus.textContent = "Status: Connecting...";
-      socket = io("http://3.148.222.243:3000", {  // <-- Replace with your AWS server address.
+      socket = io("https://3.148.222.243:3000", {  // <-- Replace with your AWS server address.
         transports: ["websocket"]
       });
       socket.on("connect", () => {
