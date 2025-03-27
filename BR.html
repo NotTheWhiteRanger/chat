@@ -44,6 +44,20 @@
       margin: 10px;
       cursor: pointer;
     }
+    /* Debug log styling */
+    #debugLog {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 300px;
+      max-height: 150px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.7);
+      color: #0f0;
+      font-size: 12px;
+      padding: 5px;
+      z-index: 50;
+    }
   </style>
   <!-- Include Socket.IO client from CDN -->
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -59,11 +73,24 @@
   <div id="weaponDisplay">Weapon: Pistol</div>
   <div id="connectionStatus">Status: Not Connected</div>
   <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <!-- Debug log area -->
+  <div id="debugLog"></div>
 
   <!-- Include updated gun mechanics code -->
   <script src="gunMechanics.js"></script>
 
   <script>
+    // Helper function to log debug messages
+    function logDebug(msg) {
+      const debugLog = document.getElementById("debugLog");
+      debugLog.innerHTML += msg + "<br>";
+      // Keep only the last 20 messages
+      if (debugLog.childNodes.length > 20) {
+        debugLog.removeChild(debugLog.firstChild);
+      }
+      console.log("DEBUG:", msg);
+    }
+
     /***********************
      * GAME MODE & MULTIPLAYER INIT
      ***********************/
@@ -82,27 +109,27 @@
       gameMode = "target";
       menu.style.display = "none";
       connectionStatus.textContent = "Status: (Target Practice Mode)";
-      console.log("Starting in Target Practice mode.");
+      logDebug("Starting in Target Practice mode.");
     });
     multiplayerBtn.addEventListener("click", () => {
       gameMode = "multiplayer";
       menu.style.display = "none";
       initMultiplayer();
-      console.log("Starting in Multiplayer mode.");
+      logDebug("Starting in Multiplayer mode.");
     });
 
-    // Multiplayer initialization: update the URL with your AWS server's IP/domain and port.
+    // Multiplayer initialization
     function initMultiplayer() {
       connectionStatus.textContent = "Status: Connecting...";
       socket = io("https://3.148.222.243:3000", {
         transports: ["websocket"]
       });
       socket.on("connect", () => {
-        console.log("Connected to server with id:", socket.id);
+        logDebug("Connected to server with id: " + socket.id);
         connectionStatus.textContent = "Status: Connected";
       });
       socket.on("disconnect", () => {
-        console.log("Disconnected from server");
+        logDebug("Disconnected from server");
         connectionStatus.textContent = "Status: Disconnected";
       });
       socket.on("currentId", (id) => { localPlayerId = id; });
@@ -110,14 +137,14 @@
         for (let id in players) {
           if (id === localPlayerId) continue;
           remotePlayers[id] = players[id];
-          if (!remotePlayers[id].health) remotePlayers[id].health = 100;
+          remotePlayers[id].health = remotePlayers[id].health || 100;
         }
       });
       socket.on("newPlayer", (playerData) => {
         if (playerData.id !== localPlayerId) {
           remotePlayers[playerData.id] = playerData;
-          if (!remotePlayers[playerData.id].health) remotePlayers[playerData.id].health = 100;
-          console.log("New player joined:", playerData.id);
+          remotePlayers[playerData.id].health = remotePlayers[playerData.id].health || 100;
+          logDebug("New player joined: " + playerData.id);
         }
       });
       socket.on("playerMoved", (data) => {
@@ -131,30 +158,32 @@
             remotePlayers[data.id].health = data.health;
           } else {
             remotePlayers[data.id] = data;
-            if (!remotePlayers[data.id].radius) remotePlayers[data.id].radius = 20;
+            remotePlayers[data.id].radius = remotePlayers[data.id].radius || 20;
           }
         }
       });
       socket.on("playerDisconnected", (id) => {
         delete remotePlayers[id];
-        console.log("Player disconnected:", id);
+        logDebug("Player disconnected: " + id);
       });
       socket.on("playerShot", (data) => {
         if (data.id !== localPlayerId) {
+          logDebug("Received playerShot from " + data.id);
           remoteBullets.push({ ...data.bullet, owner: data.id });
         }
       });
-      // Damage handler.
       socket.on("playerDamaged", (data) => {
+        logDebug("Received damage update: " + JSON.stringify(data));
         if (data.id === localPlayerId) {
           player.health = data.health;
-          console.log("Local health updated from server. Health:", player.health);
+          logDebug("Local health updated. New Health: " + player.health);
           if (player.health <= 0) {
             alert("You Lose!");
             location.reload();
           }
         } else if (remotePlayers[data.id]) {
           remotePlayers[data.id].health = data.health;
+          logDebug("Remote player " + data.id + " health updated to " + data.health);
         }
       });
     }
@@ -245,7 +274,6 @@
       player.angle = Math.atan2(mouseY - player.y, mouseX - player.x);
     });
     canvas.addEventListener("click", () => {
-      // Call the shootBullet function from gunMechanics.js.
       shootBullet(player, gameMode, socket);
     });
 
@@ -253,7 +281,6 @@
      * GAME LOOP & UPDATES
      ***********************/
     function update() {
-      // Update player movement.
       if (keysPressed["ArrowUp"] || keysPressed["w"]) player.y -= player.speed;
       if (keysPressed["ArrowDown"] || keysPressed["s"]) player.y += player.speed;
       if (keysPressed["ArrowLeft"] || keysPressed["a"]) player.x -= player.speed;
@@ -263,10 +290,9 @@
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
 
-      // Update local bullets (via external gunMechanics.js).
       updateBullets(canvas, obstacles);
 
-      // TARGET PRACTICE: Check collisions between local bullets and targets.
+      // TARGET PRACTICE collisions.
       if (gameMode === "target") {
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
@@ -279,11 +305,11 @@
               score++;
               player.score = score;
               document.getElementById("score").textContent = "Score: " + score;
+              logDebug("Bullet hit target in target practice.");
               break;
             }
           }
         }
-        // Remove expired targets.
         const currentTime = Date.now();
         for (let i = targets.length - 1; i >= 0; i--) {
           if (currentTime - targets[i].spawnTime > targetLifetime) {
@@ -292,9 +318,9 @@
         }
       }
 
-      // MULTIPLAYER: Handle bullet collisions.
+      // MULTIPLAYER bullet collisions.
       if (gameMode === "multiplayer") {
-        // Process remote bullets.
+        // Process remote bullets hitting local player.
         for (let i = remoteBullets.length - 1; i >= 0; i--) {
           const b = remoteBullets[i];
           b.x += b.speed * Math.cos(b.angle);
@@ -303,44 +329,43 @@
             remoteBullets.splice(i, 1);
             continue;
           }
-          // Check collision with obstacles.
           for (let obs of obstacles) {
             if (b.x > obs.x && b.x < obs.x + obs.width &&
                 b.y > obs.y && b.y < obs.y + obs.height) {
               remoteBullets.splice(i, 1);
+              logDebug("Remote bullet hit obstacle.");
               break;
             }
           }
-          // Check collision with local player.
-          const bulletRadius = b.radius || 5;
+          const bulletRad = b.radius || 5;
           const dist = Math.hypot(b.x - player.x, b.y - player.y);
-          if (dist < bulletRadius + player.radius && b.owner !== localPlayerId) {
+          if (dist < bulletRad + player.radius && b.owner !== localPlayerId) {
             remoteBullets.splice(i, 1);
+            logDebug("Remote bullet collided with local player. Damage event sent.");
             if (socket) {
               socket.emit("playerDamaged", { id: localPlayerId, damage: 10 });
             }
-            console.log("Remote bullet hit! Damage event sent.");
           }
         }
         // Process local bullets hitting remote players.
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           if (b.owner !== localPlayerId) continue;
-          const bulletRadius = b.radius || 5;
+          const bulletRad = b.radius || 5;
           for (let id in remotePlayers) {
             const rp = remotePlayers[id];
             const dist = Math.hypot(b.x - rp.x, b.y - rp.y);
-            if (dist < bulletRadius + rp.radius) {
+            if (dist < bulletRad + rp.radius) {
               bullets.splice(i, 1);
+              logDebug("Local bullet collided with remote player " + id + ". Damage event sent.");
               if (socket) socket.emit("playerDamaged", { id: id, damage: 10 });
-              console.log("Local bullet hit remote player " + id + ". Damage event sent.");
               break;
             }
           }
         }
       }
 
-      // Check for upgrade pickups.
+      // Upgrade pickups.
       for (let i = upgrades.length - 1; i >= 0; i--) {
         const upg = upgrades[i];
         const dist = Math.hypot(player.x - upg.x, player.y - upg.y);
@@ -349,10 +374,11 @@
           player.weapon = currentWeapon;
           updateWeaponDisplay();
           upgrades.splice(i, 1);
+          logDebug("Picked up upgrade: " + upg.type);
         }
       }
 
-      // Check for health pack pickups.
+      // Health pack pickups.
       for (let i = healthPacks.length - 1; i >= 0; i--) {
         const pack = healthPacks[i];
         const dist = Math.hypot(player.x - pack.x, player.y - pack.y);
@@ -360,11 +386,10 @@
           player.health += pack.heal;
           if (player.health > 100) player.health = 100;
           healthPacks.splice(i, 1);
-          console.log("Picked up health! Health:", player.health);
+          logDebug("Picked up health pack. Health: " + player.health);
         }
       }
 
-      // Emit updated movement (including health) in multiplayer mode.
       if (gameMode === "multiplayer" && socket) {
         socket.emit("playerMovement", { 
           x: player.x, 
@@ -380,7 +405,6 @@
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw targets (target practice only).
       if (gameMode === "target") {
         for (const target of targets) {
           ctx.fillStyle = "red";
@@ -390,13 +414,11 @@
         }
       }
       
-      // Draw obstacles.
       for (const obs of obstacles) {
         ctx.fillStyle = "gray";
         ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
       }
       
-      // Draw health packs.
       for (const pack of healthPacks) {
         ctx.fillStyle = "lime";
         ctx.beginPath();
@@ -408,7 +430,6 @@
         ctx.fillText("HP", pack.x, pack.y + 4);
       }
       
-      // Draw upgrades.
       upgrades.forEach(upg => {
         ctx.fillStyle = upg.type === "shotgun" ? "orange" : upg.type === "assault" ? "green" : "gray";
         ctx.beginPath();
@@ -420,10 +441,8 @@
         ctx.fillText(upg.type === "shotgun" ? "SG" : upg.type === "assault" ? "AR" : "", upg.x, upg.y + 4);
       });
       
-      // Draw local bullets.
       drawBullets(ctx);
       
-      // Draw remote bullets.
       if (gameMode === "multiplayer") {
         for (const bullet of remoteBullets) {
           ctx.fillStyle = "purple";
@@ -433,7 +452,6 @@
         }
       }
       
-      // Draw local player.
       ctx.fillStyle = player.color;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
@@ -444,7 +462,6 @@
       ctx.textAlign = "center";
       ctx.fillText("HP: " + player.health, player.x, player.y - player.radius - 10);
       
-      // Draw remote players.
       if (gameMode === "multiplayer") {
         for (let id in remotePlayers) {
           const p = remotePlayers[id];
