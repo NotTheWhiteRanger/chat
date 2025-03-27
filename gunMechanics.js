@@ -14,7 +14,7 @@ let lastShotTime = 0;
 function shootBullet(player, gameMode, socket) {
   const now = Date.now();
   const props = weaponProperties[currentWeapon];
-  // Assault rifle fires a burst.
+  
   if (currentWeapon === "assault") {
     if (now - lastShotTime < props.cooldown) return;
     lastShotTime = now;
@@ -30,7 +30,7 @@ function shootBullet(player, gameMode, socket) {
         };
         bullets.push(bullet);
         if (gameMode === "multiplayer" && socket) {
-          socket.emit("shoot", { bullet: bullet });
+          socket.emit("playerShot", bullet);
         }
       }, i * props.burstDelay);
     }
@@ -50,7 +50,7 @@ function shootBullet(player, gameMode, socket) {
         };
         bullets.push(bullet);
         if (gameMode === "multiplayer" && socket) {
-          socket.emit("shoot", { bullet: bullet });
+          socket.emit("playerShot", bullet);
         }
       }
     } else {
@@ -64,13 +64,13 @@ function shootBullet(player, gameMode, socket) {
       };
       bullets.push(bullet);
       if (gameMode === "multiplayer" && socket) {
-        socket.emit("shoot", { bullet: bullet });
+        socket.emit("playerShot", bullet);
       }
     }
   }
 }
 
-// updateBullets updates the positions of local bullets and removes them if off-screen or if they hit obstacles.
+// updateBullets updates positions of local bullets and removes them if off-screen or on obstacle collision.
 function updateBullets(canvas, obstacles) {
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
@@ -81,7 +81,7 @@ function updateBullets(canvas, obstacles) {
       bullets.splice(i, 1);
       continue;
     }
-    // Check collision with any obstacle.
+    // Check collision with obstacles.
     for (let obs of obstacles) {
       if (b.x > obs.x && b.x < obs.x + obs.width &&
           b.y > obs.y && b.y < obs.y + obs.height) {
