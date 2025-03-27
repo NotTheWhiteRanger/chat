@@ -15,16 +15,13 @@
       display: block;
       margin: 0 auto;
     }
-    #score, #health {
+    #score {
       position: absolute;
       top: 10px;
       left: 10px;
       color: #fff;
       font-size: 24px;
       z-index: 10;
-    }
-    #health {
-      top: 50px;
     }
     #weaponDisplay {
       position: absolute;
@@ -36,7 +33,7 @@
     }
     #connectionStatus {
       position: absolute;
-      top: 90px;
+      top: 50px;
       left: 10px;
       color: #fff;
       font-size: 18px;
@@ -77,11 +74,9 @@
   </div>
 
   <div id="score">Score: 0</div>
-  <div id="health">Health: 100</div>
   <div id="weaponDisplay">Weapon: Pistol</div>
   <div id="connectionStatus">Status: Not Connected</div>
-  <!-- Expanded map size -->
-  <canvas id="gameCanvas" width="1600" height="1200"></canvas>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
 
   <!-- Include external gun mechanics code -->
   <script src="gunMechanics.js"></script>
@@ -92,8 +87,6 @@
     let localPlayerId = null;
     const remotePlayers = {};
     const remoteBullets = [];
-    // Damage dealt per bullet
-    const bulletDamage = 20;
 
     const menu = document.getElementById("menu");
     const targetPracticeBtn = document.getElementById("targetPracticeBtn");
@@ -116,7 +109,7 @@
     // Multiplayer initialization: update the URL below with your AWS server's IP/domain and port.
     function initMultiplayer() {
       connectionStatus.textContent = "Status: Connecting...";
-      socket = io("https://kcschat.org:3000", {  // <-- Replace with your AWS server address.
+      socket = io("https://3.148.222.243:3000", {  // <-- Replace with your AWS server address.
         transports: ["websocket"]
       });
       socket.on("connect", () => {
@@ -134,17 +127,11 @@
         for (let id in players) {
           if (id === localPlayerId) continue;
           remotePlayers[id] = players[id];
-          if (!remotePlayers[id].health) {
-            remotePlayers[id].health = 100;
-          }
         }
       });
       socket.on("newPlayer", (playerData) => {
         if (playerData.id !== localPlayerId) {
           remotePlayers[playerData.id] = playerData;
-          if (!remotePlayers[playerData.id].health) {
-            remotePlayers[playerData.id].health = 100;
-          }
           console.log("New player joined:", playerData.id);
         }
       });
@@ -156,15 +143,8 @@
             remotePlayers[data.id].angle = data.angle;
             remotePlayers[data.id].weapon = data.weapon;
             remotePlayers[data.id].score = data.score;
-            // If health is not provided, keep the existing value
-            if (data.health !== undefined) {
-              remotePlayers[data.id].health = data.health;
-            }
           } else {
             remotePlayers[data.id] = data;
-            if (!remotePlayers[data.id].health) {
-              remotePlayers[data.id].health = 100;
-            }
           }
         }
       });
@@ -184,7 +164,7 @@
     let score = 0;
     document.getElementById("score").textContent = "Score: " + score;
 
-    // The player object now uses "currentWeapon" from gunMechanics.js and includes health.
+    // The player object now uses "currentWeapon" from gunMechanics.js
     const player = {
       x: canvas.width / 2,
       y: canvas.height / 2,
@@ -193,31 +173,8 @@
       color: "blue",
       angle: 0,
       weapon: currentWeapon, // currentWeapon defined in gunMechanics.js
-      score: score,
-      health: 100
+      score: score
     };
-
-    // Obstacles added to the map (as gray rectangles)
-    const obstacles = [
-      { x: 300, y: 300, width: 200, height: 20 },
-      { x: 1000, y: 800, width: 20, height: 200 },
-      { x: 700, y: 500, width: 150, height: 150 }
-    ];
-
-    // Collision detection between a circle and a rectangle
-    function circleRectCollision(circle, rect) {
-      const distX = Math.abs(circle.x - rect.x - rect.width / 2);
-      const distY = Math.abs(circle.y - rect.y - rect.height / 2);
-
-      if (distX > (rect.width / 2 + circle.radius)) return false;
-      if (distY > (rect.height / 2 + circle.radius)) return false;
-      if (distX <= (rect.width / 2)) return true;
-      if (distY <= (rect.height / 2)) return true;
-      
-      const dx = distX - rect.width / 2;
-      const dy = distY - rect.height / 2;
-      return (dx * dx + dy * dy <= (circle.radius * circle.radius));
-    }
 
     function drawFacingIndicator(p, color = "black") {
       const lineLength = p.radius + 15;
@@ -266,29 +223,14 @@
     });
 
     function update() {
-      // Save previous position for collision rollback
-      const oldX = player.x;
-      const oldY = player.y;
-
       if (keysPressed["ArrowUp"] || keysPressed["w"]) player.y -= player.speed;
       if (keysPressed["ArrowDown"] || keysPressed["s"]) player.y += player.speed;
       if (keysPressed["ArrowLeft"] || keysPressed["a"]) player.x -= player.speed;
       if (keysPressed["ArrowRight"] || keysPressed["d"]) player.x += player.speed;
-
-      // Boundaries of the canvas
       if (player.x < player.radius) player.x = player.radius;
       if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
       if (player.y < player.radius) player.y = player.radius;
       if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
-
-      // Check collision with obstacles, revert if collision occurs
-      for (const obs of obstacles) {
-        if (circleRectCollision(player, obs)) {
-          player.x = oldX;
-          player.y = oldY;
-          break;
-        }
-      }
 
       // Update bullets via the external gun mechanics code
       updateBullets(canvas);
@@ -310,38 +252,13 @@
         }
       }
 
-      // In multiplayer mode, handle bullet collisions with players.
       if (gameMode === "multiplayer") {
-        // Local player's bullets hitting remote players
-        for (let i = bullets.length - 1; i >= 0; i--) {
-          const b = bullets[i];
-          for (let id in remotePlayers) {
-            const rp = remotePlayers[id];
-            const dist = Math.hypot(b.x - rp.x, b.y - rp.y);
-            if (dist < b.radius + rp.radius) {
-              rp.health -= bulletDamage;
-              bullets.splice(i, 1);
-              if (rp.health <= 0) {
-                delete remotePlayers[id];
-              }
-              break;
-            }
-          }
-        }
-        // Remote bullets hitting local player
         for (let i = remoteBullets.length - 1; i >= 0; i--) {
           const b = remoteBullets[i];
-          const dist = Math.hypot(b.x - player.x, b.y - player.y);
-          if (dist < b.radius + player.radius) {
-            player.health -= bulletDamage;
+          b.x += b.speed * Math.cos(b.angle);
+          b.y += b.speed * Math.sin(b.angle);
+          if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
             remoteBullets.splice(i, 1);
-            if (player.health <= 0) {
-              alert("Game Over!");
-              player.health = 100;
-              player.score = 0;
-              score = 0;
-              document.getElementById("score").textContent = "Score: " + score;
-            }
           }
         }
       }
@@ -365,32 +282,20 @@
         }
       }
 
-      // Update local health display
-      document.getElementById("health").textContent = "Health: " + player.health;
-
       if (gameMode === "multiplayer" && socket) {
-        // Optionally, you could send health updates as well.
         socket.emit("playerMovement", { 
           x: player.x, 
           y: player.y, 
           angle: player.angle, 
           weapon: currentWeapon, 
-          score: player.score,
-          health: player.health
+          score: player.score 
         });
       }
     }
 
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw obstacles
-      for (const obs of obstacles) {
-        ctx.fillStyle = "gray";
-        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-      }
-
-      // Draw targets
+      
       for (const target of targets) {
         ctx.fillStyle = "red";
         ctx.beginPath();
@@ -402,38 +307,14 @@
       drawBullets(ctx);
 
       if (gameMode === "multiplayer") {
-        // Draw remote bullets
         for (const bullet of remoteBullets) {
           ctx.fillStyle = "purple";
           ctx.beginPath();
           ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
           ctx.fill();
         }
-        // Draw remote players with health bars and scores.
-        for (let id in remotePlayers) {
-          const rp = remotePlayers[id];
-          ctx.fillStyle = "cyan";
-          ctx.beginPath();
-          ctx.arc(rp.x, rp.y, rp.radius, 0, Math.PI * 2);
-          ctx.fill();
-          drawFacingIndicator(rp, "gray");
-          // Health bar above remote player
-          const barWidth = rp.radius * 2;
-          const barHeight = 5;
-          const healthPercent = rp.health / 100;
-          ctx.fillStyle = "green";
-          ctx.fillRect(rp.x - rp.radius, rp.y - rp.radius - 10, barWidth * healthPercent, barHeight);
-          ctx.strokeStyle = "black";
-          ctx.strokeRect(rp.x - rp.radius, rp.y - rp.radius - 10, barWidth, barHeight);
-          // Score text
-          ctx.fillStyle = "black";
-          ctx.font = "12px sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText("Score: " + (rp.score || 0), rp.x, rp.y - rp.radius - 20);
-        }
       }
       
-      // Draw weapon upgrades
       upgrades.forEach(upg => {
         ctx.fillStyle = upg.type === "shotgun" ? "orange" : upg.type === "assault" ? "green" : "gray";
         ctx.beginPath();
@@ -445,12 +326,26 @@
         ctx.fillText(upg.type === "shotgun" ? "SG" : upg.type === "assault" ? "AR" : "", upg.x, upg.y + 4);
       });
       
-      // Draw local player
       ctx.fillStyle = player.color;
       ctx.beginPath();
       ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
       ctx.fill();
       drawFacingIndicator(player);
+
+      if (gameMode === "multiplayer") {
+        for (let id in remotePlayers) {
+          const p = remotePlayers[id];
+          ctx.fillStyle = "cyan";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          drawFacingIndicator(p, "gray");
+          ctx.fillStyle = "black";
+          ctx.font = "12px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("Score: " + (p.score || 0), p.x, p.y - p.radius - 10);
+        }
+      }
     }
 
     function gameLoop() {
