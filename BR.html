@@ -144,14 +144,14 @@
           remoteBullets.push({ ...data.bullet, owner: data.id });
         }
       });
-      // Updated damage handler: update health with the server's health value.
+      // Damage handler.
       socket.on("playerDamaged", (data) => {
         if (data.id === localPlayerId) {
           player.health = data.health;
           console.log("Local health updated from server. Health:", player.health);
           if (player.health <= 0) {
             alert("You Lose!");
-            location.reload(); // Reloads the game
+            location.reload();
           }
         } else if (remotePlayers[data.id]) {
           remotePlayers[data.id].health = data.health;
@@ -273,7 +273,7 @@
           for (let j = targets.length - 1; j >= 0; j--) {
             const t = targets[j];
             const dist = Math.hypot(b.x - t.x, b.y - t.y);
-            if (dist < b.radius + t.radius) {
+            if (dist < (b.radius || 5) + t.radius) {
               targets.splice(j, 1);
               bullets.splice(i, 1);
               score++;
@@ -292,7 +292,7 @@
         }
       }
 
-      // MULTIPLAYER: Handle remote bullet collisions.
+      // MULTIPLAYER: Handle bullet collisions.
       if (gameMode === "multiplayer") {
         // Process remote bullets.
         for (let i = remoteBullets.length - 1; i >= 0; i--) {
@@ -312,10 +312,10 @@
             }
           }
           // Check collision with local player.
+          const bulletRadius = b.radius || 5;
           const dist = Math.hypot(b.x - player.x, b.y - player.y);
-          if (dist < b.radius + player.radius && b.owner !== localPlayerId) {
+          if (dist < bulletRadius + player.radius && b.owner !== localPlayerId) {
             remoteBullets.splice(i, 1);
-            // Emit damage to the server.
             if (socket) {
               socket.emit("playerDamaged", { id: localPlayerId, damage: 10 });
             }
@@ -326,10 +326,11 @@
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
           if (b.owner !== localPlayerId) continue;
+          const bulletRadius = b.radius || 5;
           for (let id in remotePlayers) {
             const rp = remotePlayers[id];
             const dist = Math.hypot(b.x - rp.x, b.y - rp.y);
-            if (dist < b.radius + rp.radius) {
+            if (dist < bulletRadius + rp.radius) {
               bullets.splice(i, 1);
               if (socket) socket.emit("playerDamaged", { id: id, damage: 10 });
               console.log("Local bullet hit remote player " + id + ". Damage event sent.");
@@ -427,7 +428,7 @@
         for (const bullet of remoteBullets) {
           ctx.fillStyle = "purple";
           ctx.beginPath();
-          ctx.arc(bullet.x, bullet.y, bullet.radius, 0, Math.PI * 2);
+          ctx.arc(bullet.x, bullet.y, bullet.radius || 5, 0, Math.PI * 2);
           ctx.fill();
         }
       }
