@@ -264,6 +264,11 @@
                 window.location.href = "index.html";
             }
         });
+
+        // Expose functions to the global scope so inline onclicks can access them.
+        window.playSlots = playSlots;
+        window.playBlackjack = playBlackjack;
+        window.playRoulette = playRoulette;
     </script>
 </body>
 </html>
