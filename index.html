@@ -413,7 +413,7 @@
         });
     });
 
-    // Search bar logic
+    // Search bar logic with added "Hacker" trigger
     const searchBar = document.getElementById("searchBar");
     searchBar.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
@@ -421,6 +421,8 @@
           window.location.href = "encryptionTool.html";
         } else if (searchBar.value === "SecretChat") {
           window.location.href = "encryptchat.html";
+        } else if (searchBar.value === "Hacker") {
+          window.location.href = "HackOrBeHacked.html";
         }
       }
     });
