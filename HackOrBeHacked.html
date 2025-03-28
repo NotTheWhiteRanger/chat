@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hack or Be Hacked</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+    #gameArea { max-width: 800px; margin: 0 auto; }
+    .hidden { display: none; }
+    #damageMeter { width: 300px; height: 20px; background: #ddd; margin: 10px 0; }
+    #damageFill { height: 100%; width: 0; background: red; }
+  </style>
+</head>
+<body>
+  <div id="gameArea">
+    <h1>Hack or Be Hacked</h1>
+
+    <!-- Lobby -->
+    <div id="lobby">
+      <h2>Players</h2>
+      <ul id="playerList"></ul>
+    </div>
+
+    <!-- Game Content -->
+    <div id="gameContent" class="hidden">
+      <h2 id="roundInfo"></h2>
+      <div id="roleInfo"></div>
+
+      <!-- Attacker UI -->
+      <div id="attackArea">
+        <h3 id="attackPrompt"></h3>
+        <div id="attackOptions">
+          <select id="attackSelect">
+            <option value="Phishing">Phishing</option>
+            <option value="DDoS">DDoS</option>
+            <option value="SQL Injection">SQL Injection</option>
+            <option value="Malware Injection">Malware Injection</option>
+            <option value="Ransomware">Ransomware</option>
+            <option value="Man-in-the-Middle">Man-in-the-Middle</option>
+            <option value="Cross-Site Scripting">Cross-Site Scripting</option>
+            <option value="Brute Force Attack">Brute Force Attack</option>
+            <option value="Credential Stuffing">Credential Stuffing</option>
+            <option value="DNS Spoofing">DNS Spoofing</option>
+            <option value="Exploit">Exploit</option>
+          </select>
+          <button id="attackButton">Launch Attack</button>
+        </div>
+      </div>
+
+      <!-- Defender UI -->
+      <div id="defenseArea" class="hidden">
+        <h3 id="defensePrompt"></h3>
+        <div id="damageMeter">
+          <div id="damageFill"></div>
+        </div>
+        <div id="miniGameArea">
+          <p>Solve the puzzle to reduce damage:</p>
+          <p id="puzzle">Rearrange: TCESEL</p>
+          <input type="text" id="puzzleInput" placeholder="Type answer here">
+          <button id="submitDefense">Submit Defense</button>
+        </div>
+        <div id="defenseResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io from CDN -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script>
+    // IMPORTANT: Replace with your AWS server URL or IP + port
+    const socket = io("http://YOUR_AWS_PUBLIC_IP:3000");
+
+    const playerListElem = document.getElementById('playerList');
+    const gameContent = document.getElementById('gameContent');
+    const roundInfo = document.getElementById('roundInfo');
+    const roleInfo = document.getElementById('roleInfo');
+    const attackPrompt = document.getElementById('attackPrompt');
+    const attackOptions = document.getElementById('attackOptions');
+    const attackSelect = document.getElementById('attackSelect');
+    const attackButton = document.getElementById('attackButton');
+    const defenseArea = document.getElementById('defenseArea');
+    const defensePrompt = document.getElementById('defensePrompt');
+    const damageFill = document.getElementById('damageFill');
+    const puzzle = document.getElementById('puzzle');
+    const puzzleInput = document.getElementById('puzzleInput');
+    const submitDefense = document.getElementById('submitDefense');
+    const defenseResultElem = document.getElementById('defenseResult');
+
+    let role = '';
+
+    // Update player list
+    socket.on('playerList', (players) => {
+      playerListElem.innerHTML = '';
+      players.forEach(p => {
+        let li = document.createElement('li');
+        li.textContent = `${p.username} (Integrity: ${p.integrity}, Score: ${p.score})`;
+        playerListElem.appendChild(li);
+      });
+    });
+
+    // New round
+    socket.on('newRound', (data) => {
+      gameContent.classList.remove('hidden');
+      roundInfo.textContent = 'Round ' + data.round;
+
+      if (socket.id === data.attacker.id) {
+        role = 'attacker';
+        roleInfo.textContent = 'You are the Attacker targeting ' + data.defender.username;
+        attackPrompt.textContent = 'Select an attack to launch:';
+        attackOptions.style.display = 'block';
+        defenseArea.classList.add('hidden');
+      } else if (socket.id === data.defender.id) {
+        role = 'defender';
+        roleInfo.textContent = 'You are the Defender against ' + data.attacker.username;
+        attackOptions.style.display = 'none';
+        defenseArea.classList.remove('hidden');
+        defensePrompt.textContent = 'Incoming attack! Prepare your defense!';
+        damageFill.style.width = '0px';
+      } else {
+        role = 'spectator';
+        roleInfo.textContent = 'You are spectating this round.';
+        attackOptions.style.display = 'none';
+        defenseArea.classList.add('hidden');
+      }
+    });
+
+    // Attacker chooses an attack
+    attackButton.addEventListener('click', () => {
+      const attackType = attackSelect.value;
+      socket.emit('attack', { attackType });
+      attackOptions.style.display = 'none';
+      roleInfo.textContent += ' – Attack launched: ' + attackType;
+    });
+
+    // Defender sees incoming attack
+    socket.on('incomingAttack', (data) => {
+      defensePrompt.textContent = 'Under attack with: ' + data.attackType;
+      puzzle.textContent = 'Rearrange: TCESEL';
+      puzzleInput.value = '';
+      defenseResultElem.textContent = '';
+    });
+
+    // Update damage meter as attack progresses
+    socket.on('attackProgress', (data) => {
+      damageFill.style.width = (data.damage * 3) + 'px'; 
+    });
+
+    // Defender submits puzzle solution
+    submitDefense.addEventListener('click', () => {
+      const answer = puzzleInput.value.trim().toUpperCase();
+      const success = (answer === 'SELECT'); // Example puzzle
+      const reduction = success ? 50 : 0;
+      socket.emit('defense', { success, reduction });
+    });
+
+    // Defender result
+    socket.on('defenseResult', (data) => {
+      defenseResultElem.textContent = 'You took ' + data.effectiveDamage + ' damage. Remaining Integrity: ' + data.remainingIntegrity;
+    });
+
+    // Attacker result
+    socket.on('attackResult', (data) => {
+      if (role === 'attacker') {
+        roleInfo.textContent += ' – Inflicted ' + data.inflictedDamage + ' damage. Target Integrity: ' + data.targetIntegrity;
+      }
+    });
+
+    // Game reset
+    socket.on('reset', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>
