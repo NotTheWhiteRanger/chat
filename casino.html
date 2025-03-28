@@ -11,9 +11,9 @@
         .balance-info { margin-bottom: 20px; }
         .game-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; margin-bottom: 20px; }
         .game-section h3 { margin-top: 0; }
-        .game-section input[type="number"] { width: 80px; }
+        .game-section input[type="number"], .game-section select { width: 80px; margin-right: 10px; }
         .game-section button { margin-top: 10px; padding: 5px 10px; }
-        #result { margin-top: 10px; font-weight: bold; }
+        .result { margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -22,17 +22,19 @@
         <p>Your ScamHu Points: <span id="userPoints">Loading...</span></p>
         <p>House Wealth: <span id="houseWealth">Loading...</span></p>
     </div>
+
+    <!-- Existing Games -->
     <div class="game-section" id="slotsSection">
         <h3>Slots</h3>
         <p>Bet (min 50): <input type="number" id="slotsBet" min="50" value="50" /></p>
         <button onclick="playSlots()">Play Slots</button>
-        <div id="slotsResult"></div>
+        <div id="slotsResult" class="result"></div>
     </div>
     <div class="game-section" id="blackjackSection">
         <h3>Blackjack</h3>
         <p>Bet (min 50): <input type="number" id="blackjackBet" min="50" value="50" /></p>
         <button onclick="playBlackjack()">Play Blackjack</button>
-        <div id="blackjackResult"></div>
+        <div id="blackjackResult" class="result"></div>
     </div>
     <div class="game-section" id="rouletteSection">
         <h3>Roulette</h3>
@@ -44,8 +46,63 @@
             </select>
         </p>
         <button onclick="playRoulette()">Play Roulette</button>
-        <div id="rouletteResult"></div>
+        <div id="rouletteResult" class="result"></div>
     </div>
+
+    <!-- New Game: Dice Duel -->
+    <div class="game-section" id="diceSection">
+        <h3>Dice Duel</h3>
+        <p>Bet (min 50): <input type="number" id="diceBet" min="50" value="50" /></p>
+        <button onclick="playDiceDuel()">Play Dice Duel</button>
+        <div id="diceResult" class="result"></div>
+    </div>
+
+    <!-- New Game: High-Low -->
+    <div class="game-section" id="highLowSection">
+        <h3>High-Low</h3>
+        <p>Bet (min 50): <input type="number" id="highLowBet" min="50" value="50" /></p>
+        <p>Guess: 
+            <select id="highLowChoice">
+                <option value="high">High</option>
+                <option value="low">Low</option>
+            </select>
+        </p>
+        <button onclick="playHighLow()">Play High-Low</button>
+        <div id="highLowResult" class="result"></div>
+    </div>
+
+    <!-- New Game: Jackpot Wheel -->
+    <div class="game-section" id="jackpotSection">
+        <h3>ScamHu Jackpot Wheel</h3>
+        <p>Spin Cost: 100 points</p>
+        <button onclick="spinJackpotWheel()">Spin the Wheel</button>
+        <div id="jackpotResult" class="result"></div>
+    </div>
+
+    <!-- New Game: Scratch-Off Cards -->
+    <div class="game-section" id="scratchSection">
+        <h3>Scratch-Off Cards</h3>
+        <p>Bet (min 50): <input type="number" id="scratchBet" min="50" value="50" /></p>
+        <button onclick="playScratchOff()">Play Scratch-Off</button>
+        <div id="scratchResult" class="result"></div>
+    </div>
+
+    <!-- New Game: Cat Race -->
+    <div class="game-section" id="raceSection">
+        <h3>Cat Race</h3>
+        <p>Bet (min 50): <input type="number" id="raceBet" min="50" value="50" /></p>
+        <p>Choose your cat: 
+            <select id="raceChoice">
+                <option value="Whiskers">Whiskers</option>
+                <option value="Fluffy">Fluffy</option>
+                <option value="Tiger">Tiger</option>
+                <option value="Simba">Simba</option>
+            </select>
+        </p>
+        <button onclick="playCatRace()">Bet on Cat Race</button>
+        <div id="raceResult" class="result"></div>
+    </div>
+
     <button onclick="window.location.href='index.html'">Back to Home</button>
 
     <script type="module">
@@ -140,6 +197,8 @@
             return bet;
         }
 
+        // --- Existing Game Functions ---
+
         // Slots game logic
         function playSlots() {
             if (!currentUser) { alert("Please sign in to play."); return; }
@@ -147,11 +206,9 @@
             try {
                 bet = getBetAmount("slotsBet");
             } catch (e) { return; }
-            // Deduct bet from user points
             updateUserPoints(currentUser.uid, userPoints - bet);
-            updateHouseWealth(bet); // house gains the bet amount initially
+            updateHouseWealth(bet);
 
-            // Simulate slot spin: three random numbers 0-9
             const slot1 = Math.floor(Math.random() * 10);
             const slot2 = Math.floor(Math.random() * 10);
             const slot3 = Math.floor(Math.random() * 10);
@@ -166,13 +223,10 @@
             } else {
                 resultMessage += "No match. You lose.";
             }
-
-            // Update points if win
             if (payout > 0) {
                 updateUserPoints(currentUser.uid, userPoints + payout);
                 updateHouseWealth(-payout);
             }
-
             document.getElementById("slotsResult").textContent = resultMessage;
         }
 
@@ -183,13 +237,11 @@
             try {
                 bet = getBetAmount("blackjackBet");
             } catch (e) { return; }
-            // Deduct bet from user points
             updateUserPoints(currentUser.uid, userPoints - bet);
             updateHouseWealth(bet);
 
-            // Simplified blackjack: generate random totals for player and dealer
-            const playerTotal = Math.floor(Math.random() * 8) + 15; // 15 to 22
-            const dealerTotal = Math.floor(Math.random() * 7) + 16; // 16 to 22
+            const playerTotal = Math.floor(Math.random() * 8) + 15; // 15-22
+            const dealerTotal = Math.floor(Math.random() * 7) + 16; // 16-22
 
             let resultMessage = `Your total: ${playerTotal}, Dealer's total: ${dealerTotal}. `;
             let payout = 0;
@@ -199,21 +251,19 @@
                 payout = bet * 2;
                 resultMessage += "You win " + payout + " points!";
             } else if (playerTotal === dealerTotal) {
-                payout = bet; // return bet
+                payout = bet;
                 resultMessage += "Push! Your bet is returned.";
             } else {
                 resultMessage += "You lose.";
             }
-
             if (payout > 0) {
                 updateUserPoints(currentUser.uid, userPoints + payout);
                 updateHouseWealth(- (payout - bet));
             }
-
             document.getElementById("blackjackResult").textContent = resultMessage;
         }
 
-        // Roulette game logic (bet on red or black)
+        // Roulette game logic
         function playRoulette() {
             if (!currentUser) { alert("Please sign in to play."); return; }
             let bet;
@@ -221,11 +271,9 @@
                 bet = getBetAmount("rouletteBet");
             } catch (e) { return; }
             const choice = document.getElementById("rouletteChoice").value;
-            // Deduct bet from user points
             updateUserPoints(currentUser.uid, userPoints - bet);
             updateHouseWealth(bet);
 
-            // Simulate roulette spin: outcome probabilities (red: 47%, black: 47%, green: 6%)
             let rand = Math.random();
             let outcome = "";
             if (rand < 0.47) {
@@ -235,7 +283,6 @@
             } else {
                 outcome = "green";
             }
-
             let payout = 0;
             let resultMessage = `Roulette landed on ${outcome}. `;
             if (outcome === choice) {
@@ -244,16 +291,178 @@
             } else {
                 resultMessage += "You lose.";
             }
-
             if (payout > 0) {
                 updateUserPoints(currentUser.uid, userPoints + payout);
                 updateHouseWealth(- (payout - bet));
             }
-
             document.getElementById("rouletteResult").textContent = resultMessage;
         }
 
-        // Listen for auth state changes
+        // --- New Game Functions ---
+
+        // Dice Duel game logic
+        function playDiceDuel() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("diceBet");
+            } catch (e) { return; }
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            const playerRoll = Math.floor(Math.random() * 6) + 1;
+            const houseRoll = Math.floor(Math.random() * 6) + 1;
+            let payout = 0;
+            let resultMessage = `You rolled ${playerRoll}, House rolled ${houseRoll}. `;
+            if (playerRoll > houseRoll) {
+                payout = bet * 2;
+                resultMessage += "You win " + payout + " points!";
+            } else if (playerRoll === houseRoll) {
+                payout = bet;
+                resultMessage += "It's a tie! Your bet is returned.";
+            } else {
+                resultMessage += "You lose.";
+            }
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+            document.getElementById("diceResult").textContent = resultMessage;
+        }
+
+        // High-Low game logic
+        function playHighLow() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("highLowBet");
+            } catch (e) { return; }
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            const firstCard = Math.floor(Math.random() * 13) + 1;
+            const guess = document.getElementById("highLowChoice").value;
+            const secondCard = Math.floor(Math.random() * 13) + 1;
+            let payout = 0;
+            let resultMessage = `First card: ${firstCard}, Second card: ${secondCard}. `;
+            if (firstCard === secondCard) {
+                payout = bet;
+                resultMessage += "It's a tie! Your bet is returned.";
+            } else if ((guess === "high" && secondCard > firstCard) || (guess === "low" && secondCard < firstCard)) {
+                payout = bet * 2;
+                resultMessage += "Correct guess! You win " + payout + " points!";
+            } else {
+                resultMessage += "Wrong guess. You lose.";
+            }
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+            document.getElementById("highLowResult").textContent = resultMessage;
+        }
+
+        // Jackpot Wheel game logic
+        function spinJackpotWheel() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            const spinCost = 100;
+            if (userPoints < spinCost) {
+                alert("Insufficient points to spin the wheel.");
+                return;
+            }
+            updateUserPoints(currentUser.uid, userPoints - spinCost);
+            updateHouseWealth(spinCost);
+
+            const outcomes = [
+                { result: "Win 50 points", multiplier: 50 },
+                { result: "Win 200 points", multiplier: 200 },
+                { result: "Lose 100 points", multiplier: -100 },
+                { result: "Try Again", multiplier: 0 },
+                { result: "DOUBLE your points", multiplier: "double" }
+            ];
+            const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+            let payout = 0;
+            let resultMessage = `Wheel outcome: ${outcome.result}. `;
+            if (outcome.multiplier === "double") {
+                payout = userPoints; // doubling current points (a huge win)
+                resultMessage += "Your points are doubled to " + (userPoints + payout) + "!";
+            } else if (outcome.multiplier > 0) {
+                payout = outcome.multiplier;
+                resultMessage += "You win " + payout + " points!";
+            } else if (outcome.multiplier < 0) {
+                resultMessage += "You lose an additional " + Math.abs(outcome.multiplier) + " points.";
+                updateUserPoints(currentUser.uid, userPoints - Math.abs(outcome.multiplier));
+                updateHouseWealth(Math.abs(outcome.multiplier));
+            } else {
+                resultMessage += "No change in points. Your spin cost is refunded.";
+                payout = spinCost;
+            }
+            if (payout > 0 && outcome.multiplier !== "double") {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(-payout);
+            }
+            document.getElementById("jackpotResult").textContent = resultMessage;
+        }
+
+        // Scratch-Off Cards game logic
+        function playScratchOff() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("scratchBet");
+            } catch (e) { return; }
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            const rand = Math.random();
+            let payout = 0;
+            let resultMessage = "";
+            if (rand < 0.4) {
+                resultMessage = "Scratch result: No win. You lose.";
+            } else if (rand < 0.7) {
+                payout = bet * 2;
+                resultMessage = "Scratch result: You win " + payout + " points!";
+            } else if (rand < 0.9) {
+                payout = bet * 3;
+                resultMessage = "Scratch result: Big win! You win " + payout + " points!";
+            } else {
+                payout = bet;
+                resultMessage = "Scratch result: Bonus! Your bet is returned.";
+            }
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+            document.getElementById("scratchResult").textContent = resultMessage;
+        }
+
+        // Cat Race game logic
+        function playCatRace() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("raceBet");
+            } catch (e) { return; }
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            const cats = ["Whiskers", "Fluffy", "Tiger", "Simba"];
+            const winningCat = cats[Math.floor(Math.random() * cats.length)];
+            const chosenCat = document.getElementById("raceChoice").value;
+            let payout = 0;
+            let resultMessage = `Winning cat: ${winningCat}. `;
+            if (chosenCat === winningCat) {
+                payout = bet * 3;
+                resultMessage += "You win " + payout + " points!";
+            } else {
+                resultMessage += "You lose.";
+            }
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+            document.getElementById("raceResult").textContent = resultMessage;
+        }
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -265,10 +474,15 @@
             }
         });
 
-        // Expose functions to the global scope so inline onclicks can access them.
+        // Expose functions to global scope for inline onclick attributes
         window.playSlots = playSlots;
         window.playBlackjack = playBlackjack;
         window.playRoulette = playRoulette;
+        window.playDiceDuel = playDiceDuel;
+        window.playHighLow = playHighLow;
+        window.spinJackpotWheel = spinJackpotWheel;
+        window.playScratchOff = playScratchOff;
+        window.playCatRace = playCatRace;
     </script>
 </body>
 </html>
