@@ -5,50 +5,95 @@
   <link rel="icon" type="image/png" href="images/favicon2.png">
   <title>Casino - Cats & Guns Central</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Include custom fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Press+Start+2P|Roboto&display=swap" rel="stylesheet">
   <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      margin: 20px; 
-      background: #f2f2f2; 
+    /* Global Styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('images/casino-bg.jpg');
+      background-size: cover;
+      color: #fff;
     }
-    h1, h2 { 
-      color: #1a73e8; 
+    h1, h2 {
+      font-family: 'Press Start 2P', cursive;
+      text-align: center;
+      margin: 20px 0;
     }
-    .balance-info { 
-      margin-bottom: 20px; 
-      font-size: 1.1em;
+    .balance-info {
+      text-align: center;
+      font-size: 1.2em;
+      margin-bottom: 20px;
     }
-    .game-section { 
-      border: 1px solid #ddd; 
-      padding: 15px; 
-      border-radius: 8px; 
-      background: #fff; 
-      margin-bottom: 20px; 
+    /* Grid Layout for Game Sections */
+    .games-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .game-section {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+      transition: transform 0.3s, box-shadow 0.3s;
       position: relative;
     }
-    .game-section h3 { 
-      margin-top: 0; 
+    .game-section:hover {
+      transform: scale(1.03);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7);
+    }
+    .game-section h3 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 1.2em;
     }
     .game-section input[type="number"],
-    .game-section select { 
-      width: 80px; 
-      margin-right: 10px; 
+    .game-section select {
+      width: 80px;
+      margin-right: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+      outline: none;
     }
-    .game-section button { 
-      margin-top: 10px; 
-      padding: 5px 10px; 
+    .game-section button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background: #1a73e8;
+      color: #fff;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
     }
-    .result { 
-      margin-top: 10px; 
-      font-weight: bold; 
+    .game-section button:hover {
+      background: #1558b0;
+      transform: scale(1.05);
     }
-    /* Image placeholders for graphical enhancements */
+    .result {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 1em;
+    }
     .game-image {
       display: block;
       margin: 10px auto;
-      max-width: 120px;
+      max-width: 150px;
+      transition: transform 0.3s;
     }
-    /* Simple animation for spinning elements */
+    .game-image:hover {
+      transform: scale(1.1);
+    }
     @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
@@ -56,29 +101,46 @@
     .spinning {
       animation: spin 2s linear;
     }
-    /* Leaderboard styling */
+    /* Leaderboard Styles */
     #leaderboard {
+      background: rgba(0, 0, 0, 0.7);
       border: 2px solid #1a73e8;
-      border-radius: 8px;
-      background: #fff;
-      padding: 10px;
-      margin-top: 30px;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 40px auto;
+      max-width: 600px;
     }
     #leaderboard h2 {
-      text-align: center;
+      margin-bottom: 20px;
     }
     #leaderboardTable {
       width: 100%;
       border-collapse: collapse;
     }
     #leaderboardTable th, #leaderboardTable td {
-      border: 1px solid #ddd;
-      padding: 8px;
+      border: 1px solid #fff;
+      padding: 10px;
       text-align: center;
     }
     #leaderboardTable th {
       background-color: #1a73e8;
+    }
+    /* Back to Home Button */
+    .back-button {
+      display: block;
+      margin: 30px auto;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      border-radius: 5px;
+      background: #1a73e8;
       color: #fff;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .back-button:hover {
+      background: #1558b0;
+      transform: scale(1.05);
     }
   </style>
 </head>
@@ -88,107 +150,99 @@
     <p>Your ScamHu Points: <span id="userPoints">Loading...</span></p>
     <p>House Wealth: <span id="houseWealth">Loading...</span></p>
   </div>
+  
+  <div class="games-container">
+    <!-- Slots Section -->
+    <div class="game-section" id="slotsSection">
+      <h3>Slots</h3>
+      <p>Bet (min 50): <input type="number" id="slotsBet" min="50" value="50" /></p>
+      <button onclick="playSlots()">Play Slots</button>
+      <img id="slotsImage" class="game-image" src="images/slot.png" alt="Slots Reel" />
+      <div id="slotsResult" class="result"></div>
+    </div>
 
-  <!-- Existing Games -->
+    <!-- Blackjack Section -->
+    <div class="game-section" id="blackjackSection">
+      <h3>Blackjack</h3>
+      <p>Bet (min 50): <input type="number" id="blackjackBet" min="50" value="50" /></p>
+      <button onclick="playBlackjack()">Play Blackjack</button>
+      <img id="blackjackImage" class="game-image" src="images/blackjack.png" alt="Blackjack Cards" />
+      <div id="blackjackResult" class="result"></div>
+    </div>
 
-  <!-- Slots Section with image -->
-  <div class="game-section" id="slotsSection">
-    <h3>Slots</h3>
-    <p>Bet (min 50): <input type="number" id="slotsBet" min="50" value="50" /></p>
-    <button onclick="playSlots()">Play Slots</button>
-    <!-- Image placeholder for slots reels -->
-    <img id="slotsImage" class="game-image" src="images/slot.png" alt="Slots Reel" />
-    <div id="slotsResult" class="result"></div>
-  </div>
+    <!-- Roulette Section -->
+    <div class="game-section" id="rouletteSection">
+      <h3>Roulette</h3>
+      <p>Bet (min 50): <input type="number" id="rouletteBet" min="50" value="50" /></p>
+      <p>Select Color: 
+        <select id="rouletteChoice">
+          <option value="red">Red</option>
+          <option value="black">Black</option>
+        </select>
+      </p>
+      <button onclick="playRoulette()">Play Roulette</button>
+      <img id="rouletteImage" class="game-image" src="images/roulette.png" alt="Roulette Wheel" />
+      <div id="rouletteResult" class="result"></div>
+    </div>
 
-  <!-- Blackjack Section with card display -->
-  <div class="game-section" id="blackjackSection">
-    <h3>Blackjack</h3>
-    <p>Bet (min 50): <input type="number" id="blackjackBet" min="50" value="50" /></p>
-    <button onclick="playBlackjack()">Play Blackjack</button>
-    <!-- Card images placeholder -->
-    <img id="blackjackImage" class="game-image" src="images/blackjack.png" alt="Blackjack Cards" />
-    <div id="blackjackResult" class="result"></div>
-  </div>
+    <!-- Dice Duel Section -->
+    <div class="game-section" id="diceSection">
+      <h3>Dice Duel</h3>
+      <p>Bet (min 50): <input type="number" id="diceBet" min="50" value="50" /></p>
+      <button onclick="playDiceDuel()">Play Dice Duel</button>
+      <img id="diceImage" class="game-image" src="images/dice.png" alt="Dice" />
+      <div id="diceResult" class="result"></div>
+    </div>
 
-  <!-- Roulette Section with animated wheel -->
-  <div class="game-section" id="rouletteSection">
-    <h3>Roulette</h3>
-    <p>Bet (min 50): <input type="number" id="rouletteBet" min="50" value="50" /></p>
-    <p>Select Color: 
-      <select id="rouletteChoice">
-        <option value="red">Red</option>
-        <option value="black">Black</option>
-      </select>
-    </p>
-    <button onclick="playRoulette()">Play Roulette</button>
-    <!-- Roulette wheel image that can spin -->
-    <img id="rouletteImage" class="game-image" src="images/roulette.png" alt="Roulette Wheel" />
-    <div id="rouletteResult" class="result"></div>
-  </div>
+    <!-- High-Low Section -->
+    <div class="game-section" id="highLowSection">
+      <h3>High-Low</h3>
+      <p>Bet (min 50): <input type="number" id="highLowBet" min="50" value="50" /></p>
+      <p>Guess: 
+        <select id="highLowChoice">
+          <option value="high">High</option>
+          <option value="low">Low</option>
+        </select>
+      </p>
+      <button onclick="playHighLow()">Play High-Low</button>
+      <img id="highLowImage" class="game-image" src="images/cards.png" alt="Cards" />
+      <div id="highLowResult" class="result"></div>
+    </div>
 
-  <!-- New Game: Dice Duel with dice image -->
-  <div class="game-section" id="diceSection">
-    <h3>Dice Duel</h3>
-    <p>Bet (min 50): <input type="number" id="diceBet" min="50" value="50" /></p>
-    <button onclick="playDiceDuel()">Play Dice Duel</button>
-    <!-- Dice image placeholder -->
-    <img id="diceImage" class="game-image" src="images/dice.png" alt="Dice" />
-    <div id="diceResult" class="result"></div>
-  </div>
+    <!-- Jackpot Wheel Section -->
+    <div class="game-section" id="jackpotSection">
+      <h3>ScamHu Jackpot Wheel</h3>
+      <p>Spin Cost: 100 points</p>
+      <button onclick="spinJackpotWheel()">Spin the Wheel</button>
+      <img id="jackpotImage" class="game-image" src="images/jackpot.png" alt="Jackpot Wheel" />
+      <div id="jackpotResult" class="result"></div>
+    </div>
 
-  <!-- New Game: High-Low with card image -->
-  <div class="game-section" id="highLowSection">
-    <h3>High-Low</h3>
-    <p>Bet (min 50): <input type="number" id="highLowBet" min="50" value="50" /></p>
-    <p>Guess: 
-      <select id="highLowChoice">
-        <option value="high">High</option>
-        <option value="low">Low</option>
-      </select>
-    </p>
-    <button onclick="playHighLow()">Play High-Low</button>
-    <!-- Card image placeholder -->
-    <img id="highLowImage" class="game-image" src="images/cards.png" alt="Cards" />
-    <div id="highLowResult" class="result"></div>
-  </div>
+    <!-- Scratch-Off Cards Section -->
+    <div class="game-section" id="scratchSection">
+      <h3>Scratch-Off Cards</h3>
+      <p>Bet (min 50): <input type="number" id="scratchBet" min="50" value="50" /></p>
+      <button onclick="playScratchOff()">Play Scratch-Off</button>
+      <img id="scratchImage" class="game-image" src="images/scratch.png" alt="Scratch-Off Card" />
+      <div id="scratchResult" class="result"></div>
+    </div>
 
-  <!-- New Game: Jackpot Wheel with spinning effect -->
-  <div class="game-section" id="jackpotSection">
-    <h3>ScamHu Jackpot Wheel</h3>
-    <p>Spin Cost: 100 points</p>
-    <button onclick="spinJackpotWheel()">Spin the Wheel</button>
-    <!-- Jackpot wheel image -->
-    <img id="jackpotImage" class="game-image" src="images/jackpot.png" alt="Jackpot Wheel" />
-    <div id="jackpotResult" class="result"></div>
-  </div>
-
-  <!-- New Game: Scratch-Off Cards with scratch card image -->
-  <div class="game-section" id="scratchSection">
-    <h3>Scratch-Off Cards</h3>
-    <p>Bet (min 50): <input type="number" id="scratchBet" min="50" value="50" /></p>
-    <button onclick="playScratchOff()">Play Scratch-Off</button>
-    <!-- Scratch card image placeholder -->
-    <img id="scratchImage" class="game-image" src="images/scratch.png" alt="Scratch-Off Card" />
-    <div id="scratchResult" class="result"></div>
-  </div>
-
-  <!-- New Game: Cat Race with simple animation -->
-  <div class="game-section" id="raceSection">
-    <h3>Cat Race</h3>
-    <p>Bet (min 50): <input type="number" id="raceBet" min="50" value="50" /></p>
-    <p>Choose your cat: 
-      <select id="raceChoice">
-        <option value="Whiskers">Whiskers</option>
-        <option value="Fluffy">Fluffy</option>
-        <option value="Tiger">Tiger</option>
-        <option value="Simba">Simba</option>
-      </select>
-    </p>
-    <button onclick="playCatRace()">Bet on Cat Race</button>
-    <!-- Cat race image placeholder; later this can be animated -->
-    <img id="raceImage" class="game-image" src="images/catrace.png" alt="Cat Race" />
-    <div id="raceResult" class="result"></div>
+    <!-- Cat Race Section -->
+    <div class="game-section" id="raceSection">
+      <h3>Cat Race</h3>
+      <p>Bet (min 50): <input type="number" id="raceBet" min="50" value="50" /></p>
+      <p>Choose your cat: 
+        <select id="raceChoice">
+          <option value="Whiskers">Whiskers</option>
+          <option value="Fluffy">Fluffy</option>
+          <option value="Tiger">Tiger</option>
+          <option value="Simba">Simba</option>
+        </select>
+      </p>
+      <button onclick="playCatRace()">Bet on Cat Race</button>
+      <img id="raceImage" class="game-image" src="images/catrace.png" alt="Cat Race" />
+      <div id="raceResult" class="result"></div>
+    </div>
   </div>
 
   <!-- Leaderboard Section -->
@@ -207,12 +261,14 @@
     </table>
   </div>
 
-  <button onclick="window.location.href='index.html'">Back to Home</button>
+  <div style="text-align: center; margin: 30px;">
+    <button onclick="window.location.href='index.html'" class="back-button">Back to Home</button>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { getDatabase, ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
@@ -309,7 +365,6 @@
       try { bet = getBetAmount("slotsBet"); } catch (e) { return; }
       updateUserPoints(currentUser.uid, userPoints - bet);
       updateHouseWealth(bet);
-      // Simulate slots outcome
       const slot1 = Math.floor(Math.random() * 10);
       const slot2 = Math.floor(Math.random() * 10);
       const slot3 = Math.floor(Math.random() * 10);
@@ -329,7 +384,6 @@
         updateHouseWealth(-payout);
       }
       document.getElementById("slotsResult").textContent = resultMessage;
-      // Animate the slot image (for example, a brief spin)
       const slotImg = document.getElementById("slotsImage");
       slotImg.classList.add("spinning");
       setTimeout(() => { slotImg.classList.remove("spinning"); }, 1000);
@@ -362,7 +416,6 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("blackjackResult").textContent = resultMessage;
-      // Simple card flip animation
       const bjImg = document.getElementById("blackjackImage");
       bjImg.classList.add("spinning");
       setTimeout(() => { bjImg.classList.remove("spinning"); }, 800);
@@ -394,7 +447,6 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("rouletteResult").textContent = resultMessage;
-      // Animate roulette wheel image
       const rouletteImg = document.getElementById("rouletteImage");
       rouletteImg.classList.add("spinning");
       setTimeout(() => { rouletteImg.classList.remove("spinning"); }, 2000);
@@ -425,7 +477,6 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("diceResult").textContent = resultMessage;
-      // Animate dice image
       const diceImg = document.getElementById("diceImage");
       diceImg.classList.add("spinning");
       setTimeout(() => { diceImg.classList.remove("spinning"); }, 1000);
@@ -457,7 +508,6 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("highLowResult").textContent = resultMessage;
-      // Animate card image
       const highLowImg = document.getElementById("highLowImage");
       highLowImg.classList.add("spinning");
       setTimeout(() => { highLowImg.classList.remove("spinning"); }, 800);
@@ -484,7 +534,7 @@
       let payout = 0;
       let resultMessage = `Wheel outcome: ${outcome.result}. `;
       if (outcome.multiplier === "double") {
-        payout = userPoints; // doubling current points
+        payout = userPoints;
         resultMessage += "Your points are doubled to " + (userPoints + payout) + "!";
       } else if (outcome.multiplier > 0) {
         payout = outcome.multiplier;
@@ -502,7 +552,6 @@
         updateHouseWealth(-payout);
       }
       document.getElementById("jackpotResult").textContent = resultMessage;
-      // Spin animation for jackpot wheel
       const jackpotImg = document.getElementById("jackpotImage");
       jackpotImg.classList.add("spinning");
       setTimeout(() => { jackpotImg.classList.remove("spinning"); }, 2000);
@@ -535,7 +584,6 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("scratchResult").textContent = resultMessage;
-      // Brief scratch effect: fade the scratch image out and back in
       const scratchImg = document.getElementById("scratchImage");
       scratchImg.style.opacity = 0.5;
       setTimeout(() => { scratchImg.style.opacity = 1; }, 800);
@@ -564,24 +612,19 @@
         updateHouseWealth(- (payout - bet));
       }
       document.getElementById("raceResult").textContent = resultMessage;
-      // Animate cat race image (simulate a race by sliding it)
       const raceImg = document.getElementById("raceImage");
       raceImg.style.transition = "transform 2s";
       raceImg.style.transform = "translateX(100px)";
-      setTimeout(() => { 
-        raceImg.style.transform = "translateX(0)";
-      }, 2100);
+      setTimeout(() => { raceImg.style.transform = "translateX(0)"; }, 2100);
       updateLeaderboard();
     }
 
-    // --- Leaderboard Function ---
     function updateLeaderboard() {
       const leaderboardBody = document.getElementById("leaderboardBody");
       const usersRef = ref(db, "users");
       get(usersRef).then(snapshot => {
         if (snapshot.exists()) {
           let usersData = snapshot.val();
-          // Convert object into an array and sort descending by points
           let usersArray = Object.values(usersData).sort((a, b) => b.points - a.points);
           let html = "";
           usersArray.forEach(user => {
@@ -602,7 +645,6 @@
         initUserPoints(user.uid);
         initHouseWealth();
         updateLeaderboard();
-        // Optionally, refresh the leaderboard every 30 seconds
         setInterval(updateLeaderboard, 30000);
       } else {
         alert("Please sign in to access the casino.");
@@ -610,7 +652,6 @@
       }
     });
 
-    // Expose functions to the global scope for inline onclick attributes.
     window.playSlots = playSlots;
     window.playBlackjack = playBlackjack;
     window.playRoulette = playRoulette;
