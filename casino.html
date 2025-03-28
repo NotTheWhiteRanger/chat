@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="images/favicon2.png">
+    <title>Casino - Cats & Guns Central</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f2f2f2; }
+        h1, h2 { color: #1a73e8; }
+        .balance-info { margin-bottom: 20px; }
+        .game-section { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; margin-bottom: 20px; }
+        .game-section h3 { margin-top: 0; }
+        .game-section input[type="number"] { width: 80px; }
+        .game-section button { margin-top: 10px; padding: 5px 10px; }
+        #result { margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the Casino</h1>
+    <div class="balance-info">
+        <p>Your ScamHu Points: <span id="userPoints">Loading...</span></p>
+        <p>House Wealth: <span id="houseWealth">Loading...</span></p>
+    </div>
+    <div class="game-section" id="slotsSection">
+        <h3>Slots</h3>
+        <p>Bet (min 50): <input type="number" id="slotsBet" min="50" value="50" /></p>
+        <button onclick="playSlots()">Play Slots</button>
+        <div id="slotsResult"></div>
+    </div>
+    <div class="game-section" id="blackjackSection">
+        <h3>Blackjack</h3>
+        <p>Bet (min 50): <input type="number" id="blackjackBet" min="50" value="50" /></p>
+        <button onclick="playBlackjack()">Play Blackjack</button>
+        <div id="blackjackResult"></div>
+    </div>
+    <div class="game-section" id="rouletteSection">
+        <h3>Roulette</h3>
+        <p>Bet (min 50): <input type="number" id="rouletteBet" min="50" value="50" /></p>
+        <p>Select Color: 
+            <select id="rouletteChoice">
+                <option value="red">Red</option>
+                <option value="black">Black</option>
+            </select>
+        </p>
+        <button onclick="playRoulette()">Play Roulette</button>
+        <div id="rouletteResult"></div>
+    </div>
+    <button onclick="window.location.href='index.html'">Back to Home</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+          authDomain: "new-chat-8d4f4.firebaseapp.com",
+          databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+          projectId: "new-chat-8d4f4",
+          storageBucket: "new-chat-8d4f4.firebasestorage.app",
+          messagingSenderId: "825077448854",
+          appId: "1:825077448854:web:3906174c00e1f6604782b7"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let userPoints = 0;
+        const MIN_BET = 50;
+        const DEFAULT_POINTS = 1000;
+
+        const userPointsElem = document.getElementById("userPoints");
+        const houseWealthElem = document.getElementById("houseWealth");
+
+        // Initialize house wealth if not exists
+        function initHouseWealth() {
+            const houseWealthRef = ref(db, "houseWealth");
+            get(houseWealthRef).then(snapshot => {
+                if (!snapshot.exists()) {
+                    set(houseWealthRef, 0);
+                    houseWealthElem.textContent = "0";
+                } else {
+                    houseWealthElem.textContent = snapshot.val();
+                }
+            });
+        }
+
+        // Update house wealth display
+        function updateHouseWealthDisplay(newWealth) {
+            houseWealthElem.textContent = newWealth;
+        }
+
+        // Initialize user points if not exists
+        function initUserPoints(uid) {
+            const userRef = ref(db, "users/" + uid);
+            get(userRef).then(snapshot => {
+                if (!snapshot.exists()) {
+                    set(userRef, { points: DEFAULT_POINTS });
+                    userPoints = DEFAULT_POINTS;
+                } else {
+                    userPoints = snapshot.val().points;
+                }
+                userPointsElem.textContent = userPoints;
+            });
+        }
+
+        // Update user points in firebase and display
+        function updateUserPoints(uid, newPoints) {
+            const userRef = ref(db, "users/" + uid);
+            update(userRef, { points: newPoints });
+            userPoints = newPoints;
+            userPointsElem.textContent = userPoints;
+        }
+
+        // Update house wealth in firebase
+        function updateHouseWealth(amount) {
+            const houseWealthRef = ref(db, "houseWealth");
+            get(houseWealthRef).then(snapshot => {
+                let currentWealth = snapshot.exists() ? snapshot.val() : 0;
+                let newWealth = currentWealth + amount;
+                set(houseWealthRef, newWealth);
+                updateHouseWealthDisplay(newWealth);
+            });
+        }
+
+        // Utility: check bet amount
+        function getBetAmount(inputId) {
+            const betInput = document.getElementById(inputId);
+            let bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet < MIN_BET) {
+                alert("Minimum bet is " + MIN_BET + " points.");
+                throw new Error("Invalid bet amount");
+            }
+            if (bet > userPoints) {
+                alert("Insufficient points for this bet.");
+                throw new Error("Insufficient points");
+            }
+            return bet;
+        }
+
+        // Slots game logic
+        function playSlots() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("slotsBet");
+            } catch (e) { return; }
+            // Deduct bet from user points
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet); // house gains the bet amount initially
+
+            // Simulate slot spin: three random numbers 0-9
+            const slot1 = Math.floor(Math.random() * 10);
+            const slot2 = Math.floor(Math.random() * 10);
+            const slot3 = Math.floor(Math.random() * 10);
+            let payout = 0;
+            let resultMessage = `Result: [ ${slot1} | ${slot2} | ${slot3} ] - `;
+            if (slot1 === slot2 && slot2 === slot3) {
+                payout = bet * 10;
+                resultMessage += "Jackpot! You win " + payout + " points!";
+            } else if (slot1 === slot2 || slot2 === slot3 || slot1 === slot3) {
+                payout = bet * 3;
+                resultMessage += "Two in a row! You win " + payout + " points!";
+            } else {
+                resultMessage += "No match. You lose.";
+            }
+
+            // Update points if win
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(-payout);
+            }
+
+            document.getElementById("slotsResult").textContent = resultMessage;
+        }
+
+        // Blackjack game logic (simplified)
+        function playBlackjack() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("blackjackBet");
+            } catch (e) { return; }
+            // Deduct bet from user points
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            // Simplified blackjack: generate random totals for player and dealer
+            const playerTotal = Math.floor(Math.random() * 8) + 15; // 15 to 22
+            const dealerTotal = Math.floor(Math.random() * 7) + 16; // 16 to 22
+
+            let resultMessage = `Your total: ${playerTotal}, Dealer's total: ${dealerTotal}. `;
+            let payout = 0;
+            if (playerTotal > 21) {
+                resultMessage += "Bust! You lose.";
+            } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                payout = bet * 2;
+                resultMessage += "You win " + payout + " points!";
+            } else if (playerTotal === dealerTotal) {
+                payout = bet; // return bet
+                resultMessage += "Push! Your bet is returned.";
+            } else {
+                resultMessage += "You lose.";
+            }
+
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+
+            document.getElementById("blackjackResult").textContent = resultMessage;
+        }
+
+        // Roulette game logic (bet on red or black)
+        function playRoulette() {
+            if (!currentUser) { alert("Please sign in to play."); return; }
+            let bet;
+            try {
+                bet = getBetAmount("rouletteBet");
+            } catch (e) { return; }
+            const choice = document.getElementById("rouletteChoice").value;
+            // Deduct bet from user points
+            updateUserPoints(currentUser.uid, userPoints - bet);
+            updateHouseWealth(bet);
+
+            // Simulate roulette spin: outcome probabilities (red: 47%, black: 47%, green: 6%)
+            let rand = Math.random();
+            let outcome = "";
+            if (rand < 0.47) {
+                outcome = "red";
+            } else if (rand < 0.94) {
+                outcome = "black";
+            } else {
+                outcome = "green";
+            }
+
+            let payout = 0;
+            let resultMessage = `Roulette landed on ${outcome}. `;
+            if (outcome === choice) {
+                payout = bet * 2;
+                resultMessage += "You win " + payout + " points!";
+            } else {
+                resultMessage += "You lose.";
+            }
+
+            if (payout > 0) {
+                updateUserPoints(currentUser.uid, userPoints + payout);
+                updateHouseWealth(- (payout - bet));
+            }
+
+            document.getElementById("rouletteResult").textContent = resultMessage;
+        }
+
+        // Listen for auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                initUserPoints(user.uid);
+                initHouseWealth();
+            } else {
+                alert("Please sign in to access the casino.");
+                window.location.href = "index.html";
+            }
+        });
+    </script>
+</body>
+</html>
