@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MTG Commander Online</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase SDKs and our main JS file (using ES modules) -->
+  <script type="module" src="main.js"></script>
+</head>
+<body>
+  <div id="game-lobby">
+    <h1>Welcome to MTG Commander Online</h1>
+    <button id="create-game">Create Game</button>
+    <input type="text" id="game-code" placeholder="Enter Game Code">
+    <button id="join-game">Join Game</button>
+  </div>
+  
+  <!-- Game board to be displayed once a game starts -->
+  <div id="game-board" style="display:none;">
+    <!-- Play Area: Players can click or drop a card here -->
+    <div id="play-area">
+      <p>Click or drag your card here to play it.</p>
+    </div>
+    
+    <!-- Player Hand: Shows the cards in the player's hand -->
+    <div id="player-hand">
+      <h2>Your Hand</h2>
+      <div id="hand-cards"></div>
+      <button id="draw-card">Draw Card</button>
+    </div>
+  </div>
+</body>
+</html>
