@@ -1,18 +1,18 @@
 // main.js
-// Replace these values with your actual Firebase project configuration.
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-app.firebaseapp.com",
-  databaseURL: "https://your-app-default-rtdb.firebaseio.com",
-  projectId: "your-app",
-  storageBucket: "your-app.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-// Import Firebase modules (v9 modular style)
+// Import Firebase modules using ES modules (v9 modular style)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+
+// Updated Firebase configuration (from your index.html)
+const firebaseConfig = {
+  apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+  authDomain: "new-chat-8d4f4.firebaseapp.com",
+  databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+  projectId: "new-chat-8d4f4",
+  storageBucket: "new-chat-8d4f4.firebasestorage.app",
+  messagingSenderId: "825077448854",
+  appId: "1:825077448854:web:3906174c00e1f6604782b7"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -185,7 +185,7 @@ document.getElementById("draw-card").addEventListener("click", () => {
 });
 
 // --- Scryfall API Integration ---
-// Function to fetch card data from Scryfall by card name (you could use this to enrich your card details)
+// Function to fetch card data from Scryfall by card name
 function fetchCard(cardName) {
   fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`)
     .then(response => response.json())
