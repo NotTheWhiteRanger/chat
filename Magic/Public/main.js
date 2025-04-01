@@ -1,9 +1,10 @@
 // main.js
+
 // Import Firebase modules using ES modules (v9 modular style)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-// Updated Firebase configuration (from your index.html)
+// Firebase configuration (same as your main website)
 const firebaseConfig = {
   apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
   authDomain: "new-chat-8d4f4.firebaseapp.com",
@@ -20,7 +21,7 @@ const database = getDatabase(app);
 
 // --- Simulated Deck and Hand Management ---
 
-// Simulated deck: an array of card names (in a full implementation, you might fetch details from Scryfall)
+// Simulated deck: an array of card names (for demo purposes)
 const deck = [
   "Lightning Bolt",
   "Counterspell",
@@ -41,10 +42,10 @@ const deck = [
   "Mox Pearl"
 ];
 
-// The player's hand will be an array of card names
+// Player's hand will hold the card names
 let playerHand = [];
 
-// A variable to keep track of the currently selected card (for click-based play)
+// Variable to track the currently selected card for click-based play
 let selectedCard = null;
 
 // Utility to generate a random game ID
@@ -52,9 +53,8 @@ function generateGameId() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// Initialize game: set up the player's hand and render it
+// Initialize game: draw starting hand (7 cards) and render hand
 function initializeGame() {
-  // Draw 7 cards from the deck (simple random draw without removal for demo purposes)
   for (let i = 0; i < 7; i++) {
     drawCard();
   }
@@ -63,14 +63,13 @@ function initializeGame() {
 
 // Draw a card from the deck
 function drawCard() {
-  // For simplicity, draw a random card from the deck array
   const randomIndex = Math.floor(Math.random() * deck.length);
   const card = deck[randomIndex];
   playerHand.push(card);
   renderHand();
 }
 
-// Render the player's hand in the #hand-cards container
+// Render player's hand inside the #hand-cards container
 function renderHand() {
   const handContainer = document.getElementById("hand-cards");
   handContainer.innerHTML = "";
@@ -81,12 +80,10 @@ function renderHand() {
     cardDiv.dataset.index = index;
     cardDiv.textContent = card;
 
-    // For click-based selection
-    cardDiv.addEventListener("click", (e) => {
-      // Remove highlight from any previously selected card
+    // Click-based selection: highlight selected card
+    cardDiv.addEventListener("click", () => {
       const previouslySelected = document.querySelector(".card.selected");
       if (previouslySelected) previouslySelected.classList.remove("selected");
-      // Mark this card as selected
       cardDiv.classList.add("selected");
       selectedCard = index;
     });
@@ -100,15 +97,13 @@ function renderHand() {
   });
 }
 
-// Handler for playing a card (removes from hand and adds to play area)
+// Play a card: remove it from hand and add it to the play area
 function playCard(cardIndex) {
   const card = playerHand[cardIndex];
   if (!card) return;
-  // Remove card from hand
   playerHand.splice(cardIndex, 1);
   renderHand();
 
-  // Display the played card in the play area
   const playArea = document.getElementById("play-area");
   const playedCard = document.createElement("div");
   playedCard.className = "played-card";
@@ -125,18 +120,17 @@ function playCard(cardIndex) {
 function setupPlayArea() {
   const playArea = document.getElementById("play-area");
 
-  // For click-based playing: if a card is selected, clicking play area plays it.
-  playArea.addEventListener("click", (e) => {
+  // Click: if a card is selected, play it when clicking the play area
+  playArea.addEventListener("click", () => {
     if (selectedCard !== null) {
       playCard(selectedCard);
     }
   });
 
-  // For drag and drop: allow dropping a card into the play area
+  // Drag and drop events
   playArea.addEventListener("dragover", (e) => {
-    e.preventDefault(); // Necessary to allow a drop
+    e.preventDefault();
   });
-
   playArea.addEventListener("drop", (e) => {
     e.preventDefault();
     const cardIndex = e.dataTransfer.getData("text/plain");
@@ -144,57 +138,52 @@ function setupPlayArea() {
   });
 }
 
-// --- Event Listeners for Lobby and Draw Button ---
+// --- Event Listeners for Game Lobby and Draw Button ---
 
-// Create game event handler
+// Create Game button: generates a game ID, writes initial data to Firebase, and starts the game UI
 document.getElementById("create-game").addEventListener("click", () => {
   const gameId = generateGameId();
-  const gameRef = ref(database, 'games/' + gameId);
+  const gameRef = ref(database, 'mtg/games/' + gameId);
   set(gameRef, {
     players: {},
     status: 'waiting'
-  }).then(() => {
-    console.log("Game created with ID:", gameId);
-    // Update UI: Hide lobby, show game board
-    document.getElementById("game-lobby").style.display = "none";
-    document.getElementById("game-board").style.display = "block";
-    // Initialize the game for this player (draw starting hand, etc.)
-    initializeGame();
-    setupPlayArea();
-  }).catch((error) => {
-    console.error("Error creating game:", error);
-  });
+  })
+    .then(() => {
+      console.log("Game created with ID:", gameId);
+      document.getElementById("game-lobby").style.display = "none";
+      document.getElementById("game-board").style.display = "block";
+      initializeGame();
+      setupPlayArea();
+    })
+    .catch((error) => {
+      console.error("Error creating game:", error);
+    });
 });
 
-// Join game event handler (simplified)
+// Join Game button (simplified for demonstration)
 document.getElementById("join-game").addEventListener("click", () => {
   const gameCode = document.getElementById("game-code").value.trim().toUpperCase();
   if (!gameCode) return alert("Please enter a valid game code.");
   console.log("Attempting to join game:", gameCode);
-  // Add your logic to join an existing game via Firebase here.
-  // For now, simulate by initializing the game.
   document.getElementById("game-lobby").style.display = "none";
   document.getElementById("game-board").style.display = "block";
   initializeGame();
   setupPlayArea();
 });
 
-// Draw Card button handler
+// Draw Card button
 document.getElementById("draw-card").addEventListener("click", () => {
   drawCard();
 });
 
-// --- Scryfall API Integration ---
-// Function to fetch card data from Scryfall by card name
+// Example Scryfall integration to fetch card details (for future enhancement)
 function fetchCard(cardName) {
   fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`)
     .then(response => response.json())
     .then(data => {
       console.log("Fetched card data:", data);
-      // You could update the card element with image or more info here
+      // Additional card detail updates can be handled here
     })
     .catch(error => console.error("Error fetching card data:", error));
 }
-
-// Example usage: Fetch data for "Lightning Bolt"
 fetchCard("Lightning Bolt");
