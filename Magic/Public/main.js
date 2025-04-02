@@ -47,10 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
       let playerHand = [];
       let selectedCard = null;
 
+      // Utility to generate a random game ID
       function generateGameId() {
         return Math.random().toString(36).substring(2, 8).toUpperCase();
       }
 
+      // Initialize game: draw starting hand (7 cards) and render hand
       function initializeGame() {
         for (let i = 0; i < 7; i++) {
           drawCard();
@@ -58,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderHand();
       }
 
+      // Draw a card from the deck
       function drawCard() {
         const randomIndex = Math.floor(Math.random() * deck.length);
         const card = deck[randomIndex];
@@ -65,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderHand();
       }
 
+      // Render player's hand inside the #hand-cards container
       function renderHand() {
         const handContainer = document.getElementById("hand-cards");
         if (!handContainer) {
@@ -79,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
           cardDiv.dataset.index = index;
           cardDiv.textContent = card;
 
+          // Click-based selection: highlight selected card
           cardDiv.addEventListener("click", () => {
             const previouslySelected = document.querySelector(".card.selected");
             if (previouslySelected) previouslySelected.classList.remove("selected");
@@ -87,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Card selected:", card);
           });
 
+          // Drag events for drag and drop
           cardDiv.addEventListener("dragstart", (e) => {
             e.dataTransfer.setData("text/plain", index);
           });
@@ -95,6 +101,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
 
+      // Fetch card data from Scryfall
+      function fetchCardData(cardName) {
+        return fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`)
+          .then(response => response.json())
+          .catch(error => {
+            console.error("Error fetching card data:", error);
+            return null;
+          });
+      }
+
+      // Play a card: remove it from hand and add it to the play area
       function playCard(cardIndex) {
         const card = playerHand[cardIndex];
         if (!card) return;
@@ -108,15 +125,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         const playedCard = document.createElement("div");
         playedCard.className = "played-card";
-        playedCard.textContent = card;
+        // Use Scryfall API to get card details and display an image if available
+        fetchCardData(card).then(data => {
+          if (data && data.image_uris && data.image_uris.normal) {
+            const img = document.createElement("img");
+            img.src = data.image_uris.normal;
+            img.alt = card;
+            img.style.maxWidth = "100px"; // Adjust the size as needed
+            playedCard.innerHTML = ""; // Clear text
+            playedCard.appendChild(img);
+          } else {
+            playedCard.textContent = card;
+          }
+        });
+
         playArea.appendChild(playedCard);
 
+        // Reset selection
         selectedCard = null;
         const selectedElem = document.querySelector(".card.selected");
         if (selectedElem) selectedElem.classList.remove("selected");
         console.log("Card played:", card);
       }
 
+      // Set up the play area to accept clicks and drops
       function setupPlayArea() {
         const playArea = document.getElementById("play-area");
         if (!playArea) {
@@ -141,6 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
           playCard(parseInt(cardIndex));
         });
       }
+
+      // --- Event Listeners for Game Lobby and Draw Button ---
 
       const createGameBtn = document.getElementById("create-game");
       if (!createGameBtn) {
@@ -211,16 +245,10 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Draw Card button pressed.");
       });
 
-      // Example Scryfall integration
-      function fetchCard(cardName) {
-        fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`)
-          .then(response => response.json())
-          .then(data => {
-            console.log("Fetched card data:", data);
-          })
-          .catch(error => console.error("Error fetching card data:", error));
-      }
-      fetchCard("Lightning Bolt");
+      // Optional: Initial Scryfall test call (can be removed if not needed)
+      fetchCardData("Lightning Bolt").then(data => {
+        console.log("Test fetch for Lightning Bolt:", data);
+      });
 
     }); // End of firebase-database import
   }); // End of firebase-app import
