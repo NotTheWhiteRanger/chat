@@ -161,10 +161,17 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("Game created with ID:", gameId);
             document.getElementById("game-lobby").style.display = "none";
             document.getElementById("game-board").style.display = "block";
+
             // Display the room code overlay
             const roomCodeElem = document.getElementById("room-code");
-            roomCodeElem.textContent = "Room Code: " + gameId;
-            roomCodeElem.style.display = "block";
+            if (!roomCodeElem) {
+              console.error("Room code element not found!");
+            } else {
+              roomCodeElem.textContent = "Room Code: " + gameId;
+              roomCodeElem.style.display = "block";
+              console.log("Room code set to:", roomCodeElem.textContent);
+            }
+
             initializeGame();
             setupPlayArea();
           })
@@ -183,10 +190,17 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Attempting to join game:", gameCode);
         document.getElementById("game-lobby").style.display = "none";
         document.getElementById("game-board").style.display = "block";
-        // Optionally, you can display the room code even for joined games:
+
+        // Optionally, display the room code overlay even for joined games:
         const roomCodeElem = document.getElementById("room-code");
-        roomCodeElem.textContent = "Room Code: " + gameCode;
-        roomCodeElem.style.display = "block";
+        if (roomCodeElem) {
+          roomCodeElem.textContent = "Room Code: " + gameCode;
+          roomCodeElem.style.display = "block";
+          console.log("Room code set to:", roomCodeElem.textContent);
+        } else {
+          console.error("Room code element not found on join!");
+        }
+
         initializeGame();
         setupPlayArea();
       });
@@ -197,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Draw Card button pressed.");
       });
 
+      // Example Scryfall integration
       function fetchCard(cardName) {
         fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`)
           .then(response => response.json())
@@ -207,6 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       fetchCard("Lightning Bolt");
 
-    });
-  });
+    }); // End of firebase-database import
+  }); // End of firebase-app import
 });
