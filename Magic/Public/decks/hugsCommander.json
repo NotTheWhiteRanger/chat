@@ -1,62 +1,91 @@
-Commander
-1 Hugs, Grisly Guardian
-
-Creatures
-1 Courser of Kruphix
-1 Oracle of Mul Daya
-1 Augur of Autumn
-1 Vivien, Monsters' Advocate
-1 Wayward Swordtooth
-1 Azusa, Lost but Seeking
-1 Dryad of the Ilysian Grove
-1 Kami of Whispered Hopes
-1 Visionary Augmenter
-1 Craterhoof Behemoth
-1 Avenger of Zendikar
-1 Elder Gargaroth
-1 Soul of the Harvest
-1 Beast Whisperer
-1 Sylvan Safekeeper
-1 Reclamation Sage
-
-Enchantments
-1 Exploration
-1 Burgeoning
-1 Outpost Siege
-1 Garruk's Uprising
-1 Guardian Project
-1 Song of the Dryads
-1 Lignify
-
-Sorceries
-1 Kodama's Reach
-1 Cultivate
-1 Rampant Growth
-1 Nature's Lore
-1 Rishkar's Expertise
-1 Return of the Wildspeaker
-1 Tooth and Nail
-
-Artifacts
-1 Chalice of the Void
-1 Containment Construct
-1 The Great Henge
-1 Sol Ring
-1 Emerald Medallion
-1 Seer's Lantern
-
-Planeswalkers
-1 Vivien's Arkbow
-
-Instants
-1 Krosan Grip
-1 Beast Within
-
-Lands
-1 Yavimaya, Cradle of Growth
-1 Nykthos, Shrine to Nyx
-1 Field of the Dead
-1 Boseiju, Who Endures
-1 Reliquary Tower
-1 Ghost Quarter
-30 Forest
+{
+  "name": "Hugs Commander",
+  "commander": ["Hugs, Grisly Guardian"],
+  "creatures": [
+    "Courser of Kruphix",
+    "Oracle of Mul Daya",
+    "Augur of Autumn",
+    "Vivien, Monsters' Advocate",
+    "Wayward Swordtooth",
+    "Azusa, Lost but Seeking",
+    "Dryad of the Ilysian Grove",
+    "Kami of Whispered Hopes",
+    "Visionary Augmenter",
+    "Craterhoof Behemoth",
+    "Avenger of Zendikar",
+    "Elder Gargaroth",
+    "Soul of the Harvest",
+    "Beast Whisperer",
+    "Sylvan Safekeeper",
+    "Reclamation Sage"
+  ],
+  "enchantments": [
+    "Exploration",
+    "Burgeoning",
+    "Outpost Siege",
+    "Garruk's Uprising",
+    "Guardian Project",
+    "Song of the Dryads",
+    "Lignify"
+  ],
+  "sorceries": [
+    "Kodama's Reach",
+    "Cultivate",
+    "Rampant Growth",
+    "Nature's Lore",
+    "Rishkar's Expertise",
+    "Return of the Wildspeaker",
+    "Tooth and Nail"
+  ],
+  "artifacts": [
+    "Chalice of the Void",
+    "Containment Construct",
+    "The Great Henge",
+    "Sol Ring",
+    "Emerald Medallion",
+    "Seer's Lantern"
+  ],
+  "planeswalkers": ["Vivien's Arkbow"],
+  "instants": [
+    "Krosan Grip",
+    "Beast Within"
+  ],
+  "lands": [
+    "Yavimaya, Cradle of Growth",
+    "Nykthos, Shrine to Nyx",
+    "Field of the Dead",
+    "Boseiju, Who Endures",
+    "Reliquary Tower",
+    "Ghost Quarter",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest"
+  ]
+}
