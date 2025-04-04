@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Multiplayer Playmat</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #0b0b0b;
+      color: white;
+      overflow: hidden;
+    }
+    #board {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('https://i.imgur.com/j2zq5ZF.jpg'); /* placeholder background */
+      background-size: cover;
+      overflow: hidden;
+    }
+    .card {
+      width: 120px;
+      height: 170px;
+      background-size: cover;
+      border: 1px solid #444;
+      position: absolute;
+      cursor: grab;
+      user-select: none;
+      transform-origin: center center;
+    }
+    .counter {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      font-size: 12px;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    #lifeTracker {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 10px;
+    }
+    #lifeTracker input {
+      width: 50px;
+      font-size: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div id="board"></div>
+<div id="lifeTracker">
+  Your Life: <input type="number" id="life" value="40">
+</div>
+
+<script type="module">
+  // Firebase setup
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    databaseURL: "YOUR_DATABASE_URL"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const cardsRef = ref(db, 'cards');
+
+  const board = document.getElementById('board');
+
+  function createCard(id, imgUrl, x = 100, y = 100, tapped = false, counters = 0) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.left = `${x}px`;
+    card.style.top = `${y}px`;
+    card.style.backgroundImage = `url(${imgUrl})`;
+    card.dataset.id = id;
+    card.dataset.tapped = tapped;
+    card.dataset.counters = counters;
+
+    if (tapped === 'true') {
+      card.style.transform = 'rotate(90deg)';
+    }
+
+    const counterDisplay = document.createElement('div');
+    counterDisplay.className = 'counter';
+    counterDisplay.innerText = counters;
+    card.appendChild(counterDisplay);
+
+    makeDraggable(card);
+
+    card.addEventListener('dblclick', () => {
+      // Toggle tapped state
+      const isTapped = card.dataset.tapped === 'true';
+      card.dataset.tapped = !isTapped;
+      card.style.transform = isTapped ? 'rotate(0deg)' : 'rotate(90deg)';
+      syncCard(card);
+    });
+
+    card.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      let c = parseInt(card.dataset.counters);
+      c = e.shiftKey ? Math.max(0, c - 1) : c + 1;
+      card.dataset.counters = c;
+      card.querySelector('.counter').innerText = c;
+      syncCard(card);
+    });
+
+    board.appendChild(card);
+    return card;
+  }
+
+  function makeDraggable(card) {
+    let offsetX, offsetY;
+    card.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      offsetX = e.offsetX;
+      offsetY = e.offsetY;
+
+      function onMouseMove(ev) {
+        card.style.left = `${ev.clientX - offsetX}px`;
+        card.style.top = `${ev.clientY - offsetY}px`;
+      }
+
+      function onMouseUp() {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        syncCard(card);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  }
+
+  function syncCard(card) {
+    const id = card.dataset.id;
+    const data = {
+      imgUrl: card.style.backgroundImage.slice(5, -2),
+      x: parseInt(card.style.left),
+      y: parseInt(card.style.top),
+      tapped: card.dataset.tapped,
+      counters: parseInt(card.dataset.counters)
+    };
+    update(ref(db, `cards/${id}`), data);
+  }
+
+  onValue(cardsRef, (snapshot) => {
+    const cards = snapshot.val();
+    board.innerHTML = '';
+    for (let id in cards) {
+      createCard(id, cards[id].imgUrl, cards[id].x, cards[id].y, cards[id].tapped, cards[id].counters);
+    }
+  });
+
+  // Demo card
+  createCard('card1', 'https://cards.scryfall.io/normal/front/e/f/ef3796a4-0c3d-4b3f-8c2b-4be1df1831f4.jpg');
+</script>
+</body>
+</html>
