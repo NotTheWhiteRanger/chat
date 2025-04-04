@@ -16,7 +16,7 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      background-image: url('https://i.imgur.com/j2zq5ZF.jpg'); /* placeholder background */
+      background-image: url('https://i.imgur.com/j2zq5ZF.jpg');
       background-size: cover;
       overflow: hidden;
     }
@@ -40,47 +40,52 @@
       padding: 2px 5px;
       border-radius: 4px;
     }
-    #lifeTracker {
+    #controls {
       position: absolute;
       top: 10px;
       left: 10px;
       background: rgba(0,0,0,0.7);
       padding: 10px;
       border-radius: 10px;
+      z-index: 1000;
     }
-    #lifeTracker input {
-      width: 50px;
-      font-size: 20px;
-      text-align: center;
+    #controls input, #controls select, #controls button {
+      margin: 5px;
     }
   </style>
 </head>
 <body>
 <div id="board"></div>
-<div id="lifeTracker">
-  Your Life: <input type="number" id="life" value="40">
+<div id="controls">
+  Life: <input type="number" id="life" value="40">
+  <br>
+  Deck:
+  <select id="deckSelect">
+    <option value="hugsCommander">Hugs Commander</option>
+  </select>
+  <button id="loadDeck">Load Deck</button>
 </div>
 
 <script type="module">
-  // Firebase setup
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
-      authDomain: "new-chat-8d4f4.firebaseapp.com",
-      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
-      projectId: "new-chat-8d4f4",
-      storageBucket: "new-chat-8d4f4.firebasestorage.app",
-      messagingSenderId: "825077448854",
-      appId: "1:825077448854:web:3906174c00e1f6604782b7"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDwKnA0x8VGYk4CLiqPRYRL5xMy4Zdpu3c",
+    authDomain: "new-chat-8d4f4.firebaseapp.com",
+    projectId: "new-chat-8d4f4",
+    storageBucket: "new-chat-8d4f4.appspot.com",
+    messagingSenderId: "998012770880",
+    appId: "1:998012770880:web:0b9cf74d0a92836b65a6d4",
+    databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com"
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   const cardsRef = ref(db, 'cards');
-
   const board = document.getElementById('board');
+  const loadDeckBtn = document.getElementById('loadDeck');
+  const deckSelect = document.getElementById('deckSelect');
 
   function createCard(id, imgUrl, x = 100, y = 100, tapped = false, counters = 0) {
     const card = document.createElement('div');
@@ -104,7 +109,6 @@
     makeDraggable(card);
 
     card.addEventListener('dblclick', () => {
-      // Toggle tapped state
       const isTapped = card.dataset.tapped === 'true';
       card.dataset.tapped = !isTapped;
       card.style.transform = isTapped ? 'rotate(0deg)' : 'rotate(90deg)';
@@ -167,8 +171,36 @@
     }
   });
 
-  // Demo card
-  createCard('card1', 'https://cards.scryfall.io/normal/front/e/f/ef3796a4-0c3d-4b3f-8c2b-4be1df1831f4.jpg');
+  async function fetchCardImage(cardName) {
+    const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
+    const data = await res.json();
+    return data.image_uris?.normal || '';
+  }
+
+  loadDeckBtn.addEventListener('click', async () => {
+    const selectedDeck = deckSelect.value;
+    const res = await fetch(`decks/${selectedDeck}.json`);
+    const deck = await res.json();
+
+    const allCards = [
+      ...(deck.commander || []),
+      ...(deck.creatures || []),
+      ...(deck.enchantments || []),
+      ...(deck.sorceries || []),
+      ...(deck.artifacts || []),
+      ...(deck.planeswalkers || []),
+      ...(deck.instants || []),
+      ...(deck.lands || [])
+    ];
+
+    for (let i = 0; i < allCards.length; i++) {
+      const name = allCards[i];
+      const img = await fetchCardImage(name);
+      const id = `${selectedDeck}_${i}_${Date.now()}`;
+      createCard(id, img, 150 + (i % 10) * 130, 100 + Math.floor(i / 10) * 180);
+      syncCard(document.querySelector(`.card[data-id='${id}']`));
+    }
+  });
 </script>
 </body>
 </html>
