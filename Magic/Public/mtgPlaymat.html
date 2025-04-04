@@ -49,6 +49,15 @@
       border-radius: 10px;
       z-index: 1000;
     }
+    #playerList {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 10px;
+      z-index: 1000;
+    }
     #controls input, #controls select, #controls button {
       margin: 5px;
     }
@@ -57,6 +66,9 @@
 <body>
 <div id="board"></div>
 <div id="controls">
+  <div>
+    Name: <input type="text" id="playerName" placeholder="Enter your name">
+  </div>
   <div>
     Game ID: <input type="text" id="gameId" placeholder="Enter or create game ID">
     <button id="startGame">Start Game</button>
@@ -73,10 +85,14 @@
     <button id="loadDeck">Load Deck</button>
   </div>
 </div>
+<div id="playerList">
+  <strong>Players in Game:</strong>
+  <ul id="players"></ul>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  import { getDatabase, ref, set, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDwKnA0x8VGYk4CLiqPRYRL5xMy4Zdpu3c",
@@ -95,11 +111,13 @@
   let cardsRef = null;
   const board = document.getElementById('board');
 
+  const playerNameInput = document.getElementById('playerName');
   const gameInput = document.getElementById('gameId');
   const startBtn = document.getElementById('startGame');
   const joinBtn = document.getElementById('joinGame');
   const loadDeckBtn = document.getElementById('loadDeck');
   const deckSelect = document.getElementById('deckSelect');
+  const playerListUI = document.getElementById('players');
 
   function createCard(id, imgUrl, x = 100, y = 100, tapped = false, counters = 0) {
     const card = document.createElement('div');
@@ -142,7 +160,6 @@
     return card;
   }
 
-  
   function makeDraggable(card) {
     let offsetX, offsetY;
     card.addEventListener('mousedown', (e) => {
@@ -190,18 +207,42 @@
     });
   }
 
+  function subscribeToPlayers(gameId) {
+    const playersRef = ref(db, `games/${gameId}/players`);
+    onValue(playersRef, (snapshot) => {
+      const players = snapshot.val() || {};
+      playerListUI.innerHTML = '';
+      Object.values(players).forEach(name => {
+        const li = document.createElement('li');
+        li.textContent = name;
+        playerListUI.appendChild(li);
+      });
+    });
+  }
+
+  function registerPlayer(gameId, name) {
+    const playersRef = ref(db, `games/${gameId}/players`);
+    push(playersRef, name);
+  }
+
   startBtn.addEventListener('click', () => {
     gameId = gameInput.value.trim();
-    if (!gameId) return alert('Please enter a game ID');
+    const playerName = playerNameInput.value.trim();
+    if (!gameId || !playerName) return alert('Enter game ID and player name');
     cardsRef = ref(db, `games/${gameId}/cards`);
     set(cardsRef, {});
     subscribeToGameCards(`games/${gameId}/cards`);
+    registerPlayer(gameId, playerName);
+    subscribeToPlayers(gameId);
   });
 
   joinBtn.addEventListener('click', () => {
     gameId = gameInput.value.trim();
-    if (!gameId) return alert('Please enter a game ID');
+    const playerName = playerNameInput.value.trim();
+    if (!gameId || !playerName) return alert('Enter game ID and player name');
     subscribeToGameCards(`games/${gameId}/cards`);
+    registerPlayer(gameId, playerName);
+    subscribeToPlayers(gameId);
   });
 
   async function fetchCardImage(cardName) {
