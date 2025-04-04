@@ -57,13 +57,21 @@
 <body>
 <div id="board"></div>
 <div id="controls">
-  Life: <input type="number" id="life" value="40">
-  <br>
-  Deck:
-  <select id="deckSelect">
-    <option value="hugsCommander">Hugs Commander</option>
-  </select>
-  <button id="loadDeck">Load Deck</button>
+  <div>
+    Game ID: <input type="text" id="gameId" placeholder="Enter or create game ID">
+    <button id="startGame">Start Game</button>
+    <button id="joinGame">Join Game</button>
+  </div>
+  <div>
+    Life: <input type="number" id="life" value="40">
+  </div>
+  <div>
+    Deck:
+    <select id="deckSelect">
+      <option value="hugsCommander">Hugs Commander</option>
+    </select>
+    <button id="loadDeck">Load Deck</button>
+  </div>
 </div>
 
 <script type="module">
@@ -82,8 +90,14 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const cardsRef = ref(db, 'cards');
+
+  let gameId = null;
+  let cardsRef = null;
   const board = document.getElementById('board');
+
+  const gameInput = document.getElementById('gameId');
+  const startBtn = document.getElementById('startGame');
+  const joinBtn = document.getElementById('joinGame');
   const loadDeckBtn = document.getElementById('loadDeck');
   const deckSelect = document.getElementById('deckSelect');
 
@@ -152,6 +166,7 @@
   }
 
   function syncCard(card) {
+    if (!cardsRef) return;
     const id = card.dataset.id;
     const data = {
       imgUrl: card.style.backgroundImage.slice(5, -2),
@@ -160,15 +175,32 @@
       tapped: card.dataset.tapped,
       counters: parseInt(card.dataset.counters)
     };
-    update(ref(db, `cards/${id}`), data);
+    update(ref(db, `${cardsRef.key}/${id}`), data);
   }
 
-  onValue(cardsRef, (snapshot) => {
-    const cards = snapshot.val();
-    board.innerHTML = '';
-    for (let id in cards) {
-      createCard(id, cards[id].imgUrl, cards[id].x, cards[id].y, cards[id].tapped, cards[id].counters);
-    }
+  function subscribeToGameCards(refPath) {
+    cardsRef = ref(db, refPath);
+    onValue(cardsRef, (snapshot) => {
+      const cards = snapshot.val();
+      board.innerHTML = '';
+      for (let id in cards) {
+        createCard(id, cards[id].imgUrl, cards[id].x, cards[id].y, cards[id].tapped, cards[id].counters);
+      }
+    });
+  }
+
+  startBtn.addEventListener('click', () => {
+    gameId = gameInput.value.trim();
+    if (!gameId) return alert('Please enter a game ID');
+    cardsRef = ref(db, `games/${gameId}/cards`);
+    set(cardsRef, {});
+    subscribeToGameCards(`games/${gameId}/cards`);
+  });
+
+  joinBtn.addEventListener('click', () => {
+    gameId = gameInput.value.trim();
+    if (!gameId) return alert('Please enter a game ID');
+    subscribeToGameCards(`games/${gameId}/cards`);
   });
 
   async function fetchCardImage(cardName) {
@@ -178,6 +210,7 @@
   }
 
   loadDeckBtn.addEventListener('click', async () => {
+    if (!cardsRef) return alert('Start or join a game first!');
     const selectedDeck = deckSelect.value;
     const res = await fetch(`decks/${selectedDeck}.json`);
     const deck = await res.json();
