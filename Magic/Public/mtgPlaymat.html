@@ -1,29 +1,4 @@
 <!DOCTYPE html>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      alert("You must be signed in to access the playmat.");
-      window.location.href = "/";
-    }
-  });
-</script>
-
-
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -89,218 +64,250 @@
   </style>
 </head>
 <body>
-<div id="board"></div>
-<div id="controls">
-  <div>
-    Name: <input type="text" id="playerName" placeholder="Enter your name">
+  <div id="board"></div>
+  <div id="controls">
+    <div>
+      Name: <input type="text" id="playerName" placeholder="Enter your name">
+    </div>
+    <div>
+      Game ID: <input type="text" id="gameId" placeholder="Enter or create game ID">
+      <button id="startGame">Start Game</button>
+      <button id="joinGame">Join Game</button>
+    </div>
+    <div>
+      Life: <input type="number" id="life" value="40">
+    </div>
+    <div>
+      Deck:
+      <select id="deckSelect">
+        <option value="hugsCommander">Hugs Commander</option>
+      </select>
+      <button id="loadDeck">Load Deck</button>
+    </div>
   </div>
-  <div>
-    Game ID: <input type="text" id="gameId" placeholder="Enter or create game ID">
-    <button id="startGame">Start Game</button>
-    <button id="joinGame">Join Game</button>
+  <div id="playerList">
+    <strong>Players in Game:</strong>
+    <ul id="players"></ul>
   </div>
-  <div>
-    Life: <input type="number" id="life" value="40">
-  </div>
-  <div>
-    Deck:
-    <select id="deckSelect">
-      <option value="hugsCommander">Hugs Commander</option>
-    </select>
-    <button id="loadDeck">Load Deck</button>
-  </div>
-</div>
-<div id="playerList">
-  <strong>Players in Game:</strong>
-  <ul id="players"></ul>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, set, push, onValue, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  <!-- Authentication Check -->
+  <script type="module">
+    // Use the same Firebase version as in index.html (version 9.22.0)
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDwKnA0x8VGYk4CLiqPRYRL5xMy4Zdpu3c",
-    authDomain: "new-chat-8d4f4.firebaseapp.com",
-    projectId: "new-chat-8d4f4",
-    storageBucket: "new-chat-8d4f4.appspot.com",
-    messagingSenderId: "998012770880",
-    appId: "1:998012770880:web:0b9cf74d0a92836b65a6d4",
-    databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  let gameId = null;
-  let cardsRef = null;
-  const board = document.getElementById('board');
-
-  const playerNameInput = document.getElementById('playerName');
-  const gameInput = document.getElementById('gameId');
-  const startBtn = document.getElementById('startGame');
-  const joinBtn = document.getElementById('joinGame');
-  const loadDeckBtn = document.getElementById('loadDeck');
-  const deckSelect = document.getElementById('deckSelect');
-  const playerListUI = document.getElementById('players');
-
-  function createCard(id, imgUrl, x = 100, y = 100, tapped = false, counters = 0) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.left = `${x}px`;
-    card.style.top = `${y}px`;
-    card.style.backgroundImage = `url(${imgUrl})`;
-    card.dataset.id = id;
-    card.dataset.tapped = tapped;
-    card.dataset.counters = counters;
-
-    if (tapped === 'true') {
-      card.style.transform = 'rotate(90deg)';
-    }
-
-    const counterDisplay = document.createElement('div');
-    counterDisplay.className = 'counter';
-    counterDisplay.innerText = counters;
-    card.appendChild(counterDisplay);
-
-    makeDraggable(card);
-
-    card.addEventListener('dblclick', () => {
-      const isTapped = card.dataset.tapped === 'true';
-      card.dataset.tapped = !isTapped;
-      card.style.transform = isTapped ? 'rotate(0deg)' : 'rotate(90deg)';
-      syncCard(card);
-    });
-
-    card.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      let c = parseInt(card.dataset.counters);
-      c = e.shiftKey ? Math.max(0, c - 1) : c + 1;
-      card.dataset.counters = c;
-      card.querySelector('.counter').innerText = c;
-      syncCard(card);
-    });
-
-    board.appendChild(card);
-    return card;
-  }
-
-  function makeDraggable(card) {
-    let offsetX, offsetY;
-    card.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      offsetX = e.offsetX;
-      offsetY = e.offsetY;
-
-      function onMouseMove(ev) {
-        card.style.left = `${ev.clientX - offsetX}px`;
-        card.style.top = `${ev.clientY - offsetY}px`;
-      }
-
-      function onMouseUp() {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-        syncCard(card);
-      }
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    });
-  }
-
-  function syncCard(card) {
-    if (!cardsRef) return;
-    const id = card.dataset.id;
-    const data = {
-      imgUrl: card.style.backgroundImage.slice(5, -2),
-      x: parseInt(card.style.left),
-      y: parseInt(card.style.top),
-      tapped: card.dataset.tapped,
-      counters: parseInt(card.dataset.counters)
+    // Use your shared Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
     };
-    update(ref(db, `${cardsRef.key}/${id}`), data);
-  }
 
-  function subscribeToGameCards(refPath) {
-    cardsRef = ref(db, refPath);
-    onValue(cardsRef, (snapshot) => {
-      const cards = snapshot.val();
-      board.innerHTML = '';
-      for (let id in cards) {
-        createCard(id, cards[id].imgUrl, cards[id].x, cards[id].y, cards[id].tapped, cards[id].counters);
+    // Check if an app has already been initialized to avoid duplicate initialization.
+    const appInstance = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const auth = getAuth(appInstance);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        alert("You must be signed in to access the playmat.");
+        window.location.href = "/";
       }
     });
-  }
+  </script>
 
-  function subscribeToPlayers(gameId) {
-    const playersRef = ref(db, `games/${gameId}/players`);
-    onValue(playersRef, (snapshot) => {
-      const players = snapshot.val() || {};
-      playerListUI.innerHTML = '';
-      Object.values(players).forEach(name => {
-        const li = document.createElement('li');
-        li.textContent = name;
-        playerListUI.appendChild(li);
+  <!-- MTG Game Logic -->
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, update } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+
+    // Use the same configuration (or re-use the one from the auth script)
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2B6KZgtYQPE4K-JF5GQszp5wjNgX6_MY",
+      authDomain: "new-chat-8d4f4.firebaseapp.com",
+      databaseURL: "https://new-chat-8d4f4-default-rtdb.firebaseio.com",
+      projectId: "new-chat-8d4f4",
+      storageBucket: "new-chat-8d4f4.firebasestorage.app",
+      messagingSenderId: "825077448854",
+      appId: "1:825077448854:web:3906174c00e1f6604782b7"
+    };
+
+    // Initialize or get the existing app instance
+    const appInstance = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    const db = getDatabase(appInstance);
+
+    let gameId = null;
+    let cardsRef = null;
+    const board = document.getElementById('board');
+
+    const playerNameInput = document.getElementById('playerName');
+    const gameInput = document.getElementById('gameId');
+    const startBtn = document.getElementById('startGame');
+    const joinBtn = document.getElementById('joinGame');
+    const loadDeckBtn = document.getElementById('loadDeck');
+    const deckSelect = document.getElementById('deckSelect');
+    const playerListUI = document.getElementById('players');
+
+    function createCard(id, imgUrl, x = 100, y = 100, tapped = false, counters = 0) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.left = `${x}px`;
+      card.style.top = `${y}px`;
+      card.style.backgroundImage = `url(${imgUrl})`;
+      card.dataset.id = id;
+      card.dataset.tapped = tapped;
+      card.dataset.counters = counters;
+
+      if (tapped === 'true') {
+        card.style.transform = 'rotate(90deg)';
+      }
+
+      const counterDisplay = document.createElement('div');
+      counterDisplay.className = 'counter';
+      counterDisplay.innerText = counters;
+      card.appendChild(counterDisplay);
+
+      makeDraggable(card);
+
+      card.addEventListener('dblclick', () => {
+        const isTapped = card.dataset.tapped === 'true';
+        card.dataset.tapped = !isTapped;
+        card.style.transform = isTapped ? 'rotate(0deg)' : 'rotate(90deg)';
+        syncCard(card);
       });
-    });
-  }
 
-  function registerPlayer(gameId, name) {
-    const playersRef = ref(db, `games/${gameId}/players`);
-    push(playersRef, name);
-  }
+      card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        let c = parseInt(card.dataset.counters);
+        c = e.shiftKey ? Math.max(0, c - 1) : c + 1;
+        card.dataset.counters = c;
+        card.querySelector('.counter').innerText = c;
+        syncCard(card);
+      });
 
-  startBtn.addEventListener('click', () => {
-    gameId = gameInput.value.trim();
-    const playerName = playerNameInput.value.trim();
-    if (!gameId || !playerName) return alert('Enter game ID and player name');
-    cardsRef = ref(db, `games/${gameId}/cards`);
-    set(cardsRef, {});
-    subscribeToGameCards(`games/${gameId}/cards`);
-    registerPlayer(gameId, playerName);
-    subscribeToPlayers(gameId);
-  });
-
-  joinBtn.addEventListener('click', () => {
-    gameId = gameInput.value.trim();
-    const playerName = playerNameInput.value.trim();
-    if (!gameId || !playerName) return alert('Enter game ID and player name');
-    subscribeToGameCards(`games/${gameId}/cards`);
-    registerPlayer(gameId, playerName);
-    subscribeToPlayers(gameId);
-  });
-
-  async function fetchCardImage(cardName) {
-    const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
-    const data = await res.json();
-    return data.image_uris?.normal || '';
-  }
-
-  loadDeckBtn.addEventListener('click', async () => {
-    if (!cardsRef) return alert('Start or join a game first!');
-    const selectedDeck = deckSelect.value;
-    const res = await fetch(`decks/${selectedDeck}.json`);
-    const deck = await res.json();
-
-    const allCards = [
-      ...(deck.commander || []),
-      ...(deck.creatures || []),
-      ...(deck.enchantments || []),
-      ...(deck.sorceries || []),
-      ...(deck.artifacts || []),
-      ...(deck.planeswalkers || []),
-      ...(deck.instants || []),
-      ...(deck.lands || [])
-    ];
-
-    for (let i = 0; i < allCards.length; i++) {
-      const name = allCards[i];
-      const img = await fetchCardImage(name);
-      const id = `${selectedDeck}_${i}_${Date.now()}`;
-      createCard(id, img, 150 + (i % 10) * 130, 100 + Math.floor(i / 10) * 180);
-      syncCard(document.querySelector(`.card[data-id='${id}']`));
+      board.appendChild(card);
+      return card;
     }
-  });
-</script>
+
+    function makeDraggable(card) {
+      let offsetX, offsetY;
+      card.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+
+        function onMouseMove(ev) {
+          card.style.left = `${ev.clientX - offsetX}px`;
+          card.style.top = `${ev.clientY - offsetY}px`;
+        }
+
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+          syncCard(card);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      });
+    }
+
+    function syncCard(card) {
+      if (!cardsRef) return;
+      const id = card.dataset.id;
+      const data = {
+        imgUrl: card.style.backgroundImage.slice(5, -2),
+        x: parseInt(card.style.left),
+        y: parseInt(card.style.top),
+        tapped: card.dataset.tapped,
+        counters: parseInt(card.dataset.counters)
+      };
+      update(ref(db, `${cardsRef.key}/${id}`), data);
+    }
+
+    function subscribeToGameCards(refPath) {
+      cardsRef = ref(db, refPath);
+      onValue(cardsRef, (snapshot) => {
+        const cards = snapshot.val();
+        board.innerHTML = '';
+        for (let id in cards) {
+          createCard(id, cards[id].imgUrl, cards[id].x, cards[id].y, cards[id].tapped, cards[id].counters);
+        }
+      });
+    }
+
+    function subscribeToPlayers(gameId) {
+      const playersRef = ref(db, `games/${gameId}/players`);
+      onValue(playersRef, (snapshot) => {
+        const players = snapshot.val() || {};
+        playerListUI.innerHTML = '';
+        Object.values(players).forEach(name => {
+          const li = document.createElement('li');
+          li.textContent = name;
+          playerListUI.appendChild(li);
+        });
+      });
+    }
+
+    function registerPlayer(gameId, name) {
+      const playersRef = ref(db, `games/${gameId}/players`);
+      push(playersRef, name);
+    }
+
+    startBtn.addEventListener('click', () => {
+      gameId = gameInput.value.trim();
+      const playerName = playerNameInput.value.trim();
+      if (!gameId || !playerName) return alert('Enter game ID and player name');
+      cardsRef = ref(db, `games/${gameId}/cards`);
+      set(cardsRef, {});
+      subscribeToGameCards(`games/${gameId}/cards`);
+      registerPlayer(gameId, playerName);
+      subscribeToPlayers(gameId);
+    });
+
+    joinBtn.addEventListener('click', () => {
+      gameId = gameInput.value.trim();
+      const playerName = playerNameInput.value.trim();
+      if (!gameId || !playerName) return alert('Enter game ID and player name');
+      subscribeToGameCards(`games/${gameId}/cards`);
+      registerPlayer(gameId, playerName);
+      subscribeToPlayers(gameId);
+    });
+
+    async function fetchCardImage(cardName) {
+      const res = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
+      const data = await res.json();
+      return data.image_uris?.normal || '';
+    }
+
+    loadDeckBtn.addEventListener('click', async () => {
+      if (!cardsRef) return alert('Start or join a game first!');
+      const selectedDeck = deckSelect.value;
+      const res = await fetch(`decks/${selectedDeck}.json`);
+      const deck = await res.json();
+
+      const allCards = [
+        ...(deck.commander || []),
+        ...(deck.creatures || []),
+        ...(deck.enchantments || []),
+        ...(deck.sorceries || []),
+        ...(deck.artifacts || []),
+        ...(deck.planeswalkers || []),
+        ...(deck.instants || []),
+        ...(deck.lands || [])
+      ];
+
+      for (let i = 0; i < allCards.length; i++) {
+        const name = allCards[i];
+        const img = await fetchCardImage(name);
+        const id = `${selectedDeck}_${i}_${Date.now()}`;
+        createCard(id, img, 150 + (i % 10) * 130, 100 + Math.floor(i / 10) * 180);
+        syncCard(document.querySelector(`.card[data-id='${id}']`));
+      }
+    });
+  </script>
 </body>
 </html>
